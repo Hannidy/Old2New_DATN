@@ -9,6 +9,9 @@ import HomeView from '../views/home/HomeView.vue'
 
 import Users from '../views/admin/Users.vue'
 
+// Thêm dòng này vào khu vực import
+import Sell from '../views/product/Sell.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -36,6 +39,11 @@ const router = createRouter({
       path: '/admin/users',
       name: 'admin-users',
       component: Users
+    },
+    {
+      path: '/dang-ban',
+      name: 'Sell',
+      component: Sell
     }
   ]
 })

@@ -5,6 +5,9 @@ import router from './router' // Đảm bảo đường dẫn này đúng
 import vue3GoogleLogin from 'vue3-google-login'
 
 
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+
 
 // 1. Tạo app trước
 const app = createApp(App)

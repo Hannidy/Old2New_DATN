@@ -8,7 +8,6 @@ import poly.edu.o2n.auth.service.AuthService;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin("*") // Vẫn nhớ cho phép Vue.js gọi sang nhé
 public class AuthController {
 
     @Autowired
