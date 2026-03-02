@@ -1,15 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // Import các trang của bạn
-import Login from '../views/auth/Login.vue' // Cập nhật đường dẫn theo thư mục thực tế của bạn
-import Register from '../views/auth/Register.vue' // Cập nhật đường dẫn theo thư mục thực tế của bạn
+import Login from '../views/auth/Login.vue' 
+
+import Register from '../views/auth/Register.vue' 
+
 import ForgotPassword from '../views/auth/ForgotPassword.vue'
-// Import trang chủ (nếu bạn chưa có file này thì tạo tạm nhé)
+
 import HomeView from '../views/home/HomeView.vue' 
 
 import Users from '../views/admin/Users.vue'
 
-// Thêm dòng này vào khu vực import
 import Sell from '../views/product/Sell.vue'
 
 import QuanLyDonHang from '@/views/order/QuanLyDonHang.vue'
@@ -17,7 +18,10 @@ import QuanLyDonHang from '@/views/order/QuanLyDonHang.vue'
 import QuanLyDonBan from '@/views/order/QuanLyDonBan.vue'
 
 import ProductDetail from '../views/product/ProductDetail.vue'
+
 import Cart from '../views/product/Cart.vue'
+
+import Profile from '../views/user/Profile.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -71,6 +75,11 @@ const router = createRouter({
       path: '/quan-ly-don-ban',
       name: 'QuanLyDonBan',
       component: QuanLyDonBan
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile
     }
   ]
 })

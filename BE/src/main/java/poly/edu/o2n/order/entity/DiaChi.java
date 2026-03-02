@@ -16,7 +16,7 @@ public class DiaChi {
     @Column(name = "nguoi_dung_id")
     private Integer nguoiDungId;
 
-    // Tùy theo thiết kế DB của bạn, có thể đổi tên cột này thành ghn_phuong_ma nếu cần
+    // TRẢ LẠI ĐÚNG TÊN CỘT THEO DATABASE THỰC TẾ CỦA BẠN
     @Column(name = "phuong_xa_id")
     private Integer phuongXaId;
 
@@ -24,5 +24,5 @@ public class DiaChi {
     private String diaChiChiTiet;
 
     @Column(name = "dia_chi_mac_dinh")
-    private Boolean diaChiMacDinh;
+    private Integer diaChiMacDinh;
 }

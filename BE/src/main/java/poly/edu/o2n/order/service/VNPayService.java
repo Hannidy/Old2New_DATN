@@ -13,7 +13,7 @@ public class VNPayService {
 
     private final String vnp_TmnCode = "SDIAEPTA";
 
-    // MÃ KHÓA MỚI TINH CỦA BẠN (SẼ KHÔNG CÒN BỊ LỆCH NỮA)
+    // MÃ KHÓA CẦN CHUẨN KHÔNG SAI MỚI CHẠY ĐƯỢC
     private final String vnp_HashSecret = "G4HWURTFZHOQ6A0RSKQMRDTC7Y1B3INU";
 
     private final String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
