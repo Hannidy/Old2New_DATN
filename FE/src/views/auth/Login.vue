@@ -57,6 +57,7 @@ const handleLogin = async () => {
   try {
     const response = await axios.post('http://localhost:8080/api/auth/login', form.value);
     
+    console.log("🔥 DỮ LIỆU BACKEND TRẢ VỀ LÀ:", response.data);
     // ĐÃ SỬA: Phải trỏ vào thuộc tính .thongBao của Object DTO
     if (response.data.thongBao === "Thành công") {
       alert("Đăng nhập thành công! Chào " + response.data.hoVaTen);
@@ -68,7 +69,8 @@ const handleLogin = async () => {
         id: response.data.nguoiDungId,
         hoVaTen: response.data.hoVaTen,
         email: response.data.email,
-        vaiTro: role
+        vaiTro: role,
+        token: response.data.token
       }));
       
       // PHÂN QUYỀN CHUYỂN TRANG
@@ -86,6 +88,11 @@ const handleLogin = async () => {
       alert(response.data.thongBao); 
     }
   } catch (error) {
+    if (error.response && error.response.data && error.response.data.message) {
+       alert("❌ " + error.response.data.message); // In ra chữ "Tài khoản của bạn đã bị khóa..."
+    } else {
+       alert("❌ Đăng nhập thất bại!");
+    }
     console.error(error);
     alert('Lỗi kết nối đến máy chủ!');
   } finally {
@@ -112,6 +119,7 @@ const handleGoogleLogin = async (googleResponse) => {
     const response = await axios.post('http://localhost:8080/api/auth/google', {
       credential: token
     });
+    console.log("🔥 DỮ LIỆU BACKEND TRẢ VỀ LÀ:", response.data);
 
     // 3. Xử lý kết quả trả về (Giống hệt như Đăng nhập Local)
     if (response.data.thongBao === "Thành công") {
@@ -124,7 +132,8 @@ const handleGoogleLogin = async (googleResponse) => {
         id: response.data.nguoiDungId,
         hoVaTen: response.data.hoVaTen,
         email: response.data.email,
-        vaiTro: role
+        vaiTro: role,
+        token: response.data.token
       }));
       
       // Phân quyền chuyển trang

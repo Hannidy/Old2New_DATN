@@ -1,5 +1,6 @@
 package poly.edu.o2n.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,9 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Autowired
+    private JwtAuthFilter jwtAuthFilter;
+
     // 1. Khai báo cái máy xay mật khẩu (BCrypt)
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -24,22 +28,67 @@ public class SecurityConfig {
     }
 
     // 2. Mở cửa cho toàn bộ API và ÁP DỤNG LUẬT CORS
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//                // Bật tính năng CORS và áp dụng cái "Danh sách khách VIP" ở bên dưới
+//                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//
+//                // Tắt CSRF để Vue gọi API không bị lỗi
+//                .csrf(csrf -> csrf.disable())
+//
+//                // Tạm thời cho phép tất cả các đường dẫn đi qua
+//                .authorizeHttpRequests(auth -> auth
+//                        .anyRequest().permitAll()
+//                );
+//
+//        return http.build();
+//    }
+
+
+    // 2. Mở cửa cho toàn bộ API và ÁP DỤNG LUẬT CORS
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Bật tính năng CORS và áp dụng cái "Danh sách khách VIP" ở bên dưới
+                // Bật tính năng CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 // Tắt CSRF để Vue gọi API không bị lỗi
                 .csrf(csrf -> csrf.disable())
 
-                // Tạm thời cho phép tất cả các đường dẫn đi qua
+                // ======================================================
+                // PHÂN QUYỀN ĐƯỜNG DẪN DỰA TRÊN DANH SÁCH THỰC TẾ
+                // ======================================================
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
-                );
+
+                        // 1. NHÓM CÔNG KHAI (Không cần đăng nhập)
+                        .requestMatchers("/api/auth/**").permitAll() // Login, Google, Reset Password
+                        .requestMatchers("/api/categories/tree").permitAll() // Lấy danh mục
+                        .requestMatchers("/api/products/**").permitAll() // Xem sản phẩm (home, chi tiết)
+                        .requestMatchers("/api/don-hang/vnpay-return").permitAll() // Nhận kết quả từ VNPay
+                        .requestMatchers("/uploads/**").permitAll() // Xem ảnh đại diện, ảnh sản phẩm
+
+                        // 2. NHÓM ADMIN
+                        .requestMatchers("/api/admin/**").authenticated() // Quản lý user
+
+                        // 3. NHÓM NGƯỜI BÁN & NGƯỜI MUA (Phải đăng nhập)
+                        .requestMatchers("/api/san-pham/**").authenticated() // Đăng bán sản phẩm
+                        .requestMatchers("/api/nguoi-dung/**").authenticated() // Sửa hồ sơ, đổi avatar
+                        .requestMatchers("/api/dia-chi/**").authenticated() // Quản lý sổ địa chỉ
+
+                        // Cấu hình riêng cho Đơn hàng (Khóa toàn bộ ngoại trừ VNPay return ở trên)
+                        .requestMatchers("/api/don-hang/**").authenticated()
+
+                        // 4. CHỐT CHẶN CUỐI CÙNG
+                        .anyRequest().authenticated()
+                ) // <--- ĐÃ BỎ DẤU CHẤM PHẨY Ở ĐÂY ĐỂ NỐI TIẾP LỆNH
+
+                // THÊM LỚP BẢO VỆ JWT VÀO DÂY CHUYỀN
+                .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class); // <--- DẤU CHẤM PHẨY KẾT THÚC CHUYỂN XUỐNG ĐÂY
 
         return http.build();
     }
+
 
     // 3. DANH SÁCH KHÁCH VIP (CORS CONFIGURATION)
     @Bean
@@ -53,8 +102,6 @@ public class SecurityConfig {
                 "http://localhost:5173"
         ));
 
-        // Cho phép TẤT CẢ các nguồn đều có thể truy cập (Dùng Pattern)
-//        corsConfiguration.setAllowedOriginPatterns(List.of("*"));
 
         // Cho phép các hành động
         corsConfiguration.setAllowedMethods(List.of(

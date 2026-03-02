@@ -10,6 +10,7 @@ import poly.edu.o2n.auth.dto.request.ResetPasswordRequestDto;
 import poly.edu.o2n.auth.dto.response.AuthResponseDto;
 import poly.edu.o2n.auth.service.AuthService;
 import poly.edu.o2n.auth.service.EmailService;
+import poly.edu.o2n.security.JwtService;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 
@@ -35,6 +36,10 @@ public class AuthServiceImpl implements AuthService {
     // THÊM DÒNG NÀY:
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
+
 
     @Override
     public String register(RegisterRequestDto request) {
@@ -80,6 +85,16 @@ public class AuthServiceImpl implements AuthService {
         } else {
             response.setTenVaiTro("USER"); // Mặc định là USER nếu chưa gán vai trò
         }
+
+        // ==========================================
+        // 🔥 2. THÊM ĐOẠN TẠO VÀ TRẢ VỀ TOKEN Ở ĐÂY
+        // ==========================================
+        // Tùy vào hàm generateToken của team bạn yêu cầu truyền vào nguyên Object User hay chỉ truyền Email nhé:
+        String token = jwtService.generateToken(user);
+
+        // Nhét Token vào DTO để trả về cho Vue.js
+        response.setToken(token);
+        // ==========================================
 
         return response;
     }
@@ -128,6 +143,13 @@ public class AuthServiceImpl implements AuthService {
                 response.setEmail(user.getEmail());
                 response.setHoVaTen(user.getHoVaTen());
                 response.setTenVaiTro(user.getVaiTro() != null ? user.getVaiTro().getTenVaiTro() : "USER");
+
+                // ==========================================
+                // 🔥 3. THÊM ĐOẠN TẠO VÀ TRẢ VỀ TOKEN Ở ĐÂY (Tương tự ở trên)
+                // ==========================================
+                String token = jwtService.generateToken(user);
+                response.setToken(token);
+                // ==========================================
 
             } else {
                 response.setThongBao("Lỗi: Mã Google không hợp lệ!");

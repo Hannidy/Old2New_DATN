@@ -16,9 +16,8 @@ public class DiaChi {
     @Column(name = "nguoi_dung_id")
     private Integer nguoiDungId;
 
-    // TRẢ LẠI ĐÚNG TÊN CỘT THEO DATABASE THỰC TẾ CỦA BẠN
     @Column(name = "phuong_xa_id")
-    private Integer phuongXaId;
+    private String phuongXaId;
 
     @Column(name = "dia_chi_chi_tiet")
     private String diaChiChiTiet;

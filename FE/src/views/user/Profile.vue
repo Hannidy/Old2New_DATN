@@ -113,7 +113,6 @@
                 <div v-for="addr in userAddresses" :key="addr.diaChiId" 
                      class="p-3 mb-3 border rounded bg-white shadow-sm position-relative"
                      :class="{'border-danger border-2': addr.diaChiMacDinh === 1}">
-                  
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
                       <div class="fw-bold text-dark fs-5 mb-1 d-flex align-items-center gap-2">
@@ -124,19 +123,16 @@
                         {{ addr.diaChiChiTiet.split(' | ')[1] || addr.diaChiChiTiet }}
                       </div>
                     </div>
-                    
                     <div class="d-flex gap-2">
-                      <button class="btn btn-sm btn-outline-primary" @click="alert('Sẽ làm chức năng Sửa sau nhé!')">Sửa</button>
-                      <button class="btn btn-sm btn-outline-danger" @click="alert('Sẽ làm chức năng Xóa sau nhé!')">Xóa</button>
+                      <button class="btn btn-sm btn-outline-primary" @click="alert('Chức năng sửa đang phát triển!')">Sửa</button>
+                      <button class="btn btn-sm btn-outline-danger" @click="alert('Chức năng xóa đang phát triển!')">Xóa</button>
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
 
             <form v-if="showAddressForm" @submit.prevent="saveAddress" class="mt-4 p-4 border rounded bg-light">
-              
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="form-label small fw-bold">Tên người nhận</label>
@@ -153,21 +149,21 @@
                   <label class="form-label small fw-bold">Tỉnh / Thành phố</label>
                   <select v-model="addressForm.tinhCode" @change="fetchDistricts" class="form-select" required>
                     <option value="" disabled>Chọn Tỉnh / Thành</option>
-                    <option v-for="tinh in listProvinces" :key="tinh.code" :value="tinh.code">{{ tinh.name }}</option>
+                    <option v-for="tinh in listProvinces" :key="tinh.ProvinceID" :value="tinh.ProvinceID">{{ tinh.ProvinceName }}</option>
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label small fw-bold">Quận / Huyện</label>
                   <select v-model="addressForm.huyenCode" @change="fetchWards" class="form-select" :disabled="!addressForm.tinhCode" required>
                     <option value="" disabled>Chọn Quận / Huyện</option>
-                    <option v-for="huyen in listDistricts" :key="huyen.code" :value="huyen.code">{{ huyen.name }}</option>
+                    <option v-for="huyen in listDistricts" :key="huyen.DistrictID" :value="huyen.DistrictID">{{ huyen.DistrictName }}</option>
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label small fw-bold">Phường / Xã</label>
                   <select v-model="addressForm.phuongCode" class="form-select" :disabled="!addressForm.huyenCode" required>
                     <option value="" disabled>Chọn Phường / Xã</option>
-                    <option v-for="xa in listWards" :key="xa.code" :value="xa.code">{{ xa.name }}</option>
+                    <option v-for="xa in listWards" :key="xa.WardCode" :value="xa.WardCode">{{ xa.WardName }}</option>
                   </select>
                 </div>
               </div>
@@ -179,9 +175,7 @@
 
               <div class="form-check mb-4">
                 <input class="form-check-input" type="checkbox" v-model="addressForm.isDefault" id="defaultAddress">
-                <label class="form-check-label text-muted small" for="defaultAddress">
-                  Đặt làm địa chỉ mặc định
-                </label>
+                <label class="form-check-label text-muted small" for="defaultAddress">Đặt làm địa chỉ mặc định</label>
               </div>
 
               <div class="d-flex justify-content-end gap-2">
@@ -191,7 +185,6 @@
             </form>
 
           </div>
-
         </div>
       </div>
     </div>
@@ -204,16 +197,44 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 const router = useRouter();
-const currentTab = ref('profile'); // Biến quản lý Tab ('profile' hoặc 'address')
+const currentTab = ref('profile'); 
 const isSaving = ref(false);
 let currentUserId = null;
 
 // ==========================================
-// LOGIC TAB 1: HỒ SƠ
+// BẢO MẬT: HÀM TỰ ĐỘNG LẤY TOKEN GẮN VÀO API
 // ==========================================
-const userProfile = ref({
-  hoVaTen: '', email: '', soDienThoai: '', gioiTinh: '', ngaySinh: '', anhDaiDien: ''
-});
+const getAuthHeaders = () => {
+  let token = null;
+
+  // 1. Lục tìm trong cục 'user' (như cũ)
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    const userData = JSON.parse(userStr);
+    token = userData.token || userData.accessToken || userData.jwt; 
+  }
+
+  // 2. Nếu trong 'user' không có, lục tìm xem có ai giấu nó ở ngoài không!
+  if (!token) {
+    token = localStorage.getItem('token') || localStorage.getItem('accessToken') || localStorage.getItem('jwt');
+  }
+
+  // 3. Nếu tìm thấy thì tự tin xuất trình thẻ
+  if (token) {
+    console.log("✅ Đã tìm thấy Token:", token);
+    return { headers: { Authorization: `Bearer ${token}` } };
+  }
+
+  // 4. Nếu tới đây mà vẫn không có thì... bó tay!
+  console.warn("⚠️ BÁO ĐỘNG ĐỎ: ĐỒNG ĐỘI CỦA BẠN ĐÃ QUÊN LƯU TOKEN Ở TRANG LOGIN!");
+  return {}; 
+};
+
+
+// ==========================================
+// LOGIC TAB 1: HỒ SƠ NGƯỜI DÙNG
+// ==========================================
+const userProfile = ref({ hoVaTen: '', email: '', soDienThoai: '', gioiTinh: '', ngaySinh: '', anhDaiDien: '' });
 const avatarInput = ref(null);
 
 onMounted(() => {
@@ -226,14 +247,16 @@ onMounted(() => {
   const userData = JSON.parse(storedUser);
   currentUserId = userData.id || userData.nguoiDungId;
   
-  fetchUserData();
-  fetchProvinces(); // Lấy sẵn data Tỉnh/Thành cho Tab 2
+  fetchUserData();     
+  fetchProvinces();    
   fetchUserAddresses();
 });
 
+// 1. LẤY THÔNG TIN
 const fetchUserData = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/nguoi-dung/${currentUserId}`);
+    // 🔥 Gắn Token trực tiếp vào đây để không bị lỗi 403
+    const response = await axios.get(`http://localhost:8080/api/nguoi-dung/${currentUserId}`, getAuthHeaders());
     const data = response.data;
     userProfile.value = { ...data, gioiTinh: data.gioiTinh || 'Khác' };
     
@@ -250,10 +273,12 @@ const fetchUserData = async () => {
   }
 };
 
+// 2. LƯU THÔNG TIN (ĐÃ PHỤC HỒI)
 const saveProfile = async () => {
   isSaving.value = true;
   try {
-    const response = await axios.put(`http://localhost:8080/api/nguoi-dung/${currentUserId}`, userProfile.value);
+    // 🔥 Gắn Token trực tiếp vào đây
+    const response = await axios.put(`http://localhost:8080/api/nguoi-dung/${currentUserId}`, userProfile.value, getAuthHeaders());
     if (response.status === 200) {
       alert("🎉 Cập nhật hồ sơ thành công!");
       const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -268,113 +293,123 @@ const saveProfile = async () => {
   }
 };
 
-// --- LOGIC AVATAR ---
-const triggerAvatarUpload = () => {
-  if (avatarInput.value) avatarInput.value.click();
-};
-const handleAvatarChange = (event) => {
+// 3. ĐỔI AVATAR (ĐÃ PHỤC HỒI)
+const triggerAvatarUpload = () => { if (avatarInput.value) avatarInput.value.click(); };
+
+const handleAvatarChange = async (event) => {
   const file = event.target.files[0];
-  if (file) {
-    // 1. Hiển thị ảnh tạm thời lên giao diện
-    userProfile.value.anhDaiDien = URL.createObjectURL(file);
-    alert("Đã chọn ảnh! Tính năng tải ảnh lên DB sẽ được Backend hỗ trợ sau nhé.");
-    // GHI CHÚ: Sau này bạn gọi API upload File y hệt như đăng bán sản phẩm ở đây.
+  if (!file) return;
+
+  userProfile.value.anhDaiDien = URL.createObjectURL(file);
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    // Lấy token và ghép chung với Content-Type của file
+    const authHeaders = getAuthHeaders();
+    const config = {
+      headers: {
+        ...authHeaders.headers,
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+
+    const response = await axios.post(`http://localhost:8080/api/nguoi-dung/${currentUserId}/avatar`, formData, config);
+    
+    const newAvatarUrl = response.data.anhDaiDien;
+    userProfile.value.anhDaiDien = newAvatarUrl;
+
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    storedUser.anhDaiDien = newAvatarUrl;
+    localStorage.setItem('user', JSON.stringify(storedUser));
+
+    alert("🎉 " + response.data.message);
+    window.location.reload();
+  } catch (error) {
+    console.error("Lỗi upload ảnh:", error);
+    alert("❌ Lỗi khi tải ảnh lên server!");
   }
 };
 
+
 // ==========================================
-// LOGIC TAB 2: SỔ ĐỊA CHỈ (API CẤP TỈNH/HUYỆN/XÃ)
+// LOGIC TAB 2: SỔ ĐỊA CHỈ (TÍCH HỢP GHN)
 // ==========================================
 const showAddressForm = ref(false);
-
-// Thêm mảng này để chứa danh sách địa chỉ lấy từ DB
 const userAddresses = ref([]);
+const addressForm = ref({ tenNguoiNhan: '', soDienThoai: '', tinhCode: '', huyenCode: '', phuongCode: '', diaChiChiTiet: '', isDefault: false });
 
-// Hàm lấy danh sách địa chỉ của User
-const fetchUserAddresses = async () => {
-  try {
-    const response = await axios.get(`http://localhost:8080/api/dia-chi/nguoi-dung/${currentUserId}`);
-    userAddresses.value = response.data;
-  } catch (error) {
-    console.error("Lỗi lấy danh sách địa chỉ:", error);
-  }
-};
-
-const addressForm = ref({
-  tenNguoiNhan: '', soDienThoai: '', tinhCode: '', huyenCode: '', phuongCode: '', diaChiChiTiet: '', isDefault: false
-});
-
-// Các mảng chứa dữ liệu từ API
 const listProvinces = ref([]);
 const listDistricts = ref([]);
 const listWards = ref([]);
 
-// 1. Gọi API lấy danh sách Tỉnh/Thành
+const ghnToken = 'd7acb48b-030e-11f1-a3d6-dac90fb956b5'; // Token GHN
+const ghnConfig = { headers: { Token: ghnToken } };
+
+// LẤY DANH SÁCH ĐỊA CHỈ TỪ DB
+const fetchUserAddresses = async () => {
+  try {
+    // 🔥 Gắn Token trực tiếp vào đây
+    const response = await axios.get(`http://localhost:8080/api/dia-chi/nguoi-dung/${currentUserId}`, getAuthHeaders());
+    userAddresses.value = response.data;
+  } catch (error) { console.error("Lỗi lấy danh sách địa chỉ:", error); }
+};
+
+// CÁC HÀM GHN GIỮ NGUYÊN
 const fetchProvinces = async () => {
   try {
-    const response = await axios.get('https://provinces.open-api.vn/api/p/');
-    listProvinces.value = response.data;
-  } catch (error) { console.error("Lỗi lấy Tỉnh:", error); }
+    const response = await axios.get('https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province', ghnConfig);
+    listProvinces.value = response.data.data.filter(p => !p.ProvinceName.toLowerCase().includes('test') && !p.ProvinceName.toLowerCase().includes('02') && !p.ProvinceName.toLowerCase().includes('001') && !p.ProvinceName.toLowerCase().includes('alert'));
+  } catch (error) { console.error("Lỗi lấy Tỉnh GHN:", error); }
 };
 
-// 2. Gọi API lấy danh sách Quận/Huyện (Dựa vào Tỉnh đã chọn)
 const fetchDistricts = async () => {
-  addressForm.value.huyenCode = ''; // Reset Huyện và Xã
-  addressForm.value.phuongCode = '';
-  listWards.value = []; 
+  addressForm.value.huyenCode = ''; addressForm.value.phuongCode = ''; listWards.value = []; 
   try {
-    const response = await axios.get(`https://provinces.open-api.vn/api/p/${addressForm.value.tinhCode}?depth=2`);
-    listDistricts.value = response.data.districts;
-  } catch (error) { console.error("Lỗi lấy Huyện:", error); }
+    const response = await axios.get(`https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${addressForm.value.tinhCode}`, ghnConfig);
+    listDistricts.value = response.data.data.filter(d => !d.DistrictName.toLowerCase().includes('test'));
+  } catch (error) { console.error("Lỗi lấy Huyện GHN:", error); }
 };
 
-// 3. Gọi API lấy danh sách Phường/Xã (Dựa vào Huyện đã chọn)
 const fetchWards = async () => {
-  addressForm.value.phuongCode = ''; // Reset Xã
+  addressForm.value.phuongCode = ''; 
   try {
-    const response = await axios.get(`https://provinces.open-api.vn/api/d/${addressForm.value.huyenCode}?depth=2`);
-    listWards.value = response.data.wards;
-  } catch (error) { console.error("Lỗi lấy Xã:", error); }
+    const response = await axios.get(`https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${addressForm.value.huyenCode}`, ghnConfig);
+    listWards.value = response.data.data;
+  } catch (error) { console.error("Lỗi lấy Xã GHN:", error); }
 };
 
-// 4. Bấm lưu địa chỉ (Gắn API Spring Boot)
+// LƯU ĐỊA CHỈ XUỐNG DB
 const saveAddress = async () => {
-  // Lấy ra chuỗi tên của Tỉnh, Huyện, Xã
-  const tenTinh = listProvinces.value.find(p => p.code === addressForm.value.tinhCode)?.name;
-  const tenHuyen = listDistricts.value.find(d => d.code === addressForm.value.huyenCode)?.name;
-  const tenXa = listWards.value.find(w => w.code === addressForm.value.phuongCode)?.name;
+  const tenTinh = listProvinces.value.find(p => p.ProvinceID === addressForm.value.tinhCode)?.ProvinceName;
+  const tenHuyen = listDistricts.value.find(d => d.DistrictID === addressForm.value.huyenCode)?.DistrictName;
+  const tenXa = listWards.value.find(w => w.WardCode === addressForm.value.phuongCode)?.WardName;
   
-  // Tên + SĐT + Chi tiết + Xã + Huyện + Tỉnh
   const tenVaSdt = `${addressForm.value.tenNguoiNhan} - ${addressForm.value.soDienThoai}`;
   const diaChiDayDu = `${tenVaSdt} | ${addressForm.value.diaChiChiTiet}, ${tenXa}, ${tenHuyen}, ${tenTinh}`;
   
-  // SỬA LẠI ĐÚNG ĐOẠN NÀY
   const payload = {
     nguoiDungId: currentUserId,
-    phuongXaId: Number(addressForm.value.phuongCode), // Ép kiểu sang số nguyên (Integer)
+    phuongXaId: addressForm.value.phuongCode, 
     diaChiChiTiet: diaChiDayDu,
     diaChiMacDinh: addressForm.value.isDefault ? 1 : 0
   };
 
   try {
-    const response = await axios.post('http://localhost:8080/api/dia-chi', payload);
+    // 🔥 Gắn Token trực tiếp vào đây
+    const response = await axios.post('http://localhost:8080/api/dia-chi', payload, getAuthHeaders());
     alert("🎉 " + response.data.message);
-    
-    // Đóng form thêm địa chỉ
     showAddressForm.value = false;
-    
-    // Gọi hàm load lại danh sách địa chỉ lên màn hình
     fetchUserAddresses(); 
-    
   } catch (error) {
     console.error("Lỗi lưu địa chỉ:", error);
     alert("❌ Có lỗi xảy ra khi lưu địa chỉ!");
   }
 };
-
 </script>
 
 <style scoped>
+/* CSS giữ nguyên, không thay đổi */
 .avatar-circle { width: 50px; height: 50px; border-radius: 50%; }
 .menu-list { display: flex; flex-direction: column; gap: 10px; }
 .menu-item { padding: 10px 15px; border-radius: 6px; cursor: pointer; color: #555; transition: all 0.2s ease; font-weight: 500; }

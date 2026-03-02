@@ -12,9 +12,13 @@
         
         <div v-if="currentUser" class="user-profile-dropdown position-relative">
           <div class="d-flex align-items-center gap-2" style="cursor: pointer;">
-            <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+            
+            <img v-if="currentUser.anhDaiDien" :src="currentUser.anhDaiDien" class="rounded-circle object-fit-cover shadow-sm border" style="width: 32px; height: 32px;" alt="Avatar" />
+            
+            <div v-else class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 32px; height: 32px;">
               {{ currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : 'U' }}
             </div>
+
             <span class="fw-semibold text-dark d-none d-md-block" style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               {{ currentUser.hoVaTen || currentUser.email }}
             </span>

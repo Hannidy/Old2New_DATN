@@ -9,4 +9,6 @@ public class AuthResponseDto {
     private String email;
     private String hoVaTen;
     private String tenVaiTro;     // Chìa khóa để phân quyền: ADMIN, USER, SELLER...
+
+    private String token;
 }

@@ -11,5 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
         // Cho phép truy cập ảnh từ thư mục uploads ngoài ổ cứng
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/");
+
     }
+
 }
