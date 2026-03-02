@@ -12,6 +12,13 @@ import Users from '../views/admin/Users.vue'
 // Thêm dòng này vào khu vực import
 import Sell from '../views/product/Sell.vue'
 
+import QuanLyDonHang from '@/views/order/QuanLyDonHang.vue'
+
+import QuanLyDonBan from '@/views/order/QuanLyDonBan.vue'
+
+import ProductDetail from '../views/product/ProductDetail.vue'
+import Cart from '../views/product/Cart.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -44,6 +51,26 @@ const router = createRouter({
       path: '/dang-ban',
       name: 'Sell',
       component: Sell
+    },
+    {
+      path: '/product/:id',
+      name: 'ProductDetail',
+      component: ProductDetail
+    },
+    {
+      path: '/cart',
+      name: 'Cart',
+      component: Cart
+    },
+    {
+      path: '/quan-ly-don-hang',
+      name: 'QuanLyDonHang',
+      component: QuanLyDonHang 
+    },
+    {
+      path: '/quan-ly-don-ban',
+      name: 'QuanLyDonBan',
+      component: QuanLyDonBan
     }
   ]
 })

@@ -8,6 +8,7 @@ import poly.edu.o2n.user.entity.NguoiDung;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "san_pham")
@@ -20,6 +21,10 @@ public class SanPham {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "san_pham_id")
     private Integer sanPhamId;
+
+    // Khai báo danh sách hình ảnh (Một Sản phẩm có Nhiều Hình ảnh)
+    @OneToMany(mappedBy = "sanPham", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<HinhAnhSanPham> danhSachHinhAnh;
 
     // Khóa ngoại: Người dùng nào đăng bán sản phẩm này?
     @ManyToOne

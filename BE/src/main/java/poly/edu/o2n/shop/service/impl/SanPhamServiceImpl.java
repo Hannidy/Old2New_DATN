@@ -1,13 +1,16 @@
 package poly.edu.o2n.shop.service.impl;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import poly.edu.o2n.shop.dto.request.SanPhamRequestDto;
+import poly.edu.o2n.shop.dto.response.ProductDetailResponseDto;
 import poly.edu.o2n.shop.dto.response.ProductResponseDto;
 import poly.edu.o2n.shop.entity.DanhMuc;
 import poly.edu.o2n.shop.entity.HinhAnhSanPham;
@@ -44,6 +47,7 @@ public class SanPhamServiceImpl implements SanPhamService {
     private NguoiDungRepository nguoiDungRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> getHomeProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("ngayDang").descending());
 
@@ -62,6 +66,10 @@ public class SanPhamServiceImpl implements SanPhamService {
                 dto.setNguoiBan(sp.getNguoiDung().getHoVaTen());
             } else {
                 dto.setNguoiBan("Ẩn danh");
+            }
+            if (sp.getDanhSachHinhAnh() != null && !sp.getDanhSachHinhAnh().isEmpty()) {
+                // Lấy đường dẫn của bức ảnh đầu tiên (index = 0)
+                dto.setHinhAnh(sp.getDanhSachHinhAnh().get(0).getDuongDanAnh());
             }
             return dto;
         }).collect(Collectors.toList());
@@ -145,5 +153,44 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDetailResponseDto getProductDetail(Integer id) {
+        SanPham sp = sanPhamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+
+        ProductDetailResponseDto dto = new ProductDetailResponseDto();
+        dto.setId(sp.getSanPhamId());
+        dto.setTenSanPham(sp.getTenSanPham());
+        dto.setGia(sp.getGia());
+        dto.setTinhTrang(sp.getTinhTrang());
+        dto.setTrongLuongGram(sp.getTrongLuongGram());
+
+        // Gộp kích thước thành chuỗi
+        String kichThuoc = (sp.getChieuDaiCm() != null ? sp.getChieuDaiCm() : 0) + " x " +
+                (sp.getChieuRongCm() != null ? sp.getChieuRongCm() : 0) + " x " +
+                (sp.getChieuCaoCm() != null ? sp.getChieuCaoCm() : 0) + " cm";
+        dto.setKichThuoc(kichThuoc);
+
+        dto.setMoTa(sp.getMoTa());
+
+        if (sp.getDanhMuc() != null) dto.setDanhMuc(sp.getDanhMuc().getTenDanhMuc());
+        if (sp.getNguoiDung() != null) dto.setNguoiBan(sp.getNguoiDung().getHoVaTen());
+
+        // Lấy danh sách ảnh
+        if (sp.getDanhSachHinhAnh() != null && !sp.getDanhSachHinhAnh().isEmpty()) {
+            // Gán ảnh đầu tiên làm ảnh bìa
+            dto.setHinhAnh(sp.getDanhSachHinhAnh().get(0).getDuongDanAnh());
+
+            // Lấy toàn bộ đường dẫn của tất cả các ảnh
+            List<String> danhSachUrl = sp.getDanhSachHinhAnh().stream()
+                    .map(hinhAnh -> hinhAnh.getDuongDanAnh())
+                    .collect(Collectors.toList());
+            dto.setDanhSachHinhAnh(danhSachUrl);
+        }
+
+        return dto;
+    }
 
 }

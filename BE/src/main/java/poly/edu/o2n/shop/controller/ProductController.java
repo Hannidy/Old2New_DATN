@@ -2,6 +2,7 @@ package poly.edu.o2n.shop.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import poly.edu.o2n.shop.dto.response.ProductDetailResponseDto;
 import poly.edu.o2n.shop.service.SanPhamService;
 
 import java.util.Map;
@@ -21,4 +22,10 @@ public class ProductController {
         // Gọi thẳng xuống Service
         return sanPhamService.getHomeProducts(page, size);
     }
+
+    @GetMapping("/{id}")
+    public ProductDetailResponseDto getProductDetail(@PathVariable Integer id) {
+        return sanPhamService.getProductDetail(id);
+    }
+
 }

@@ -92,21 +92,11 @@
             <input type="text" v-model="form.name" required class="form-control border-secondary">
           </div>
 
-          <div class="row mb-3 g-4">
-            <div class="col-md-3">
-              <label class="form-label fw-bold text-dark">Số lượng</label>
-              <div class="input-group">
-                <button type="button" class="btn btn-outline-secondary" @click="decreaseQty">-</button>
-                <input type="number" v-model="form.quantity" class="form-control text-center border-secondary" min="1">
-                <button type="button" class="btn btn-outline-secondary" @click="increaseQty">+</button>
-              </div>
-            </div>
-            <div class="col-md-9">
-              <label class="form-label fw-bold text-dark">Giá</label>
-              <div class="input-group">
-                <input type="number" v-model="form.price" required min="10000" class="form-control border-secondary">
-                <span class="input-group-text bg-white border-secondary">VNĐ</span>
-              </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold text-dark">Giá sản phẩm</label>
+            <div class="input-group">
+              <input type="number" v-model="form.price" required min="10000" class="form-control border-secondary" placeholder="Nhập giá bán...">
+              <span class="input-group-text bg-white border-secondary">VNĐ</span>
             </div>
           </div>
 
@@ -171,7 +161,7 @@
         </div>
 
         <div class="mt-5 pt-4 border-top d-flex justify-content-center gap-3">
-          <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white">Trở lại</button>
+          <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white"><router-link to="/">Trở lại</router-link></button>
           <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white">Lưu nháp</button>
           <button type="submit" class="btn btn-dark fw-medium px-5">Đăng</button>
         </div>
@@ -214,9 +204,27 @@
 </template>
 
 <script setup>
-import { reactive, ref, nextTick } from 'vue';
+import { reactive, ref, nextTick, onMounted } from 'vue';
+import { useRouter } from 'vue-router'; // Bổ sung router để đá khách chưa đăng nhập
 import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+
+const router = useRouter();
+let currentUserId = null;
+
+// ==========================================
+// BƯỚC 1: KIỂM TRA ĐĂNG NHẬP NGAY KHI VÀO TRANG
+// ==========================================
+onMounted(() => {
+  const storedUser = localStorage.getItem('user');
+  if (!storedUser) {
+    alert("Vui lòng đăng nhập để có thể đăng bán sản phẩm!");
+    router.push('/login'); // Chưa đăng nhập thì đá về trang Login ngay lập tức
+    return;
+  }
+  // Lấy ID của người dùng hiện tại
+  currentUserId = JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
+});
 
 // // [FIREBASE CONFIG - Giữ nguyên của Khoa]
 // const firebaseConfig = {
@@ -232,9 +240,6 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth
 // const app = initializeApp(firebaseConfig);
 // const auth = getAuth(app);
 
-
-
-// Đinh Tuấn Duy 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCy2BDZO1nKsU43fl8LqdAgix92z_G-26E",
@@ -253,39 +258,31 @@ const auth = getAuth(app);
 auth.languageCode = 'vi'; 
 
 const form = reactive({
-  category: '', name: '', quantity: 1, price: null, description: '',
+  category: '', name: '', price: null, description: '',
   shippingAddress: '', shippingPayer: 'buyer', 
   dimensions: { length: null, width: null, height: null },
   weight: null, condition: 'Mới', phone: '', otpCode: ''
 });
 
 // ====== CÁC BIẾN CHO HÌNH ẢNH ======
-const fileInput = ref(null); // Tham chiếu đến thẻ <input type="file">
-const selectedFiles = ref([]); // Mảng chứa các file thực tế để gửi lên Backend
-const previewImages = ref([]); // Mảng chứa các đường dẫn ảnh ảo để hiện lên Web xem trước
+const fileInput = ref(null); 
+const selectedFiles = ref([]); 
+const previewImages = ref([]); 
 
 // ====== CÁC HÀM XỬ LÝ HÌNH ẢNH ======
-// Hàm 1: Khi bấm vào khung đứt khúc -> Kích hoạt thẻ input ẩn
 const triggerFileInput = () => {
-  if (fileInput.value) {
-    fileInput.value.click();
-  }
+  if (fileInput.value) fileInput.value.click();
 };
 
-// Hàm 2: Nhận file khi người dùng chọn xong từ máy tính
 const handleFileChange = (event) => {
   const files = Array.from(event.target.files);
-  
   files.forEach(file => {
-    selectedFiles.value.push(file); // Lưu file thật vào mảng
-    previewImages.value.push(URL.createObjectURL(file)); // Tạo link ảo để hiện ảnh Preview
+    selectedFiles.value.push(file); 
+    previewImages.value.push(URL.createObjectURL(file)); 
   });
-
-  // Reset lại thẻ input để nếu chọn trùng file cũ nó vẫn nhận
   event.target.value = ''; 
 };
 
-// Hàm 3: Nút xóa ảnh
 const removeImage = (index) => {
   selectedFiles.value.splice(index, 1);
   previewImages.value.splice(index, 1);
@@ -297,13 +294,6 @@ const showOtpModal = ref(false);
 const isRequestingOtp = ref(false);
 const confirmationResult = ref(null); 
 
-//const conditions = [
-  //{ title: 'Mới', desc: 'Hàng mới kèm mác, chưa mở hộp/bao bì, chưa qua sử dụng.' },
-  //{ title: 'Như mới', desc: 'Hàng mới kèm mác, đã mở bao bì/hộp, chưa qua sử dụng.' },
-  //{ title: 'Tốt', desc: 'Đã qua sử dụng, tính năng đầy đủ, hoạt động tốt.' },
-  //{ title: 'Trung bình', desc: 'Hàng đã qua sử dụng, đầy đủ chức năng. Lỗi nhỏ.' },
-  //{ title: 'Kém', desc: 'Đã qua sử dụng. Nhiều sai sót. Có thể bị hư hỏng.' }
-//];
 const conditions = [
   { value: 1, title: 'Mới', desc: 'Hàng mới kèm mác, chưa mở hộp/bao bì, chưa qua sử dụng.' },
   { value: 2, title: 'Như mới', desc: 'Hàng mới kèm mác, đã mở bao bì/hộp, chưa qua sử dụng.' },
@@ -311,15 +301,12 @@ const conditions = [
   { value: 4, title: 'Trung bình', desc: 'Hàng đã qua sử dụng, đầy đủ chức năng. Lỗi nhỏ.' },
   { value: 5, title: 'Kém', desc: 'Đã qua sử dụng. Nhiều sai sót. Có thể bị hư hỏng.' }
 ];
-const decreaseQty = () => { if (form.quantity > 1) form.quantity--; };
-const increaseQty = () => { form.quantity++; };
 
 const submitForm = async () => {
   if (form.price < 10000) {
     alert("Giá sản phẩm phải lớn hơn hoặc bằng 10,000 VNĐ");
     return;
   }
-  // Bắt buộc chọn ít nhất 1 ảnh mới cho đăng
   if (selectedFiles.value.length === 0) {
     alert("Vui lòng tải lên ít nhất 1 hình ảnh sản phẩm!");
     return;
@@ -368,9 +355,11 @@ const confirmAndSubmit = async () => {
     const user = result.user;
     const firebaseToken = await user.getIdToken();
 
-    // 1. Tạo gói dữ liệu thông tin sản phẩm
+    // ==========================================
+    // BƯỚC 2: GÁN ID ĐỘNG VÀO PAYLOAD GỬI LÊN
+    // ==========================================
     const payload = {
-      nguoiDungId: 1, 
+      nguoiDungId: currentUserId, // <--- ĐÃ ĐỔI THÀNH ID ĐỘNG CỦA CHÍNH BẠN
       danhMucId: form.category,
       tenSanPham: form.name,
       gia: form.price,
@@ -384,7 +373,7 @@ const confirmAndSubmit = async () => {
       firebaseToken: firebaseToken 
     };
 
-    // 2. Gọi API để lưu sản phẩm (Lấy ID về)
+    // Gọi API để lưu sản phẩm (Lấy ID về)
     const response = await fetch('http://localhost:8080/api/san-pham', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -393,17 +382,15 @@ const confirmAndSubmit = async () => {
 
     if (response.status === 201) {
       const data = await response.json();
-      const newSanPhamId = data.sanPhamId; // <--- Đã lấy được ID sản phẩm vừa tạo
+      const newSanPhamId = data.sanPhamId; 
 
-      // 3. NẾU CÓ ẢNH THÌ TIẾP TỤC GỌI API LƯU ẢNH
+      // NẾU CÓ ẢNH THÌ TIẾP TỤC GỌI API LƯU ẢNH
       if (selectedFiles.value.length > 0) {
         const formData = new FormData();
-        // Nhồi tất cả các ảnh vào biến formData
         selectedFiles.value.forEach(file => {
           formData.append('files', file); 
         });
 
-        // Gửi ảnh xuống API hinh-anh mà chúng ta vừa viết bên Spring Boot
         const imgResponse = await fetch(`http://localhost:8080/api/san-pham/${newSanPhamId}/hinh-anh`, {
           method: 'POST',
           body: formData
@@ -418,8 +405,8 @@ const confirmAndSubmit = async () => {
       alert("🎉 Đăng bán thành công kèm theo hình ảnh!");
       showOtpModal.value = false;
       
-      // Có thể dùng dòng dưới để F5 lại trang, làm trống form
-      // location.reload(); 
+      // Chuyển hướng về trang chủ hoặc reload form
+      router.push('/'); 
       
     } else {
       const errorText = await response.text();
