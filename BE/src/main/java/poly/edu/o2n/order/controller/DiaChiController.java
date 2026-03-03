@@ -8,6 +8,7 @@ import poly.edu.o2n.order.repository.DiaChiRepository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/dia-chi")
@@ -32,6 +33,59 @@ public class DiaChiController {
             return ResponseEntity.ok(Map.of("message", "Thêm địa chỉ mới thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Lỗi thêm địa chỉ: " + e.getMessage()));
+        }
+    }
+
+    // ==========================================
+    // 1. API CẬP NHẬT ĐỊA CHỈ (SỬA)
+    // ==========================================
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateDiaChi(@PathVariable("id") Integer id, @RequestBody DiaChi request) {
+        try {
+            Optional<DiaChi> diaChiOpt = diaChiRepository.findById(id);
+            if (diaChiOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("Lỗi: Không tìm thấy địa chỉ này!");
+            }
+
+            DiaChi diaChiCu = diaChiOpt.get();
+
+            // Cập nhật thông tin mới
+            diaChiCu.setPhuongXaId(request.getPhuongXaId());
+            diaChiCu.setDiaChiChiTiet(request.getDiaChiChiTiet());
+
+            // 🔥 ĐÃ THÊM DÒNG NÀY ĐỂ LƯU MÃ HUYỆN:
+            diaChiCu.setHuyenCode(request.getHuyenCode());
+
+            // Nếu người dùng chọn làm Mặc định, phải reset các địa chỉ khác thành 0
+            if (request.getDiaChiMacDinh() == 1) {
+                List<DiaChi> danhSach = diaChiRepository.findByNguoiDungId(diaChiCu.getNguoiDungId());
+                for (DiaChi dc : danhSach) {
+                    dc.setDiaChiMacDinh(0);
+                    diaChiRepository.save(dc);
+                }
+            }
+            diaChiCu.setDiaChiMacDinh(request.getDiaChiMacDinh());
+
+            diaChiRepository.save(diaChiCu);
+            return ResponseEntity.ok(Map.of("message", "Cập nhật địa chỉ thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Lỗi server: " + e.getMessage());
+        }
+    }
+
+    // ==========================================
+    // 2. API XÓA ĐỊA CHỈ
+    // ==========================================
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDiaChi(@PathVariable("id") Integer id) {
+        try {
+            if (!diaChiRepository.existsById(id)) {
+                return ResponseEntity.badRequest().body("Lỗi: Không tìm thấy địa chỉ để xóa!");
+            }
+            diaChiRepository.deleteById(id);
+            return ResponseEntity.ok(Map.of("message", "Xóa địa chỉ thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Lỗi server: " + e.getMessage());
         }
     }
 }

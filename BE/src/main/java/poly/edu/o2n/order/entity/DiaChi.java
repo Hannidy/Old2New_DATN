@@ -24,4 +24,9 @@ public class DiaChi {
 
     @Column(name = "dia_chi_mac_dinh")
     private Integer diaChiMacDinh;
+
+    // 🔥 THÊM CỘT NÀY VÀO ĐỂ LƯU MÃ HUYỆN CHUẨN GHN:
+    @Column(name = "huyen_code")
+    private Integer huyenCode;
+
 }

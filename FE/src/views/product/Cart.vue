@@ -39,26 +39,21 @@
                           </div>
                         </div>
                       </td>
-                      
                       <td class="text-center">
                         <span class="badge border text-dark bg-white px-3 py-2 fw-normal">1</span>
                       </td>
-
                       <td class="text-center fw-semibold text-muted">
                         {{ formatCurrency(item.gia) }}
                       </td>
-
                       <td class="text-end pe-4 fw-bold text-danger fs-5">
                         {{ formatCurrency(item.gia) }}
                       </td>
-
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
           <router-link to="/" class="btn btn-outline-dark btn-sm mt-4 px-4 rounded-pill">
             ← Tiếp tục mua sắm
           </router-link>
@@ -69,22 +64,36 @@
             <div class="card-body p-4">
               <h5 class="fw-bold mb-4 border-bottom pb-2">Tóm tắt đơn hàng</h5>
               
-              <div class="d-flex justify-content-between mb-3">
-                <span class="text-muted">Tổng sản phẩm:</span>
-                <span class="fw-bold">{{ cartItems.length }} món</span>
+              <div class="mb-4">
+                <h6 class="fw-bold mb-2">📍 Giao hàng đến:</h6>
+                <select v-model="selectedAddressId" @change="calculateShippingFee" class="form-select border-primary shadow-sm">
+                  <option value="null" disabled>-- Chọn địa chỉ nhận hàng --</option>
+                  <option v-for="addr in userAddresses" :key="addr.diaChiId" :value="addr.diaChiId">
+                    {{ addr.diaChiChiTiet }}
+                  </option>
+                </select>
+                <small v-if="userAddresses.length === 0" class="text-danger d-block mt-1">
+                  Bạn chưa có địa chỉ. Vui lòng vào Hồ sơ để thêm!
+                </small>
+              </div>
+
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Tổng tiền hàng:</span>
+                <span class="fw-bold">{{ formatCurrency(totalPrice) }}</span>
               </div>
               
-              <div class="d-flex justify-content-between mb-4 border-bottom pb-3">
-                <span class="text-muted">Số đơn hàng sẽ tạo:</span>
-                <span class="text-primary fw-bold">{{ cartItems.length }} đơn riêng</span>
+              <div class="d-flex justify-content-between mb-3 border-bottom pb-3">
+                <span class="text-muted">Phí vận chuyển (GHN):</span>
+                <span v-if="isCalculatingFee" class="text-primary spinner-border spinner-border-sm" role="status"></span>
+                <span v-else-if="shippingFee > 0" class="fw-bold text-success">+ {{ formatCurrency(shippingFee) }}</span>
+                <span v-else class="fw-bold text-warning">Chưa tính</span>
               </div>
 
               <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="fw-bold fs-5">Tổng số tiền:</span>
-                  <span class="fw-bold fs-3 text-danger">{{ formatCurrency(totalPrice) }}</span>
+                  <span class="fw-bold fs-5">Tổng thanh toán:</span>
+                  <span class="fw-bold fs-3 text-danger">{{ formatCurrency(totalPrice + shippingFee) }}</span>
                 </div>
-                <small class="text-muted d-block text-end">* Chưa bao gồm phí ship từng món</small>
               </div>
 
               <div class="mb-4 border-top pt-3">
@@ -99,16 +108,9 @@
                 </div>
               </div>
 
-              <button @click="checkout" class="btn btn-danger w-100 py-3 fw-bold fs-5 shadow rounded-3">
+              <button @click="checkout" :disabled="!selectedAddressId || isCalculatingFee" class="btn btn-danger w-100 py-3 fw-bold fs-5 shadow rounded-3">
                 XÁC NHẬN THANH TOÁN
               </button>
-              
-              <div class="mt-4 p-3 bg-light rounded-3 border-dashed">
-                <p class="small text-secondary mb-0">
-                  <i class="bi bi-info-circle-fill"></i> 
-                  Hệ thống sẽ tự động tạo đơn hàng riêng cho từng món đồ để bạn dễ dàng theo dõi hành trình vận chuyển.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -117,13 +119,11 @@
       <div v-else class="text-center py-5 bg-white rounded-4 shadow-sm border">
         <div class="display-1 mb-4">🛒</div>
         <h3 class="fw-bold">Giỏ hàng đang trống!</h3>
-        <p class="text-muted mb-4">Đừng để lỡ những món đồ cũ chất lượng nhé.</p>
         <router-link to="/" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">
           QUAY LẠI MUA SẮM
         </router-link>
       </div>
     </main>
-
     <AppFooter />
   </div>
 </template>
@@ -135,14 +135,18 @@ import { useRoute, useRouter } from 'vue-router';
 import AppHeader from '@/layouts/Header.vue';
 import AppFooter from '@/layouts/Footer.vue';
 
-const route = useRoute();   // Để đọc đường link URL
-const router = useRouter(); // Để chuyển trang
+const route = useRoute();
+const router = useRouter();
 
 const cartItems = ref([]);
+const paymentMethod = ref('VNPAY'); 
 
-const paymentMethod = ref('VNPAY'); // Mặc định để VNPAY 
+// --- CÁC BIẾN MỚI CHO GIAO HÀNG NHANH ---
+const userAddresses = ref([]);
+const selectedAddressId = ref("null");
+const shippingFee = ref(0);
+const isCalculatingFee = ref(false);
 
-// 1. Tải giỏ hàng từ localStorage
 const loadCart = () => {
   const savedCart = localStorage.getItem('cart');
   if (savedCart) {
@@ -150,144 +154,172 @@ const loadCart = () => {
   }
 };
 
-// 2. Định dạng tiền VND
 const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 };
 
-// 3. Xóa sản phẩm
 const removeItem = (index) => {
   if (confirm("Bạn muốn bỏ sản phẩm này khỏi giỏ?")) {
     cartItems.value.splice(index, 1);
     localStorage.setItem('cart', JSON.stringify(cartItems.value));
+    calculateShippingFee(); // Xóa đi thì tính lại tiền ship (vì giảm cân nặng)
   }
 };
 
-// 4. Tính tổng tiền
 const totalPrice = computed(() => {
   return cartItems.value.reduce((acc, item) => acc + item.gia, 0);
 });
 
-// Thanh toán VNPAY VS COD
+// ==========================================
+// 💥 HÀM MỚI: LẤY DANH SÁCH ĐỊA CHỈ TỪ BACKEND
+// ==========================================
+const fetchUserAddresses = async () => {
+  const storedUser = localStorage.getItem('user');
+  if (!storedUser) return;
+  const token = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
+  const userId = JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
+
+  try {
+    const response = await axios.get(`http://localhost:8080/api/dia-chi/nguoi-dung/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    userAddresses.value = response.data;
+    
+    // Tự động chọn địa chỉ mặc định nếu có
+    const defaultAddr = userAddresses.value.find(a => a.diaChiMacDinh === 1);
+    if (defaultAddr) {
+      selectedAddressId.value = defaultAddr.diaChiId;
+      calculateShippingFee(); // Gọi API tính phí ship ngay lập tức
+    }
+  } catch (error) {
+    console.error("Lỗi lấy địa chỉ:", error);
+  }
+};
+
+// ==========================================
+// 💥 HÀM MỚI: GỌI API GHN ĐỂ TÍNH PHÍ SHIP
+// ==========================================
+const calculateShippingFee = async () => {
+  if (selectedAddressId.value === "null" || cartItems.value.length === 0) return;
+  
+  isCalculatingFee.value = true;
+  const storedUser = localStorage.getItem('user');
+  const token = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
+
+  // Tìm địa chỉ mà khách hàng vừa chọn trong dropdown
+  const selectedAddr = userAddresses.value.find(a => a.diaChiId === selectedAddressId.value);
+    console.log("Địa chỉ khách chọn:", selectedAddr);
+    // Check kỹ xem nó có bị rỗng không
+  if (!selectedAddr || !selectedAddr.huyenCode || !selectedAddr.phuongXaId) {
+      alert("Địa chỉ này chưa có Mã Huyện hoặc Xã chuẩn! Vui lòng tạo lại địa chỉ.");
+      isCalculatingFee.value = false;
+      return;
+  }
+  try {
+    const res = await axios.post('http://localhost:8080/api/ghn/fee', {
+        fromDistrictId: 1454, // Kho mặc định của bạn ở Quận 12 (để nguyên)
+        fromWardCode: "21211", 
+        
+
+        toDistrictId: selectedAddr.huyenCode, 
+        toWardCode: selectedAddr.phuongXaId, 
+        
+        weight: 500 * cartItems.value.length 
+    }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+
+    shippingFee.value = res.data.fee; // 🎯 CẬP NHẬT CON SỐ LÊN GIAO DIỆN!
+  } catch (error) {
+    console.error("Lỗi tính phí ship:", error);
+    shippingFee.value = 0;
+    alert("Không thể tính phí vận chuyển cho tuyến đường này!");
+  } finally {
+    isCalculatingFee.value = false;
+  }
+};
+
+
 const checkout = async () => {
-  if (cartItems.value.length === 0) {
-    alert("Giỏ hàng của bạn đang trống!");
+  if (selectedAddressId.value === "null") {
+    alert("Vui lòng chọn địa chỉ giao hàng!");
     return;
   }
 
-  // ==========================================
-  // BƯỚC 1: LẤY ID NGƯỜI DÙNG TỪ LOCAL STORAGE
-  // ==========================================
   const storedUser = localStorage.getItem('user');
-  
   if (!storedUser) {
     alert("Vui lòng đăng nhập để thanh toán đơn hàng!");
-    router.push('/login'); // Chưa đăng nhập thì đá văng ra trang Login
+    router.push('/login');
     return;
   }
   
-  const userData = JSON.parse(storedUser);
-  // Lấy chính xác ID của người đang đăng nhập (như tài khoản Duy Tuấn của bạn là 18)
-  const currentUserId = userData.id || userData.nguoiDungId; 
+  const currentUserId = JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId; 
 
-  // ==========================================
-  // BƯỚC 2: CHUẨN BỊ DỮ LIỆU GỬI XUỐNG BACKEND
-  // ==========================================
-  // Chuyển đổi giỏ hàng sang định dạng OrderItemDto của Spring Boot
   const chiTietDonHangs = cartItems.value.map(item => ({
     sanPhamId: item.id,
-    soLuongMua: 1, // Hàng độc bản luôn là 1
+    soLuongMua: 1, 
     giaLucMua: item.gia
   }));
 
-  // Gom tất cả thành OrderRequestDto
+  // Đã cập nhật tiền ship và địa chỉ động vào Payload
   const orderPayload = {
-    nguoiDungId: currentUserId, // ĐÃ ĐỔI THÀNH ID ĐỘNG CỦA NGƯỜI ĐĂNG NHẬP!
-    diaChiId: 1,    // (Phần chọn địa chỉ sau này mình làm giao diện thì sẽ đổi thành động sau)
+    nguoiDungId: currentUserId,
+    diaChiId: selectedAddressId.value, // ĐÃ ĐỘNG
     tongTienHang: totalPrice.value,
-    tongTienShip: 30000, // Giả sử phí ship đồng giá 30k
-    tongThanhTien: totalPrice.value + 30000,
+    tongTienShip: shippingFee.value, // ĐÃ ĐỘNG
+    tongThanhTien: totalPrice.value + shippingFee.value, // ĐÃ ĐỘNG
     phuongThucThanhToan: paymentMethod.value,
     chiTietDonHangs: chiTietDonHangs
   };
 
   try {
-    // ==========================================
-    // BƯỚC 3: GỌI API VÀ XỬ LÝ PHẢN HỒI
-    // ==========================================
     const response = await axios.post('http://localhost:8080/api/don-hang/tao-don', orderPayload);
-
     if (response.status === 201) {
-      // Xóa giỏ hàng
       cartItems.value = [];
       localStorage.removeItem('cart');
-
-      // KIỂM TRA NẾU CÓ LINK VNPAY THÌ CHUYỂN HƯỚNG
       if (response.data.paymentUrl) {
-         window.location.href = response.data.paymentUrl; // Bắn khách qua VNPAY
+         window.location.href = response.data.paymentUrl; 
       } else {
          alert("🎉 Đặt hàng COD thành công! Mã đơn: " + response.data.donHangId);
          router.push('/');
       }
     } 
-
   } catch (error) {
-    console.error("Lỗi khi đặt hàng:", error);
     alert("❌ Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!");
   }
 };
 
-
-
-
 onMounted(() => {
   loadCart();
+  fetchUserAddresses(); // 💥 Gọi lấy địa chỉ ngay khi vào giỏ hàng
   window.scrollTo(0, 0);
 });
 
-  onMounted(async () => {
-  // Khi trang vừa mở lên, kiểm tra xem trên URL có chữ vnp_ResponseCode không
+onMounted(async () => {
   if (route.query.vnp_ResponseCode) {
     try {
-      // Gửi toàn bộ cục URL đó xuống cho Spring Boot xử lý
       const response = await axios.get('http://localhost:8080/api/don-hang/vnpay-return', {
         params: route.query
       });
-
       if (response.data.status === 'success') {
-        alert('🎉 CHÚC MỪNG! Thanh toán VNPAY thành công. Đơn hàng đã được xác nhận!');
-        
-        // Xóa sạch giỏ hàng
+        alert('🎉 CHÚC MỪNG! Thanh toán VNPAY thành công!');
         cartItems.value = [];
         localStorage.removeItem('cart');
       }
     } catch (error) {
       alert('❌ Giao dịch bị hủy hoặc thanh toán thất bại!');
     } finally {
-      // Dọn dẹp cái link dài ngoằng cho sạch sẽ và đá về trang chủ
       router.replace('/');
     }
   }
 });
-
-
 </script>
 
 <style scoped>
-.main-content {
-  margin-top: 160px; /* Chừa chỗ cho Header Fixed */
-}
-.sticky-summary {
-  position: sticky;
-  top: 180px;
-}
-.border-dashed {
-  border: 1px dashed #dee2e6 !important;
-}
-.table > tbody > tr {
-  border-bottom: 1px solid #f8f9fa;
-}
-@media (max-width: 991px) {
-  .sticky-summary { position: static; }
-}
+/* Giữ nguyên CSS cũ của bạn */
+.main-content { margin-top: 160px; }
+.sticky-summary { position: sticky; top: 180px; }
+.border-dashed { border: 1px dashed #dee2e6 !important; }
+.table > tbody > tr { border-bottom: 1px solid #f8f9fa; }
+@media (max-width: 991px) { .sticky-summary { position: static; } }
 </style>

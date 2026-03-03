@@ -11,4 +11,6 @@ public interface DiaChiRepository extends JpaRepository<DiaChi, Integer> {
     // Thêm hàm này để tìm tất cả địa chỉ của 1 user cụ thể
     List<DiaChi> findByNguoiDungId(Integer nguoiDungId);
 
+
+
 }

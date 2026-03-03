@@ -124,8 +124,8 @@
                       </div>
                     </div>
                     <div class="d-flex gap-2">
-                      <button class="btn btn-sm btn-outline-primary" @click="alert('Chức năng sửa đang phát triển!')">Sửa</button>
-                      <button class="btn btn-sm btn-outline-danger" @click="alert('Chức năng xóa đang phát triển!')">Xóa</button>
+                      <button class="btn btn-sm btn-outline-primary" @click="editAddress(addr)">Sửa</button>
+                      <button class="btn btn-sm btn-outline-danger" @click="deleteAddress(addr.diaChiId)">Xóa</button>
                     </div>
                   </div>
                 </div>
@@ -133,6 +133,9 @@
             </div>
 
             <form v-if="showAddressForm" @submit.prevent="saveAddress" class="mt-4 p-4 border rounded bg-light">
+              <h5 class="fw-bold mb-4 text-primary">
+                {{ isEditing ? '✏️ Cập nhật địa chỉ' : '📍 Thêm địa chỉ mới' }}
+              </h5>
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="form-label small fw-bold">Tên người nhận</label>
@@ -179,7 +182,7 @@
               </div>
 
               <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-outline-secondary" @click="showAddressForm = false">Trở lại</button>
+                <button type="button" class="btn btn-outline-secondary" @click="cancelAddressForm">Trở lại</button>
                 <button type="submit" class="btn btn-info text-white fw-bold px-4">Lưu Địa Chỉ</button>
               </div>
             </form>
@@ -333,37 +336,40 @@ const handleAvatarChange = async (event) => {
 
 
 // ==========================================
-// LOGIC TAB 2: SỔ ĐỊA CHỈ (TÍCH HỢP GHN)
+// LOGIC TAB 2: SỔ ĐỊA CHỈ (THÊM, SỬA, XÓA VỚI GHN)
 // ==========================================
 const showAddressForm = ref(false);
 const userAddresses = ref([]);
+
+// 1. Thêm 2 biến này để theo dõi trạng thái Sửa
+const isEditing = ref(false);
+const editingId = ref(null);
+
 const addressForm = ref({ tenNguoiNhan: '', soDienThoai: '', tinhCode: '', huyenCode: '', phuongCode: '', diaChiChiTiet: '', isDefault: false });
 
 const listProvinces = ref([]);
 const listDistricts = ref([]);
 const listWards = ref([]);
 
-const ghnToken = 'd7acb48b-030e-11f1-a3d6-dac90fb956b5'; // Token GHN
+const ghnToken = 'd7acb48b-030e-11f1-a3d6-dac90fb956b5'; // Token GHN của bạn
 const ghnConfig = { headers: { Token: ghnToken } };
 
-// LẤY DANH SÁCH ĐỊA CHỈ TỪ DB
+// --- CÁC HÀM GET DỮ LIỆU GIỮ NGUYÊN ---
 const fetchUserAddresses = async () => {
   try {
-    // 🔥 Gắn Token trực tiếp vào đây
     const response = await axios.get(`http://localhost:8080/api/dia-chi/nguoi-dung/${currentUserId}`, getAuthHeaders());
     userAddresses.value = response.data;
   } catch (error) { console.error("Lỗi lấy danh sách địa chỉ:", error); }
 };
 
-// CÁC HÀM GHN GIỮ NGUYÊN
-const fetchProvinces = async () => {
+const fetchProvinces = async () => { /* ... Giữ nguyên ... */ 
   try {
     const response = await axios.get('https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province', ghnConfig);
     listProvinces.value = response.data.data.filter(p => !p.ProvinceName.toLowerCase().includes('test') && !p.ProvinceName.toLowerCase().includes('02') && !p.ProvinceName.toLowerCase().includes('001') && !p.ProvinceName.toLowerCase().includes('alert'));
   } catch (error) { console.error("Lỗi lấy Tỉnh GHN:", error); }
 };
 
-const fetchDistricts = async () => {
+const fetchDistricts = async () => { /* ... Giữ nguyên ... */ 
   addressForm.value.huyenCode = ''; addressForm.value.phuongCode = ''; listWards.value = []; 
   try {
     const response = await axios.get(`https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${addressForm.value.tinhCode}`, ghnConfig);
@@ -371,7 +377,7 @@ const fetchDistricts = async () => {
   } catch (error) { console.error("Lỗi lấy Huyện GHN:", error); }
 };
 
-const fetchWards = async () => {
+const fetchWards = async () => { /* ... Giữ nguyên ... */ 
   addressForm.value.phuongCode = ''; 
   try {
     const response = await axios.get(`https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${addressForm.value.huyenCode}`, ghnConfig);
@@ -379,7 +385,55 @@ const fetchWards = async () => {
   } catch (error) { console.error("Lỗi lấy Xã GHN:", error); }
 };
 
-// LƯU ĐỊA CHỈ XUỐNG DB
+// ==========================================
+// 💥 TÍNH NĂNG MỚI: XÓA ĐỊA CHỈ
+// ==========================================
+const deleteAddress = async (id) => {
+  if (!confirm("⚠️ Bạn có chắc chắn muốn xóa địa chỉ này không?")) return;
+  
+  try {
+    // Gọi API Xóa của Spring Boot
+    await axios.delete(`http://localhost:8080/api/dia-chi/${id}`, getAuthHeaders());
+    alert("✅ Đã xóa địa chỉ thành công!");
+    fetchUserAddresses(); // Tải lại danh sách
+  } catch (error) {
+    console.error("Lỗi khi xóa:", error);
+    alert("❌ Không thể xóa địa chỉ lúc này!");
+  }
+};
+
+// ==========================================
+// 💥 TÍNH NĂNG MỚI: BẤM NÚT SỬA
+// ==========================================
+const editAddress = (addr) => {
+  isEditing.value = true;
+  editingId.value = addr.diaChiId;
+  
+  // Mổ xẻ chuỗi "Tên - SĐT | Địa chỉ" để lấy lại data điền vào ô
+  const parts = addr.diaChiChiTiet.split(' | ');
+  const namePhone = parts[0].split(' - ');
+  const details = parts[1] ? parts[1].split(', ') : [];
+  
+  // Đổ dữ liệu cũ vào Form
+  addressForm.value.tenNguoiNhan = namePhone[0] ? namePhone[0].trim() : '';
+  addressForm.value.soDienThoai = namePhone[1] ? namePhone[1].trim() : '';
+  addressForm.value.diaChiChiTiet = details[0] || ''; // Chỉ lấy phần số nhà/đường
+  addressForm.value.isDefault = addr.diaChiMacDinh === 1;
+  
+  // Xóa rỗng các ô Dropdown bắt khách chọn lại
+  addressForm.value.tinhCode = '';
+  addressForm.value.huyenCode = '';
+  addressForm.value.phuongCode = '';
+  listDistricts.value = [];
+  listWards.value = [];
+  
+  showAddressForm.value = true;
+};
+
+
+// ==========================================
+// 💥 HÀM LƯU / CẬP NHẬT ĐỊA CHỈ (ĐÃ CÓ HUYỆN)
+// ==========================================
 const saveAddress = async () => {
   const tenTinh = listProvinces.value.find(p => p.ProvinceID === addressForm.value.tinhCode)?.ProvinceName;
   const tenHuyen = listDistricts.value.find(d => d.DistrictID === addressForm.value.huyenCode)?.DistrictName;
@@ -390,21 +444,38 @@ const saveAddress = async () => {
   
   const payload = {
     nguoiDungId: currentUserId,
+    
+    // 🔥 ĐÃ BỔ SUNG DÒNG NÀY:
+    huyenCode: parseInt(addressForm.value.huyenCode), 
+    
     phuongXaId: addressForm.value.phuongCode, 
     diaChiChiTiet: diaChiDayDu,
     diaChiMacDinh: addressForm.value.isDefault ? 1 : 0
   };
 
   try {
-    // 🔥 Gắn Token trực tiếp vào đây
-    const response = await axios.post('http://localhost:8080/api/dia-chi', payload, getAuthHeaders());
-    alert("🎉 " + response.data.message);
-    showAddressForm.value = false;
+    if (isEditing.value) {
+      await axios.put(`http://localhost:8080/api/dia-chi/${editingId.value}`, payload, getAuthHeaders());
+      alert("🎉 Cập nhật địa chỉ thành công!");
+    } else {
+      await axios.post('http://localhost:8080/api/dia-chi', payload, getAuthHeaders());
+      alert("🎉 Thêm địa chỉ mới thành công!");
+    }
+    
+    cancelAddressForm();
     fetchUserAddresses(); 
   } catch (error) {
     console.error("Lỗi lưu địa chỉ:", error);
     alert("❌ Có lỗi xảy ra khi lưu địa chỉ!");
   }
+};
+
+// Hàm hủy form (Gắn hàm này vào nút "Trở lại" trong HTML thay vì showAddressForm = false)
+const cancelAddressForm = () => {
+  showAddressForm.value = false;
+  isEditing.value = false;
+  editingId.value = null;
+  addressForm.value = { tenNguoiNhan: '', soDienThoai: '', tinhCode: '', huyenCode: '', phuongCode: '', diaChiChiTiet: '', isDefault: false };
 };
 </script>
 
