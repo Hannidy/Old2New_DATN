@@ -12,4 +12,6 @@ import java.util.List;
 public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     // Thêm hàm này để tìm cả DANG_BAN và CON_HANG
     Page<SanPham> findByTrangThaiIn(List<String> trangThais, Pageable pageable);
+    // Tìm sản phẩm dựa trên cột nguoi_dung_id trong table san_pham
+    List<SanPham> findByNguoiDung_NguoiDungId(Integer nguoiDungId);
 }

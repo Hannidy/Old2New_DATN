@@ -22,7 +22,7 @@ app.mount('#app')
 
 // 2. Cấu hình thư viện với mã Client ID của bạn
 app.use(vue3GoogleLogin, {
-  clientId: '904446046208-auq2g5onijmpe413ac5t1qctoj27lmbn.apps.googleusercontent.com'
+  clientId: '140844929925-l3ejokfmnsv3n3nui1rvakjqbpvt2ghb.apps.googleusercontent.com'
 })
 
 

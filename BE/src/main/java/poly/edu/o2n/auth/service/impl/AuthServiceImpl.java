@@ -108,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
 
             // Thay mã Client ID của bạn vào đây để Spring Boot biết đang làm việc với App nào
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-                    .setAudience(Collections.singletonList("904446046208-auq2g5onijmpe413ac5t1qctoj27lmbn.apps.googleusercontent.com"))
+                    .setAudience(Collections.singletonList("140844929925-l3ejokfmnsv3n3nui1rvakjqbpvt2ghb.apps.googleusercontent.com"))
                     .build();
 
             // Xác minh mã token

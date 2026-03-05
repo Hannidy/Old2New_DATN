@@ -23,6 +23,9 @@ import Cart from '../views/product/Cart.vue'
 
 import Profile from '../views/user/Profile.vue'
 
+import ShopView from '../views/product/ShopView.vue'
+
+import MyProductView from '../views/product/MyProductView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -80,7 +83,19 @@ const router = createRouter({
       path: '/profile',
       name: 'Profile',
       component: Profile
-    }
+    },
+    // Thêm vào mảng routes trong file router/index.js hoặc tương đương
+    {
+      path: '/shop/:id',
+      name: 'Shop',
+      component: ShopView // Đảm bảo đường dẫn file đúng
+    },
+    // Thêm vào mảng routes của bạn
+  {
+    path: '/my-products',
+    name: 'MyProducts',
+    component: MyProductView 
+  }
   ]
 })
 

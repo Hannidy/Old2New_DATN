@@ -31,6 +31,9 @@
               <div class="small text-muted text-truncate" style="max-width: 180px;">{{ currentUser.email }}</div>
             </li>
             <li><router-link to="/profile" class="dropdown-item py-2 mt-1">👤 Hồ sơ của tôi</router-link></li>
+            
+            <li><router-link to="/my-products" class="dropdown-item py-2">🛍️ Sản phẩm của tôi</router-link></li>
+            
             <li><router-link to="/quan-ly-don-hang" class="dropdown-item py-2">📦 Đơn hàng của tôi</router-link></li>
             <li><router-link to="/quan-ly-don-ban" class="dropdown-item py-2">🧾 Đơn khách đặt mua</router-link></li>
             <li><hr class="dropdown-divider my-1"></li>
@@ -107,28 +110,19 @@ import axios from 'axios';
 const router = useRouter();
 const searchQuery = ref('');
 const categories = ref([]);
-const currentUser = ref(null); // Biến lưu thông tin người dùng đang đăng nhập
+const currentUser = ref(null);
 
-// Lấy thông tin người dùng từ LocalStorage khi trang load
 onMounted(() => {
   fetchCategories();
-  
   const storedUser = localStorage.getItem('user');
   if (storedUser) {
     currentUser.value = JSON.parse(storedUser);
   }
 });
 
-// Hàm Đăng xuất
 const logout = () => {
-  // Xóa dữ liệu người dùng khỏi trình duyệt
   localStorage.removeItem('user');
-  // Nếu bạn có dùng token thì xóa luôn token: localStorage.removeItem('token');
-  
-  // Cập nhật lại state
   currentUser.value = null;
-  
-  // Thông báo và chuyển hướng về trang chủ
   alert("Bạn đã đăng xuất thành công!");
   router.push('/');
 };
@@ -148,7 +142,6 @@ const fetchCategories = async () => {
 </script>
 
 <style scoped>
-/* LÀM CHO HEADER ĐỨNG YÊN */
 .header-sticky {
   position: fixed;
   top: 0;
@@ -159,24 +152,20 @@ const fetchCategories = async () => {
   background-color: white;
 }
 
-/* ========================================= */
-/* CSS CHO MENU HỒ SƠ NGƯỜI DÙNG CỰC MƯỢT    */
-/* ========================================= */
 .user-profile-dropdown {
-  padding: 10px 0; /* Tăng diện tích nhận chuột */
+  padding: 10px 0;
 }
 .custom-user-menu {
   display: none; 
   position: absolute; 
   top: 100%; 
-  right: -20px; /* Đẩy sát lề phải để không bị lệch */
+  right: -20px; 
   margin-top: -5px; 
   min-width: 220px; 
   border: none;
   z-index: 1050;
   animation: fadeIn 0.2s ease;
 }
-/* Xổ menu xuống khi trỏ chuột vào vùng avatar */
 .user-profile-dropdown:hover .custom-user-menu {
   display: block;
 }
@@ -189,7 +178,6 @@ const fetchCategories = async () => {
   color: #dc3545 !important;
 }
 
-/* GIỮ NGUYÊN STYLE CŨ CỦA BẠN */
 .all-category-wrapper { position: relative; }
 .all-category-wrapper:hover .main-menu { display: block; animation: fadeIn 0.2s ease; }
 

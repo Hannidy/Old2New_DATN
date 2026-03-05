@@ -374,7 +374,7 @@ const confirmAndSubmit = async () => {
     };
 
     // Gọi API để lưu sản phẩm (Lấy ID về)
-    const response = await fetch('http://localhost:8080/api/san-pham', {
+    const response = await fetch('http://localhost:8080/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -391,7 +391,7 @@ const confirmAndSubmit = async () => {
           formData.append('files', file); 
         });
 
-        const imgResponse = await fetch(`http://localhost:8080/api/san-pham/${newSanPhamId}/hinh-anh`, {
+        const imgResponse = await fetch(`http://localhost:8080/api/products/${newSanPhamId}/hinh-anh`, {
           method: 'POST',
           body: formData
         });

@@ -4,14 +4,22 @@
 
     <main class="container main-content py-4">
       
-      <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item">
-            <router-link to="/" class="text-decoration-none text-muted">Trang chủ</router-link>
-          </li>
-          <li class="breadcrumb-item active" aria-current="page">Chi tiết sản phẩm</li>
-        </ol>
-      </nav>
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item">
+              <router-link to="/" class="text-decoration-none text-muted">
+                <i class="bi bi-house-door"></i> Trang chủ
+              </router-link>
+            </li>
+            <li class="breadcrumb-item active text-danger" aria-current="page">Chi tiết sản phẩm</li>
+          </ol>
+        </nav>
+
+        <button @click="router.push('/')" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm">
+          <i class="bi bi-arrow-left"></i> Quay lại trang chủ
+        </button>
+      </div>
 
       <div v-if="isLoading" class="text-center py-5">
         <div class="spinner-border text-danger" role="status"></div>
@@ -20,7 +28,6 @@
 
       <div v-else-if="product" class="row g-4">
         
-        <!-- Ảnh Sản phẩm -->
         <div class="col-md-5">
           <div class="product-image-wrapper border rounded overflow-hidden shadow-sm bg-light d-flex align-items-center justify-content-center">
             <img :src="selectedImage || product.hinhAnh || 'https://via.placeholder.com/500'" 
@@ -71,15 +78,21 @@
           </div>
 
           <div class="seller-card d-flex align-items-center p-3 border rounded-3 mb-4 shadow-sm">
-            <div class="avatar-circle bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4">
-              {{ product.nguoiBan?.charAt(0).toUpperCase() || 'U' }}
+              <div class="avatar-circle bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4">
+                {{ product.nguoiBan?.charAt(0).toUpperCase() || 'U' }}
+              </div>
+              <div class="ms-3">
+                <div class="fw-bold text-dark fs-5">{{ product.nguoiBan }}</div>
+                <small class="text-success"><i class="bi bi-patch-check-fill"></i> Đang hoạt động</small>
+              </div>
+              
+              <button 
+                @click="router.push(`/shop/${product.nguoiDungId}`)" 
+                class="btn btn-outline-dark btn-sm ms-auto fw-bold px-3"
+              >
+                Xem Shop
+              </button>
             </div>
-            <div class="ms-3">
-              <div class="fw-bold text-dark fs-5">{{ product.nguoiBan }}</div>
-              <small class="text-success"><i class="bi bi-patch-check-fill"></i> Đang hoạt động</small>
-            </div>
-            <button class="btn btn-outline-dark btn-sm ms-auto fw-bold px-3">Xem Shop</button>
-          </div>
 
           <div class="mb-5">
             <h5 class="fw-bold border-start border-4 border-danger ps-2 mb-3">Mô tả sản phẩm</h5>
@@ -89,9 +102,10 @@
           </div>
 
           <div class="d-flex gap-3 sticky-action">
-            <button @click="handleAddToCart" class="btn btn-outline-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
+            <button @click="addToCart(product)" class="btn btn-outline-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
               <i class="bi bi-cart-plus"></i> Thêm vào giỏ
             </button>
+            
             <button class="btn btn-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
               MUA NGAY
             </button>
@@ -144,25 +158,33 @@ const fetchProductDetail = async () => {
   }
 };
 
-// 3. Xử lý Thêm vào giỏ hàng (LocalStorage)
-// Thêm vào giỏ hàng (Hàng độc bản)
-const addToCart = (product) => {
+// 3. Xử lý Thêm vào giỏ hàng (Giữ logic giống hệt HomeView)
+const addToCart = (productData) => {
+  if (!productData) return;
+
+  // Lấy giỏ hàng từ LocalStorage
   let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const existingItem = cart.find(item => item.id === product.id);
+  
+  // Kiểm tra xem sản phẩm đã có trong giỏ chưa (dựa vào ID)
+  const existingItem = cart.find(item => item.id === productData.id);
 
   if (existingItem) {
-    // Nếu đã có trong giỏ -> Báo lỗi không cho thêm
-    alert(`Sản phẩm "${product.tenSanPham}" là hàng độc bản và đã nằm trong giỏ hàng của bạn rồi!`);
+    // Nếu đã có -> Báo lỗi vì đây là hàng cũ/độc bản (mỗi món chỉ có 1)
+    alert(`Sản phẩm "${productData.tenSanPham}" là hàng độc bản và đã nằm trong giỏ hàng của bạn rồi!`);
   } else {
-    // Nếu chưa có -> Thêm vào giỏ với số lượng mặc định luôn là 1
+    // Nếu chưa có -> Thêm mới vào mảng
     cart.push({
-      id: product.id,
-      tenSanPham: product.tenSanPham,
-      gia: product.gia,
-      hinhAnh: product.hinhAnh
+      id: productData.id,
+      tenSanPham: productData.tenSanPham,
+      gia: productData.gia,
+      hinhAnh: productData.hinhAnh
     });
+    
+    // Lưu lại vào LocalStorage
     localStorage.setItem('cart', JSON.stringify(cart));
-    alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+    
+    // Thông báo thành công
+    alert(`Đã thêm "${productData.tenSanPham}" vào giỏ hàng thành công!`);
   }
 };
 
