@@ -17,4 +17,5 @@ public class ProductDetailResponseDto {
     private String moTa;
     private String hinhAnh;
     private List<String> danhSachHinhAnh; // Thêm dòng này để chứa toàn bộ ảnh
+    private Integer nguoiDungId;
 }

@@ -75,6 +75,11 @@ public class DonHangServiceImpl implements DonHangService {
             SanPham sanPham = sanPhamRepository.findById(itemDto.getSanPhamId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại: " + itemDto.getSanPhamId()));
 
+            // Kiểm tra ID chủ sản phẩm có trùng với ID người đang mua không
+            if (sanPham.getNguoiDung().getNguoiDungId().equals(nguoiMua.getNguoiDungId())) {
+                throw new RuntimeException("Lỗi: Bạn không thể tự đặt mua sản phẩm của chính mình (" + sanPham.getTenSanPham() + ")!");
+            }
+
             ChiTietDonHang chiTiet = new ChiTietDonHang();
             chiTiet.setDonHang(savedDonHang);
             chiTiet.setSanPham(sanPham);

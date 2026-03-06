@@ -20,7 +20,6 @@
 
       <div v-else-if="product" class="row g-4">
         
-        <!-- Ảnh Sản phẩm -->
         <div class="col-md-5">
           <div class="product-image-wrapper border rounded overflow-hidden shadow-sm bg-light d-flex align-items-center justify-content-center">
             <img :src="selectedImage || product.hinhAnh || 'https://via.placeholder.com/500'" 
@@ -65,7 +64,7 @@
             <div class="col-6">
               <div class="p-3 border rounded-3 bg-light-subtle">
                 <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 0.7rem;">Kích thước (DxRxC)</small>
-                <span class="fw-semibold">{{ product.kichThuoc }}</span>
+                <span class="fw-semibold">{{ product.kichThuoc || (product.chieuDaiCm + 'x' + product.chieuRongCm + 'x' + product.chieuCaoCm) }}</span>
               </div>
             </div>
           </div>
@@ -78,7 +77,11 @@
               <div class="fw-bold text-dark fs-5">{{ product.nguoiBan }}</div>
               <small class="text-success"><i class="bi bi-patch-check-fill"></i> Đang hoạt động</small>
             </div>
-            <button class="btn btn-outline-dark btn-sm ms-auto fw-bold px-3">Xem Shop</button>
+            <button 
+                @click="router.push(`/shop/${product.nguoiDungId}`)" 
+                class="btn btn-outline-dark btn-sm ms-auto fw-bold px-3">
+                Xem Shop
+            </button>
           </div>
 
           <div class="mb-5">
@@ -89,14 +92,21 @@
           </div>
 
           <div class="d-flex gap-3 sticky-action">
-            <button @click="handleAddToCart" class="btn btn-outline-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
-              <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+            <button v-if="isMyProduct" class="btn btn-secondary btn-lg w-100 fw-bold py-3 shadow-sm" disabled>
+              <i class="bi bi-lock-fill"></i> SẢN PHẨM CỦA BẠN
             </button>
-            <button class="btn btn-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
-              MUA NGAY
-            </button>
+
+            <template v-else>
+              <button @click="addToCart(product)" class="btn btn-outline-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
+                <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+              </button>
+
+              <button class="btn btn-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
+                MUA NGAY
+              </button>
+            </template>
           </div>
-        </div>
+          </div>
       </div>
 
       <div v-else class="text-center py-5 shadow-sm rounded-4 border">
@@ -112,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // Nhớ thêm computed
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import AppHeader from '@/layouts/Header.vue';
@@ -122,17 +132,44 @@ const route = useRoute();
 const router = useRouter();
 const product = ref(null);
 const isLoading = ref(true);
-const selectedImage = ref(null); // Biến chứa ảnh đang được chọn xem
+const selectedImage = ref(null); 
 
+// 🔥 LOGIC MỚI: Lấy ID người dùng hiện tại đang đăng nhập
+const currentUserId = computed(() => {
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    const userData = JSON.parse(storedUser);
+    return userData.id || userData.nguoiDungId; 
+  }
+  return null;
+});
 
-// 1. Định dạng tiền tệ VND
+// 🔥 LOGIC MỚI: Kiểm tra sản phẩm này có phải của User đang đăng nhập hay không
+const isMyProduct = computed(() => {
+  if (!product.value || !currentUserId.value) return false;
+  
+  // 1. In toàn bộ dữ liệu sản phẩm ra console để xem Spring Boot thực sự gửi gì về
+  console.log("📦 Dữ liệu sản phẩm từ BE:", product.value);
+  console.log("👤 ID của tôi (currentUserId):", currentUserId.value);
+  
+  // 2. Quét mọi trường hợp tên biến ID mà Backend có thể trả về
+  const ownerId = product.value.nguoiDung?.nguoiDungId 
+               || product.value.nguoiDungId 
+               || product.value.nguoiBanId 
+               || product.value.sellerId;
+               
+  console.log("🏪 ID của người bán (ownerId):", ownerId);
+  
+  // 3. So sánh
+  return currentUserId.value == ownerId; 
+});
+
 const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 };
 
-// 2. Lấy dữ liệu chi tiết từ Spring Boot
 const fetchProductDetail = async () => {
-  const productId = route.params.id; // Lấy ID từ URL
+  const productId = route.params.id; 
   isLoading.value = true;
   try {
     const response = await axios.get(`http://localhost:8080/api/products/${productId}`);
@@ -144,19 +181,22 @@ const fetchProductDetail = async () => {
   }
 };
 
-// 3. Xử lý Thêm vào giỏ hàng (LocalStorage)
-// Thêm vào giỏ hàng (Hàng độc bản)
 const addToCart = (product) => {
+  // Kiểm tra đăng nhập (tùy chọn nhưng khuyến khích)
+  if (!currentUserId.value) {
+    alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+    router.push('/login');
+    return;
+  }
+
   let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const existingItem = cart.find(item => item.id === product.id);
+  const existingItem = cart.find(item => item.id === product.id || item.id === product.sanPhamId);
 
   if (existingItem) {
-    // Nếu đã có trong giỏ -> Báo lỗi không cho thêm
     alert(`Sản phẩm "${product.tenSanPham}" là hàng độc bản và đã nằm trong giỏ hàng của bạn rồi!`);
   } else {
-    // Nếu chưa có -> Thêm vào giỏ với số lượng mặc định luôn là 1
     cart.push({
-      id: product.id,
+      id: product.sanPhamId || product.id, // Linh hoạt lấy đúng ID
       tenSanPham: product.tenSanPham,
       gia: product.gia,
       hinhAnh: product.hinhAnh
@@ -166,10 +206,8 @@ const addToCart = (product) => {
   }
 };
 
-// Khi trang được mở
 onMounted(() => {
   fetchProductDetail();
-  // Luôn luôn cuộn lên đầu trang khi vào xem chi tiết
   window.scrollTo({ top: 0, behavior: 'instant' });
 });
 </script>
@@ -177,55 +215,19 @@ onMounted(() => {
 <style scoped>
 /* FIX LỖI PADDING/MARGIN CHO HEADER FIXED */
 .main-content {
-  /* Header của bạn cao khoảng 150px, nên dùng margin-top để đẩy hẳn xuống */
   margin-top: 160px;
   min-height: 70vh;
 }
+.product-image-wrapper { height: 500px; background-color: #fbfbfb; border-color: #f0f0f0 !important; }
+.object-fit-contain { object-fit: contain; }
+.price-box { background-color: #fffcfc; padding-left: 15px; padding-right: 15px; border-radius: 10px; }
+.avatar-circle { width: 55px; height: 55px; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+.seller-card { background-color: #fff; transition: all 0.3s; }
+.seller-card:hover { background-color: #fcfcfc; }
 
-/* Khung ảnh sản phẩm */
-.product-image-wrapper {
-  height: 500px;
-  background-color: #fbfbfb;
-  border-color: #f0f0f0 !important;
-}
-
-.object-fit-contain {
-  object-fit: contain;
-}
-
-/* Hộp giá tiền */
-.price-box {
-  background-color: #fffcfc;
-  padding-left: 15px;
-  padding-right: 15px;
-  border-radius: 10px;
-}
-
-/* Thẻ người bán */
-.avatar-circle {
-  width: 55px;
-  height: 55px;
-  border: 2px solid #fff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-.seller-card {
-  background-color: #fff;
-  transition: all 0.3s;
-}
-
-.seller-card:hover {
-  background-color: #fcfcfc;
-}
-
-/* Responsive cho điện thoại */
 @media (max-width: 768px) {
-  .main-content {
-    margin-top: 110px; /* Header mobile thường thấp hơn */
-  }
-  .product-image-wrapper {
-    height: 350px;
-  }
+  .main-content { margin-top: 110px; }
+  .product-image-wrapper { height: 350px; }
   .sticky-action {
     position: fixed;
     bottom: 0;

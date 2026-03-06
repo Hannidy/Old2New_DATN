@@ -1,5 +1,23 @@
 <template>
   <div class="container py-5 bg-light min-vh-100">
+
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item">
+              <router-link to="/" class="text-decoration-none text-muted">
+                <i class="bi bi-house-door"></i> Trang chủ
+              </router-link>
+            </li>
+            <li class="breadcrumb-item active text-danger" aria-current="page">Hồ sơ cá nhân</li>
+          </ol>
+        </nav>
+
+        <button @click="router.push('/')" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm">
+          <i class="bi bi-arrow-left"></i> Quay lại trang chủ
+        </button>
+      </div>
+
     <div class="row">
       
       <div class="col-md-3 mb-4">
@@ -23,17 +41,24 @@
             </div>
           </div>
 
-          <div class="menu-list">
-            <div :class="['menu-item', currentTab === 'profile' ? 'active' : '']" @click="currentTab = 'profile'">
-              <span class="icon">👤</span> Hồ sơ của tôi
+            <div class="menu-list">
+              <div :class="['menu-item', currentTab === 'profile' ? 'active' : '']" @click="currentTab = 'profile'">
+                <span class="icon">👤</span> Hồ sơ của tôi
+              </div>
+
+              <div class="menu-item text-danger fw-bold" @click="router.push('/my-products')">
+                <span class="icon">🏪</span> Hồ sơ Shop
+              </div>
+
+              <div :class="['menu-item', currentTab === 'address' ? 'active' : '']" @click="currentTab = 'address'">
+                <span class="icon">📍</span> Sổ địa chỉ
+              </div>
+
+              <div class="menu-item" @click="router.push('/quan-ly-don-hang')">
+                <span class="icon">📦</span> Đơn mua
+              </div>
             </div>
-            <div :class="['menu-item', currentTab === 'address' ? 'active' : '']" @click="currentTab = 'address'">
-              <span class="icon">📍</span> Sổ địa chỉ
-            </div>
-            <div class="menu-item" @click="router.push('/quan-ly-don-hang')">
-              <span class="icon">📦</span> Đơn mua
-            </div>
-          </div>
+
         </div>
       </div>
 
@@ -198,6 +223,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import AppHeader from '@/layouts/Header.vue';
+import AppFooter from '@/layouts/Footer.vue';
 
 const router = useRouter();
 const currentTab = ref('profile'); 

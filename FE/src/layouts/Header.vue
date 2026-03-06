@@ -33,6 +33,9 @@
             <li><router-link to="/profile" class="dropdown-item py-2 mt-1">👤 Hồ sơ của tôi</router-link></li>
             <li><router-link to="/quan-ly-don-hang" class="dropdown-item py-2">📦 Đơn hàng của tôi</router-link></li>
             <li><router-link to="/quan-ly-don-ban" class="dropdown-item py-2">🧾 Đơn khách đặt mua</router-link></li>
+            
+            <li v-if="currentUser.vaiTroId === 1"><router-link to="/admin/categories" class="dropdown-item py-2 text-primary fw-bold">⚙️ Quản trị hệ thống</router-link></li>
+            
             <li><hr class="dropdown-divider my-1"></li>
             <li><button @click="logout" class="dropdown-item text-danger py-2 fw-bold">🚪 Đăng xuất</button></li>
           </ul>
@@ -49,6 +52,7 @@
     </header>
 
     <nav class="container d-none d-md-flex align-items-center border-bottom pb-2 pt-2 position-relative bg-white">
+      
       <div class="all-category-wrapper me-4">
         <div class="category-btn d-flex align-items-center gap-2 text-dark" style="cursor: pointer; padding: 10px 0;">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-grid-fill text-muted" viewBox="0 0 16 16">
@@ -73,8 +77,18 @@
                 </a>
 
                 <ul class="sub-menu-3 shadow-sm" v-if="child.children && child.children.length > 0">
-                  <li v-for="grandchild in child.children" :key="grandchild.id">
-                    <a href="#" class="text-decoration-none py-2 px-3 d-block">{{ grandchild.name }}</a>
+                  <li v-for="grandchild in child.children" :key="grandchild.id" class="menu-item-grandchild">
+                    <a href="#" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
+                      {{ grandchild.name }}
+                      <span v-if="grandchild.children && grandchild.children.length > 0" class="text-muted small">›</span>
+                    </a>
+
+                    <ul class="sub-menu-4 shadow-sm" v-if="grandchild.children && grandchild.children.length > 0">
+                      <li v-for="greatgrandchild in grandchild.children" :key="greatgrandchild.id">
+                        <a href="#" class="text-decoration-none py-2 px-3 d-block">{{ greatgrandchild.name }}</a>
+                      </li>
+                    </ul>
+
                   </li>
                 </ul>
               </li>
@@ -88,11 +102,22 @@
           <a href="#" class="text-dark text-decoration-none py-2 d-inline-block hover-orange">
             {{ cat.name }}
           </a>
+          
           <ul class="dropdown-menu shadow-sm custom-dropdown-menu rounded-0 border-top-orange" v-if="cat.children && cat.children.length > 0">
-            <li v-for="child in cat.children" :key="'nav-child-'+child.id">
-              <a class="dropdown-item py-2" href="#">{{ child.name }}</a>
+            <li v-for="child in cat.children" :key="'nav-child-'+child.id" class="position-relative child-dropdown-item">
+              <a class="dropdown-item py-2 d-flex justify-content-between align-items-center" href="#">
+                {{ child.name }}
+                <span v-if="child.children && child.children.length > 0" class="text-muted small">›</span>
+              </a>
+
+              <ul class="dropdown-menu shadow-sm custom-sub-dropdown-menu rounded-0" v-if="child.children && child.children.length > 0">
+                <li v-for="grandchild in child.children" :key="'nav-grandchild-'+grandchild.id">
+                  <a class="dropdown-item py-2" href="#">{{ grandchild.name }}</a>
+                </li>
+              </ul>
             </li>
           </ul>
+
         </div>
       </div>
     </nav>
@@ -107,9 +132,8 @@ import axios from 'axios';
 const router = useRouter();
 const searchQuery = ref('');
 const categories = ref([]);
-const currentUser = ref(null); // Biến lưu thông tin người dùng đang đăng nhập
+const currentUser = ref(null); 
 
-// Lấy thông tin người dùng từ LocalStorage khi trang load
 onMounted(() => {
   fetchCategories();
   
@@ -119,16 +143,9 @@ onMounted(() => {
   }
 });
 
-// Hàm Đăng xuất
 const logout = () => {
-  // Xóa dữ liệu người dùng khỏi trình duyệt
   localStorage.removeItem('user');
-  // Nếu bạn có dùng token thì xóa luôn token: localStorage.removeItem('token');
-  
-  // Cập nhật lại state
   currentUser.value = null;
-  
-  // Thông báo và chuyển hướng về trang chủ
   alert("Bạn đã đăng xuất thành công!");
   router.push('/');
 };
@@ -141,6 +158,7 @@ const fetchCategories = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/categories/tree');
     categories.value = response.data;
+    // console.log("KIỂM TRA CÂY DANH MỤC:", JSON.stringify(categories.value, null, 2));
   } catch (error) {
     console.error("Lỗi tải Danh mục:", error);
   }
@@ -148,7 +166,6 @@ const fetchCategories = async () => {
 </script>
 
 <style scoped>
-/* LÀM CHO HEADER ĐỨNG YÊN */
 .header-sticky {
   position: fixed;
   top: 0;
@@ -159,37 +176,16 @@ const fetchCategories = async () => {
   background-color: white;
 }
 
-/* ========================================= */
-/* CSS CHO MENU HỒ SƠ NGƯỜI DÙNG CỰC MƯỢT    */
-/* ========================================= */
-.user-profile-dropdown {
-  padding: 10px 0; /* Tăng diện tích nhận chuột */
-}
+.user-profile-dropdown { padding: 10px 0; }
 .custom-user-menu {
-  display: none; 
-  position: absolute; 
-  top: 100%; 
-  right: -20px; /* Đẩy sát lề phải để không bị lệch */
-  margin-top: -5px; 
-  min-width: 220px; 
-  border: none;
-  z-index: 1050;
-  animation: fadeIn 0.2s ease;
+  display: none; position: absolute; top: 100%; right: -20px; margin-top: -5px; 
+  min-width: 220px; border: none; z-index: 1050; animation: fadeIn 0.2s ease;
 }
-/* Xổ menu xuống khi trỏ chuột vào vùng avatar */
-.user-profile-dropdown:hover .custom-user-menu {
-  display: block;
-}
-.custom-user-menu .dropdown-item:hover {
-  background-color: #f8f9fa;
-  color: #007bff;
-}
-.custom-user-menu .text-danger:hover {
-  background-color: #fff5f5;
-  color: #dc3545 !important;
-}
+.user-profile-dropdown:hover .custom-user-menu { display: block; }
+.custom-user-menu .dropdown-item:hover { background-color: #f8f9fa; color: #007bff; }
+.custom-user-menu .text-danger:hover { background-color: #fff5f5; color: #dc3545 !important; }
 
-/* GIỮ NGUYÊN STYLE CŨ CỦA BẠN */
+/* MENU TẤT CẢ DANH MỤC */
 .all-category-wrapper { position: relative; }
 .all-category-wrapper:hover .main-menu { display: block; animation: fadeIn 0.2s ease; }
 
@@ -219,9 +215,21 @@ const fetchCategories = async () => {
   list-style: none; z-index: 1070;
 }
 .menu-item-child:hover .sub-menu-3 { display: block; }
-.sub-menu-3 a { color: #666; font-size: 0.85rem; border-bottom: 1px solid #f9f9f9; }
-.sub-menu-3 a:hover { color: #007bff; background-color: #f8f9fa; }
+.menu-item-grandchild { position: relative; }
+.menu-item-grandchild > a { color: #666; font-size: 0.85rem; border-bottom: 1px solid #f9f9f9; }
+.menu-item-grandchild > a:hover { color: #007bff; background-color: #f8f9fa; }
 
+/* CSS TẦNG 4 MỚI THÊM */
+.sub-menu-4 {
+  display: none; position: absolute; top: 0; left: 100%; margin: 0; padding: 0;
+  background-color: white; border: 1px solid #eee; min-width: 220px; min-height: 100%;
+  list-style: none; z-index: 1080;
+}
+.menu-item-grandchild:hover .sub-menu-4 { display: block; }
+.sub-menu-4 a { color: #777; font-size: 0.8rem; border-bottom: 1px solid #f9f9f9; }
+.sub-menu-4 a:hover { color: #007bff; background-color: #f8f9fa; }
+
+/* MENU NGANG LIÊN KẾT NHANH */
 .quick-links a { color: #555; font-size: 0.95rem; transition: color 0.2s; }
 .hover-orange:hover { color: #007bff !important; }
 
@@ -232,5 +240,53 @@ const fetchCategories = async () => {
 }
 .border-top-orange { border-top: 3px solid #007bff !important; }
 
+/* CSS TẦNG 3 MENU NGANG MỚI THÊM */
+.child-dropdown-item:hover .custom-sub-dropdown-menu { display: block; animation: fadeIn 0.2s ease; }
+.custom-sub-dropdown-menu {
+  display: none; position: absolute; top: 0; left: 100%; margin-top: 0; border: none;
+  min-width: 200px; z-index: 1010; padding: 0;
+}
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- HIỆU ỨNG DI CHUỘT CHO TẦNG 3 ĐỂ HIỆN TẦNG 4 --- */
+.menu-item-grandchild { 
+  position: relative; 
+}
+
+/* Khi di chuột vào mục ở tầng 3, tầng 4 sẽ hiện ra */
+.menu-item-grandchild:hover > .sub-menu-4 { 
+  display: block !important; 
+  animation: fadeIn 0.2s ease;
+}
+
+/* Style cho khung menu tầng 4 */
+.sub-menu-4 {
+  display: none; 
+  position: absolute; 
+  top: 0; 
+  left: 100%; /* Đẩy sang bên phải của tầng 3 */
+  margin: 0; 
+  padding: 0;
+  background-color: white; 
+  border: 1px solid #eee; 
+  min-width: 220px; 
+  min-height: 100%;
+  list-style: none; 
+  z-index: 1080;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.sub-menu-4 a { 
+  color: #777; 
+  font-size: 0.85rem; 
+  border-bottom: 1px solid #f9f9f9; 
+}
+
+.sub-menu-4 a:hover { 
+  color: #007bff !important; 
+  background-color: #f8f9fa; 
+}
+
+
 </style>

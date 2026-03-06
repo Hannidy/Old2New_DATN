@@ -62,6 +62,7 @@ public class SanPhamServiceImpl implements SanPhamService {
             dto.setTinhTrang(sp.getTinhTrang());
             dto.setNgayDang(sp.getNgayDang());
 
+
             if (sp.getNguoiDung() != null) {
                 dto.setNguoiBan(sp.getNguoiDung().getHoVaTen());
             } else {
@@ -121,6 +122,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         return response;
     }
 
+
     @Override
     public void luuHinhAnhSanPham(Integer sanPhamId, List<MultipartFile> files) {
         SanPham sanPham = sanPhamRepository.findById(sanPhamId)
@@ -166,6 +168,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         dto.setGia(sp.getGia());
         dto.setTinhTrang(sp.getTinhTrang());
         dto.setTrongLuongGram(sp.getTrongLuongGram());
+        dto.setNguoiDungId(sp.getNguoiDung().getNguoiDungId());
 
         // Gộp kích thước thành chuỗi
         String kichThuoc = (sp.getChieuDaiCm() != null ? sp.getChieuDaiCm() : 0) + " x " +
@@ -191,6 +194,85 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
 
         return dto;
+    }
+
+
+    // --- HÀM HELPER: CHUYỂN ENTITY SANG DTO CHI TIẾT (DÙNG CHUNG CHO DETAIL & SHOP) ---
+    private ProductDetailResponseDto mapToDetailDto(SanPham sp) {
+        ProductDetailResponseDto dto = new ProductDetailResponseDto();
+        dto.setId(sp.getSanPhamId());
+        dto.setTenSanPham(sp.getTenSanPham());
+        dto.setGia(sp.getGia());
+        dto.setTinhTrang(sp.getTinhTrang());
+        dto.setTrongLuongGram(sp.getTrongLuongGram());
+        dto.setMoTa(sp.getMoTa());
+
+        // Gộp kích thước từ các cột trong database: chieu_dai_cm, chieu_rong_cm, chieu_cao_cm
+        String kichThuoc = (sp.getChieuDaiCm() != null ? sp.getChieuDaiCm() : 0) + " x " +
+                (sp.getChieuRongCm() != null ? sp.getChieuRongCm() : 0) + " x " +
+                (sp.getChieuCaoCm() != null ? sp.getChieuCaoCm() : 0) + " cm";
+        dto.setKichThuoc(kichThuoc);
+
+        if (sp.getDanhMuc() != null) {
+            dto.setDanhMuc(sp.getDanhMuc().getTenDanhMuc());
+        }
+
+        // Gán thông tin người bán (nguoi_dung_id)
+        if (sp.getNguoiDung() != null) {
+            dto.setNguoiBan(sp.getNguoiDung().getHoVaTen());
+            // Đây là ID để nút "Xem Shop" ở Vue có thể chạy link /shop/:id
+            dto.setNguoiDungId(sp.getNguoiDung().getNguoiDungId());
+        }
+
+        // Xử lý hình ảnh
+        if (sp.getDanhSachHinhAnh() != null && !sp.getDanhSachHinhAnh().isEmpty()) {
+            dto.setHinhAnh(sp.getDanhSachHinhAnh().get(0).getDuongDanAnh());
+            List<String> listUrls = sp.getDanhSachHinhAnh().stream()
+                    .map(HinhAnhSanPham::getDuongDanAnh)
+                    .collect(Collectors.toList());
+            dto.setDanhSachHinhAnh(listUrls);
+        } else {
+            // Placeholder nếu sản phẩm chưa có ảnh
+            dto.setHinhAnh("https://via.placeholder.com/300?text=No+Image");
+            dto.setDanhSachHinhAnh(new ArrayList<>());
+        }
+        return dto;
+    }
+
+
+    // --- 3. LẤY DANH SÁCH SẢN PHẨM CỦA MỘT SHOP (SELLER) ---
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductDetailResponseDto> getProductsBySeller(Integer sellerId) {
+        // Tìm sản phẩm dựa trên nguoi_dung_id trong database
+        List<SanPham> dsSanPham = sanPhamRepository.findByNguoiDung_NguoiDungId(sellerId);
+        return dsSanPham.stream()
+                .map(this::mapToDetailDto)
+                .collect(Collectors.toList());
+    }
+
+    // --- 4. LẤY THÔNG TIN CHỦ SHOP ---
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getSellerInfo(Integer sellerId) {
+        NguoiDung nd = nguoiDungRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Chủ shop không tồn tại"));
+
+        Map<String, Object> info = new HashMap<>();
+        info.put("id", nd.getNguoiDungId());
+        info.put("hoVaTen", nd.getHoVaTen());
+        info.put("anhDaiDien", nd.getAnhDaiDien());
+        info.put("ngayTao", nd.getNgayTao());
+        return info;
+    }
+
+
+    @Override
+    public void updateStatus(Integer id, String status) {
+        SanPham sp = sanPhamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+        sp.setTrangThai(status);
+        sanPhamRepository.save(sp);
     }
 
 }

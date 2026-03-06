@@ -67,13 +67,13 @@
                   >
                     Chi tiết
                   </button>
-                  <button 
+                  <!-- <button 
                     @click="addToCart(product)" 
                     class="btn btn-primary btn-sm px-2 py-1"
                     title="Thêm vào giỏ hàng"
                   >
                     🛒
-                  </button>
+                  </button> -->
                 </div>
 
               </div>

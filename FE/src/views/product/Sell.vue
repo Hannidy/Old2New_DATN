@@ -77,15 +77,34 @@
             <label class="form-label fw-bold text-dark">Danh mục</label>
             <select v-model="form.category" required class="form-select border-secondary text-muted">
               <option value="" disabled>Chọn danh mục phù hợp</option>
-              <option :value="1">Sách</option>
-              <option :value="2">Đồ cho nam</option>
-              <option :value="3">Thời trang nữ</option>
-              <option :value="4">Đồ làm đẹp</option>
-              <option :value="5">Đồ cho mẹ & bé</option>
-              <option :value="6">Đồ chơi</option>
-              <option :value="7">Đồ dùng nhà cửa</option>
+              
+              <option v-for="cat in categories" :key="cat.danhMucId || cat.id" :value="cat.danhMucId || cat.id">
+                {{ cat.tenDanhMuc || cat.name }}
+              </option>
+              
             </select>
           </div>
+
+          <!-- Lấy cả danh mục con đoạn code bên dưới  -->
+          <!-- <div class="mb-3">
+            <label class="form-label fw-bold text-dark">Danh mục</label>
+            <select v-model="form.category" required class="form-select border-secondary text-muted">
+              <option value="" disabled>Chọn danh mục phù hợp</option>
+              
+              <optgroup v-for="parent in categories" :key="parent.id" :label="parent.name">
+                
+                <option v-for="child in parent.children" :key="child.id" :value="child.id">
+                  {{ child.name }}
+                </option>
+
+                <option v-if="!parent.children || parent.children.length === 0" :value="parent.id">
+                  {{ parent.name }}
+                </option>
+
+              </optgroup>
+              
+            </select>
+          </div> -->
 
           <div class="mb-3">
             <label class="form-label fw-bold text-dark">Tên sản phẩm</label>
@@ -212,6 +231,23 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth
 const router = useRouter();
 let currentUserId = null;
 
+
+// 🔥 THÊM BIẾN NÀY ĐỂ CHỨA DANH MỤC:
+const categories = ref([]);
+
+// 🔥 THÊM HÀM GỌI API NÀY:
+const fetchCategories = async () => {
+  try {
+    // Đã đổi link cho khớp với CategoryController của bạn
+    const response = await fetch('http://localhost:8080/api/categories/tree'); 
+    if (response.ok) {
+      categories.value = await response.json();
+    }
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách danh mục:", error);
+  }
+};
+
 // ==========================================
 // BƯỚC 1: KIỂM TRA ĐĂNG NHẬP NGAY KHI VÀO TRANG
 // ==========================================
@@ -224,6 +260,8 @@ onMounted(() => {
   }
   // Lấy ID của người dùng hiện tại
   currentUserId = JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
+
+  fetchCategories();
 });
 
 // // [FIREBASE CONFIG - Giữ nguyên của Khoa]
@@ -355,11 +393,19 @@ const confirmAndSubmit = async () => {
     const user = result.user;
     const firebaseToken = await user.getIdToken();
 
+    // 🔥 1. LẤY TOKEN TỪ LOCAL STORAGE CỦA BẠN ĐỂ VƯỢT TRẠM
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      alert("Vui lòng đăng nhập để thực hiện chức năng này!");
+      return;
+    }
+    const jwtToken = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
+
     // ==========================================
     // BƯỚC 2: GÁN ID ĐỘNG VÀO PAYLOAD GỬI LÊN
     // ==========================================
     const payload = {
-      nguoiDungId: currentUserId, // <--- ĐÃ ĐỔI THÀNH ID ĐỘNG CỦA CHÍNH BẠN
+      nguoiDungId: currentUserId, 
       danhMucId: form.category,
       tenSanPham: form.name,
       gia: form.price,
@@ -373,26 +419,34 @@ const confirmAndSubmit = async () => {
       firebaseToken: firebaseToken 
     };
 
-    // Gọi API để lưu sản phẩm (Lấy ID về)
-    const response = await fetch('http://localhost:8080/api/san-pham', {
+    // 🔥 3. GỌI API LƯU SẢN PHẨM (Gắn thêm thẻ Authorization)
+    const response = await fetch('http://localhost:8080/api/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwtToken}` // <--- CHÌA KHÓA VÀO CỬA ĐÂY NÀY!
+      },
       body: JSON.stringify(payload)
     });
 
-    if (response.status === 201) {
+    if (response.status === 201 || response.status === 200) {
       const data = await response.json();
-      const newSanPhamId = data.sanPhamId; 
+      const newSanPhamId = data.sanPhamId || data.id; // Lấy ID linh hoạt
 
-      // NẾU CÓ ẢNH THÌ TIẾP TỤC GỌI API LƯU ẢNH
+      // 🔥 4. NẾU CÓ ẢNH THÌ TIẾP TỤC GỌI API LƯU ẢNH (Cũng phải gắn Authorization)
       if (selectedFiles.value.length > 0) {
         const formData = new FormData();
         selectedFiles.value.forEach(file => {
           formData.append('files', file); 
         });
 
-        const imgResponse = await fetch(`http://localhost:8080/api/san-pham/${newSanPhamId}/hinh-anh`, {
+        const imgResponse = await fetch(`http://localhost:8080/api/products/${newSanPhamId}/hinh-anh`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}` // <--- BẢO VỆ CỬA SỐ 2
+            // ⚠️ Lưu ý: Tuyệt đối không tự set 'Content-Type': 'multipart/form-data' ở đây. 
+            // Trình duyệt sẽ tự động làm việc đó và thêm chuỗi boundary bảo mật!
+          },
           body: formData
         });
 
@@ -405,7 +459,6 @@ const confirmAndSubmit = async () => {
       alert("🎉 Đăng bán thành công kèm theo hình ảnh!");
       showOtpModal.value = false;
       
-      // Chuyển hướng về trang chủ hoặc reload form
       router.push('/'); 
       
     } else {

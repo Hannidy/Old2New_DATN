@@ -23,6 +23,12 @@ import Cart from '../views/product/Cart.vue'
 
 import Profile from '../views/user/Profile.vue'
 
+import Categories from '../views/admin/Categories.vue'
+
+import ShopView from '../views/product/ShopView.vue'
+
+import MyProductView from '../views/product/MyProductView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -80,6 +86,21 @@ const router = createRouter({
       path: '/profile',
       name: 'Profile',
       component: Profile
+    },
+    {
+      path: '/admin/categories', 
+      name: 'admin-categories', 
+      component: Categories
+    },
+    {
+      path: '/shop/:id',
+      name: 'Shop',
+      component: ShopView 
+    },
+    {
+      path: '/my-products',
+      name: 'MyProducts',
+      component: MyProductView 
     }
   ]
 })

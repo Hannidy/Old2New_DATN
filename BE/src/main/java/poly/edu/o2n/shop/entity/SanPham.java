@@ -34,6 +34,7 @@ public class SanPham {
     @Column(name = "ten_san_pham", nullable = false, length = 255)
     private String tenSanPham;
 
+
     // Khóa ngoại: Sản phẩm này thuộc danh mục nào?
     @ManyToOne
     @JoinColumn(name = "danh_muc_id")
@@ -61,7 +62,7 @@ public class SanPham {
     private Integer chieuCaoCm;
 
     @Column(name = "trang_thai", length = 50)
-    private String trangThai;
+    private String trangThai ;
 
     @Column(name = "ngay_dang", updatable = false)
     private LocalDateTime ngayDang;
