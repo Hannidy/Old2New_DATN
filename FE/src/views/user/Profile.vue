@@ -82,12 +82,52 @@
                   <input type="text" v-model="userProfile.hoVaTen" class="form-control" required>
                 </div>
               </div>
-              <div class="row mb-4 align-items-center">
-                <div class="col-md-3 text-md-end text-muted fw-medium small">Số điện thoại</div>
-                <div class="col-md-8">
-                  <input type="tel" v-model="userProfile.soDienThoai" class="form-control">
-                </div>
-              </div>
+              <!-- Xác minh só diện thoại -->
+                  <div class="row mb-4 align-items-center">
+                    <div class="col-md-3 text-md-end text-muted fw-medium small">Số điện thoại</div>
+                    <div class="col-md-8">
+                      <div class="input-group">
+                        <input type="tel" v-model="userProfile.soDienThoai" class="form-control" placeholder="Nhập SĐT để xác minh...">
+                        <button v-if="!isVerifiedLocal" 
+                              type="button" 
+                              class="btn btn-danger btn-sm px-3 fw-bold" 
+                              @click="openOtpModal">
+                              XÁC MINH NGAY
+                      </button>
+                        <span v-else class="input-group-text bg-white text-success border-1 fw-bold">
+                          ✅ ĐÃ XÁC MINH
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                    <!--  Xác thưc số điện thoại -->
+                  <div v-if="showOtpModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.6); z-index: 1060;">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content border-0 shadow">
+                        <div class="modal-header">
+                          <h5 class="modal-title fw-bold">Xác minh SĐT Hồ sơ</h5>
+                          <button type="button" class="btn-close" @click="showOtpModal = false"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                          <p class="small text-muted mb-3">Hệ thống sẽ gửi mã xác minh đến SĐT: <b>{{ userProfile.soDienThoai }}</b></p>
+                          
+                          <div id="recaptcha-profile" class="d-flex justify-content-center mb-3"></div>
+                          
+                          <button v-if="!confirmationResult" @click="requestOtpProfile" :disabled="isRequestingOtp" class="btn btn-dark w-100 mb-3">
+                            {{ isRequestingOtp ? 'Đang gửi...' : 'GỬI MÃ XÁC MINH' }}
+                          </button>
+
+                          <div v-if="confirmationResult">
+                            <label class="form-label small fw-bold">Nhập mã OTP 6 số</label>
+                            <input type="text" v-model="otpCode" class="form-control text-center fs-4 fw-bold mb-3" placeholder="------" maxlength="6">
+                            <button class="btn btn-primary w-100 fw-bold" @click="verifyAndSaveLocal">XÁC NHẬN MÃ</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+
               <div class="row mb-4 align-items-center">
                 <div class="col-md-3 text-md-end text-muted fw-medium small">Giới tính</div>
                 <div class="col-md-8 d-flex gap-4">
@@ -220,16 +260,103 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted , nextTick } from 'vue';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { initializeApp } from "firebase/app";
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import AppHeader from '@/layouts/Header.vue';
-import AppFooter from '@/layouts/Footer.vue';
+
+// 2. Khai báo Firebase Config (Duy dùng đúng bộ Config của Duy nhé)
+const firebaseConfig = {
+  apiKey: "AIzaSyCy2BDZO1nKsU43fl8LqdAgix92z_G-26E",
+  authDomain: "old2new-e8ef2.firebaseapp.com",
+  projectId: "old2new-e8ef2",
+  storageBucket: "old2new-e8ef2.firebasestorage.app",
+  messagingSenderId: "761431606910",
+  appId: "1:761431606910:web:379c565c0e096d16a2fa2f",
+  measurementId: "G-VW201BGYC5"
+};
+
+// 3. 🔥 QUAN TRỌNG: Khởi tạo biến auth ở đây để các hàm bên dưới nhận diện được
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+auth.languageCode = 'vi'; // Thiết lập tiếng Việt cho reCAPTCHA
+
 
 const router = useRouter();
 const currentTab = ref('profile'); 
 const isSaving = ref(false);
 let currentUserId = null;
+
+// Xác minh số điện thoại nếu đã xác minh bên Profile thì không cần xác minh nữa 
+const showOtpModal = ref(false); // Điều khiển ẩn/hiện Modal
+const isRequestingOtp = ref(false); // Trạng thái đang gửi mã
+const confirmationResult = ref(null); // Lưu kết quả xác thực từ Firebase
+const otpCode = ref(''); // Lưu mã 6 số người dùng nhập
+const isVerifiedLocal = ref(localStorage.getItem('isPhoneVerified') === 'true');
+
+// 1. Hàm mở Modal
+const openOtpModal = async () => {
+  showOtpModal.value = true;
+  await nextTick(); // Đợi Modal render xong mới dựng reCAPTCHA
+  setupRecaptchaProfile();
+};
+
+// 2. Khởi tạo reCAPTCHA cho Profile
+const setupRecaptchaProfile = () => {
+  if (!window.recaptchaVerifierProfile) {
+    window.recaptchaVerifierProfile = new RecaptchaVerifier(auth, 'recaptcha-profile', {
+      'size': 'normal'
+    });
+    window.recaptchaVerifierProfile.render();
+  }
+};
+
+// 3. Hàm gửi mã OTP (Quan trọng: Phải gắn vào nút Lấy Mã)
+const requestOtpProfile = async () => {
+  if (!userProfile.value.soDienThoai) return alert("Vui lòng nhập SĐT!");
+  let phone = userProfile.value.soDienThoai;
+  let phoneNumber = phone.startsWith('0') ? '+84' + phone.substring(1) : phone;
+
+  isRequestingOtp.value = true;
+  try {
+    // 🔥 Sử dụng recaptcha-profile làm chìa khóa
+    const appVerifier = window.recaptchaVerifierProfile;
+    const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+    confirmationResult.value = result;
+    alert("🚀 Mã OTP đã được gửi đến máy bạn!");
+  } catch (error) {
+    console.error(error);
+    alert("Lỗi gửi mã OTP. Hãy tải lại trang hoặc kiểm tra SĐT!");
+    if (window.recaptchaVerifierProfile) window.recaptchaVerifierProfile.render();
+  } finally {
+    isRequestingOtp.value = false;
+  }
+};
+
+// 4. Hàm xác nhận mã và Lưu dấu "Đã xác minh"
+const verifyAndSaveLocal = async () => {
+  if (!otpCode.value) return alert("Vui lòng nhập mã OTP!");
+  try {
+    const result = await confirmationResult.value.confirm(otpCode.value);
+    if (result.user) {
+      // ✅ BƯỚC QUAN TRỌNG: Lưu dấu xác minh vào LocalStorage
+      localStorage.setItem('isPhoneVerified', 'true');
+      localStorage.setItem('verifiedPhone', userProfile.value.soDienThoai);
+      
+      // Cập nhật trạng thái hiển thị ngay lập tức
+      isVerifiedLocal.value = true;
+      showOtpModal.value = false;
+      
+      alert("🎉 Xác minh thành công! Từ giờ Duy có thể đăng bán mà không cần OTP nữa.");
+    }
+  } catch (error) {
+    console.error("Lỗi xác minh:", error);
+    alert("❌ Mã xác minh không chính xác!");
+  }
+};
+
+
 
 // ==========================================
 // BẢO MẬT: HÀM TỰ ĐỘNG LẤY TOKEN GẮN VÀO API

@@ -18,4 +18,8 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
             "JOIN san_pham sp ON ct.san_pham_id = sp.san_pham_id " +
             "WHERE sp.nguoi_dung_id = :sellerId", nativeQuery = true)
     List<DonHang> findDonHangByNguoiBanId(@Param("sellerId") Integer sellerId);
+
+// Tính tổng doanh thu trong Thông kế
+@Query("SELECT SUM(d.tongThanhTien) FROM DonHang d WHERE d.trangThaiDonHang = 'HOAN_THANH'")
+Double sumTotalRevenue();
 }

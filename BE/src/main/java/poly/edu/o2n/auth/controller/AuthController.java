@@ -34,28 +34,6 @@ public class AuthController {
     }
 
 
-//    @PostMapping("/login")
-//    public ResponseEntity<?> login(@RequestBody LoginRequestDto request) {
-//
-//        // 1. ANH BẢO VỆ TRA SỔ ĐEN TRƯỚC: Kiểm tra xem tài khoản có bị khóa không
-//        Optional<NguoiDung> userOpt = nguoiDungRepository.findByEmail(request.getEmail());
-//
-//        if (userOpt.isPresent() && "BI_KHOA".equals(userOpt.get().getTrangThaiNguoiMua())) {
-//            // Nếu bị khóa -> Đuổi thẳng cổ, trả về mã lỗi 403 (Cấm truy cập)
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                    .body(Map.of("message", "Tài khoản của bạn đã bị khóa do vi phạm chính sách nền tảng!"));
-//        }
-//
-//        // 2. NẾU TÀI KHOẢN TRONG SẠCH -> Mời vào trong cho authService xử lý tiếp
-//        try {
-//            AuthResponseDto response = authService.login(request);
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            // Nếu sai pass hoặc lỗi gì đó bên trong service thì báo lỗi 400
-//            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-//        }
-//    }
-
 
 // Đăng Nhập GG
     @PostMapping("/google")

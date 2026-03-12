@@ -52,7 +52,7 @@ public class NguoiDung {
     private poly.edu.o2n.auth.entity.VaiTro vaiTro;
 
     @Column(name = "trang_thai_nguoi_mua", length = 50)
-    private String trangThaiNguoiMua;
+    private String trangThaiNguoiMua = "HOAT_DONG" ;
 
     @Column(name = "mo_ta_vi_pham", columnDefinition = "TEXT")
     private String moTaViPham;

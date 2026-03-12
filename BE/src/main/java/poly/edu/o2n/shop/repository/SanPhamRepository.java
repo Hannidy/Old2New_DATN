@@ -15,4 +15,5 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
 
     // Tìm sản phẩm dựa trên cột nguoi_dung_id trong table san_pham
     List<SanPham> findByNguoiDung_NguoiDungId(Integer nguoiDungId);
+
 }

@@ -7,7 +7,6 @@ import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 import poly.edu.o2n.user.service.UserService;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -15,22 +14,7 @@ import java.util.Map;
 public class NguoiDungController {
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
     private NguoiDungRepository nguoiDungRepository;
-
-    // ==========================================
-    // 1. API CHO ADMIN (Trang Quản lý người dùng)
-    // ==========================================
-    @GetMapping("/admin/users")
-    public List<NguoiDung> getAllUsers() {
-        return userService.getAllUsers();
-    }
-
-    // ==========================================
-    // 2. API CHO USER (Trang Hồ Sơ Của Tôi)
-    // ==========================================
 
     // Xem thông tin người dùng theo ID
     @GetMapping("/nguoi-dung/{id}")
@@ -94,40 +78,6 @@ public class NguoiDungController {
             return ResponseEntity.badRequest().body(java.util.Map.of("message", "Lỗi tải ảnh: " + e.getMessage()));
         }
     }
-
-
-    // ==========================================
-    // 1. API CHO ADMIN (Trang Quản lý người dùng)
-    // ==========================================
-
-    // API Lấy danh sách toàn bộ người dùng (Đã có sẵn, mình giữ nguyên)
-//    @GetMapping("/admin/users")
-//    public ResponseEntity<?> getAllUsers() {
-//        // Tốt nhất nên trả về ResponseEntity thay vì List thuần túy
-//        return ResponseEntity.ok(nguoiDungRepository.findAll());
-//    }
-
-    // THÊM MỚI: API Khóa / Mở khóa tài khoản
-    @PutMapping("/admin/users/{id}/toggle-status")
-    public ResponseEntity<?> toggleUserStatus(@PathVariable Integer id) {
-        return nguoiDungRepository.findById(id).map(user -> {
-            // Kiểm tra trạng thái hiện tại. Nếu chưa có thì mặc định là đang HOAT_DONG
-            String currentStatus = user.getTrangThaiNguoiMua();
-
-            if ("BI_KHOA".equals(currentStatus)) {
-                user.setTrangThaiNguoiMua("HOAT_DONG");
-                user.setMoTaViPham(null); // Xóa lý do vi phạm khi mở khóa
-            } else {
-                user.setTrangThaiNguoiMua("BI_KHOA");
-                user.setMoTaViPham("Vi phạm chính sách nền tảng"); // Có thể làm form nhập lý do sau
-            }
-
-            nguoiDungRepository.save(user);
-            return ResponseEntity.ok(java.util.Map.of("message", "Đã cập nhật trạng thái tài khoản: " + user.getTrangThaiNguoiMua()));
-        }).orElse(ResponseEntity.badRequest().body(java.util.Map.of("message", "Không tìm thấy người dùng!")));
-    }
-
-
 
 
 

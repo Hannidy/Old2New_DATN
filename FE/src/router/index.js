@@ -1,33 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Import các trang của bạn
+// Import các trang chính
 import Login from '../views/auth/Login.vue' 
-
 import Register from '../views/auth/Register.vue' 
-
 import ForgotPassword from '../views/auth/ForgotPassword.vue'
-
 import HomeView from '../views/home/HomeView.vue' 
-
-import Users from '../views/admin/Users.vue'
-
 import Sell from '../views/product/Sell.vue'
-
 import QuanLyDonHang from '@/views/order/QuanLyDonHang.vue'
-
 import QuanLyDonBan from '@/views/order/QuanLyDonBan.vue'
-
 import ProductDetail from '../views/product/ProductDetail.vue'
-
 import Cart from '../views/product/Cart.vue'
-
 import Profile from '../views/user/Profile.vue'
-
-import Categories from '../views/admin/Categories.vue'
-
 import ShopView from '../views/product/ShopView.vue'
-
 import MyProductView from '../views/product/MyProductView.vue'
+
+// Import các thành phần Admin
+import AdminLayout from '@/layouts/AdminLayout.vue';
+import Users from '../views/admin/Users.vue'
+import Categories from '../views/admin/Categories.vue'
+import VerifyProducts from '../views/admin/VerifyProducts.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,6 +28,44 @@ const router = createRouter({
       name: 'home',
       component: HomeView
     },
+    // ==========================================
+    // CỤM ROUTE ADMIN (LỒNG NHAU)
+    // ==========================================
+    {
+      path: '/admin',
+      component: AdminLayout, // Đây là cái "khung" chứa Sidebar
+      redirect: '/admin/thong-ke', // Khi vào /admin sẽ tự nhảy tới thống kê
+      children: [
+        {
+          path: 'users',
+          name: 'admin-users',
+          component: Users,
+          meta: { title: 'Quản lý người dùng' }
+        },
+        {
+          path: 'categories',
+          name: 'admin-categories',
+          component: Categories,
+          meta: { title: 'Quản lý danh mục' }
+        },
+        {
+          path: 'thong-ke',
+          name: 'admin-dashboard',
+          // Duy có thể tạo file Dashboard.vue sau, giờ cứ dùng trang tạm
+          component: () => import('@/views/admin/Dashboard.vue'), 
+          meta: { title: 'Thống kê tổng quan' }
+        },
+        {
+          path: 'verify-products',
+          name: 'admin-verify',
+          component: VerifyProducts,
+          meta: { title: 'Kiểm duyệt tin đăng' }
+        }
+      ]
+    },
+    // ==========================================
+    // CÁC ROUTE NGƯỜI DÙNG KHÁC
+    // ==========================================
     {
       path: '/login',
       name: 'login',
@@ -51,11 +80,6 @@ const router = createRouter({
       path: '/forgot-password',
       name: 'forgot-password',
       component: ForgotPassword
-    },
-    {
-      path: '/admin/users',
-      name: 'admin-users',
-      component: Users
     },
     {
       path: '/dang-ban',
@@ -86,11 +110,6 @@ const router = createRouter({
       path: '/profile',
       name: 'Profile',
       component: Profile
-    },
-    {
-      path: '/admin/categories', 
-      name: 'admin-categories', 
-      component: Categories
     },
     {
       path: '/shop/:id',

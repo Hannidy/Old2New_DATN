@@ -223,22 +223,26 @@
 </template>
 
 <script setup>
+
 import { reactive, ref, nextTick, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; // Bổ sung router để đá khách chưa đăng nhập
+import { useRouter } from 'vue-router'; 
 import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import AppHeader from '@/layouts/Header.vue';
 
 const router = useRouter();
 let currentUserId = null;
 
+// 🔥 THÊM BIẾN NÀY ĐỂ CHỨA THÔNG BÁO LỖI (Fix lỗi errors is not defined)
+const errors = reactive({
+  category: '', name: '', price: '', images: '',
+  shippingAddress: '', length: '', width: '', height: '', weight: ''
+});
 
-// 🔥 THÊM BIẾN NÀY ĐỂ CHỨA DANH MỤC:
 const categories = ref([]);
 
-// 🔥 THÊM HÀM GỌI API NÀY:
 const fetchCategories = async () => {
   try {
-    // Đã đổi link cho khớp với CategoryController của bạn
     const response = await fetch('http://localhost:8080/api/categories/tree'); 
     if (response.ok) {
       categories.value = await response.json();
@@ -248,37 +252,36 @@ const fetchCategories = async () => {
   }
 };
 
-// ==========================================
-// BƯỚC 1: KIỂM TRA ĐĂNG NHẬP NGAY KHI VÀO TRANG
-// ==========================================
-onMounted(() => {
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) {
-    alert("Vui lòng đăng nhập để có thể đăng bán sản phẩm!");
-    router.push('/login'); // Chưa đăng nhập thì đá về trang Login ngay lập tức
+onMounted(async () => {
+  const storedUserStr = localStorage.getItem('user');
+  if (!storedUserStr) {
+    alert("Vui lòng đăng nhập!");
+    router.push('/login'); 
     return;
   }
-  // Lấy ID của người dùng hiện tại
-  currentUserId = JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
+  
+  const storedUser = JSON.parse(storedUserStr);
+  currentUserId = storedUser.id || storedUser.nguoiDungId;
+
+  try {
+    const token = storedUser.token || storedUser.accessToken || localStorage.getItem('token');
+    const response = await fetch(`http://localhost:8080/api/nguoi-dung/${currentUserId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+      const dbUser = await response.json();
+      // 🔥 CHỈ CẬP NHẬT NHỮNG THỨ CẦN THIẾT, KHÔNG RESET TOÀN BỘ CỤC USER
+      storedUser.soDienThoai = dbUser.soDienThoai;
+      localStorage.setItem('user', JSON.stringify(storedUser));
+    }
+  } catch (error) {
+    console.error("Lỗi đồng bộ:", error);
+  }
 
   fetchCategories();
 });
 
-// // [FIREBASE CONFIG - Giữ nguyên của Khoa]
-// const firebaseConfig = {
-//   apiKey: "AIzaSyATD2AUfi2BDC2ez6N77fBOX_C_QAetlKg",
-//   authDomain: "o2-n-d91f7.firebaseapp.com",
-//   projectId: "o2-n-d91f7",
-//   storageBucket: "o2-n-d91f7.firebasestorage.app",
-//   messagingSenderId: "879300790262",
-//   appId: "1:879300790262:web:c972458e5d39cf2d1769d7",
-//   measurementId: "G-LPYQL6H1ER"
-// };
-
-// const app = initializeApp(firebaseConfig);
-// const auth = getAuth(app);
-
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCy2BDZO1nKsU43fl8LqdAgix92z_G-26E",
   authDomain: "old2new-e8ef2.firebaseapp.com",
@@ -289,10 +292,8 @@ const firebaseConfig = {
   measurementId: "G-VW201BGYC5"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
 auth.languageCode = 'vi'; 
 
 const form = reactive({
@@ -302,12 +303,10 @@ const form = reactive({
   weight: null, condition: 'Mới', phone: '', otpCode: ''
 });
 
-// ====== CÁC BIẾN CHO HÌNH ẢNH ======
 const fileInput = ref(null); 
 const selectedFiles = ref([]); 
 const previewImages = ref([]); 
 
-// ====== CÁC HÀM XỬ LÝ HÌNH ẢNH ======
 const triggerFileInput = () => {
   if (fileInput.value) fileInput.value.click();
 };
@@ -326,8 +325,6 @@ const removeImage = (index) => {
   previewImages.value.splice(index, 1);
 };
 
-
-// ====== CÁC HÀM XỬ LÝ FORM & FIREBASE ======
 const showOtpModal = ref(false);
 const isRequestingOtp = ref(false);
 const confirmationResult = ref(null); 
@@ -340,19 +337,86 @@ const conditions = [
   { value: 5, title: 'Kém', desc: 'Đã qua sử dụng. Nhiều sai sót. Có thể bị hư hỏng.' }
 ];
 
-const submitForm = async () => {
-  if (form.price < 10000) {
-    alert("Giá sản phẩm phải lớn hơn hoặc bằng 10,000 VNĐ");
-    return;
-  }
-  if (selectedFiles.value.length === 0) {
-    alert("Vui lòng tải lên ít nhất 1 hình ảnh sản phẩm!");
-    return;
-  }
+// 🔥 BỔ SUNG HÀM NÀY (Fix lỗi validateForm is not defined)
+const validateForm = () => {
+  let isValid = true;
+  Object.keys(errors).forEach(key => errors[key] = '');
 
-  showOtpModal.value = true;
-  await nextTick();
-  setupRecaptcha();
+  if (selectedFiles.value.length === 0) { errors.images = 'Vui lòng tải ảnh!'; isValid = false; }
+  if (!form.category) { errors.category = 'Chọn danh mục!'; isValid = false; }
+  if (!form.name) { errors.name = 'Nhập tên!'; isValid = false; }
+  if (!form.price || form.price < 10000) { errors.price = 'Giá >= 10k!'; isValid = false; }
+
+  if (!isValid) window.scrollTo({ top: 0, behavior: 'smooth' });
+  return isValid;
+};
+
+const submitForm = async () => {
+  if (!validateForm()) return;
+
+  // 🔍 KIỂM TRA CỰC KỲ CHI TIẾT
+  const isVerified = localStorage.getItem('isPhoneVerified') === 'true'; // Đọc từ Profile
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const hasPhone = !!(storedUser.soDienThoai || localStorage.getItem('verifiedPhone'));
+
+  console.log("🔍 Kiểm tra trạng thái - Đã xác minh:", isVerified, "| Có SĐT:", hasPhone);
+
+  if (isVerified || hasPhone) {
+    // ✅ ĐÃ XÁC MINH: Đăng thẳng cánh!
+    await confirmAndSubmitNoOtp(); 
+  } else {
+    // ❌ CHƯA XÁC MINH: Hiện Modal OTP
+    showOtpModal.value = true;
+    await nextTick();
+    setupRecaptcha();
+  }
+};
+
+const confirmAndSubmitNoOtp = async () => {
+  try {
+    const storedUser = localStorage.getItem('user');
+    const jwtToken = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
+    const verifiedPhone = localStorage.getItem('verifiedPhone') || form.phone;
+
+    const payload = {
+      nguoiDungId: currentUserId, 
+      danhMucId: form.category,
+      tenSanPham: form.name,
+      gia: form.price,
+      moTaSp: form.description,
+      tinhTrang: form.condition,
+      trongLuongGram: form.weight,
+      chieuDaiCm: form.dimensions.length,
+      chieuRongCm: form.dimensions.width,
+      chieuCaoCm: form.dimensions.height,
+      soDienThoai: verifiedPhone
+    };
+
+    const response = await fetch('http://localhost:8080/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const newId = data.sanPhamId || data.id;
+      if (selectedFiles.value.length > 0) {
+        const formData = new FormData();
+        selectedFiles.value.forEach(file => formData.append('files', file));
+        await fetch(`http://localhost:8080/api/products/${newId}/hinh-anh`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${jwtToken}` },
+          body: formData
+        });
+      }
+      alert("🎉 Đăng bài thành công!");
+      router.push('/');
+    }
+  } catch (error) {
+    console.error("Lỗi:", error);
+    alert("Có lỗi xảy ra khi đăng bài!");
+  }
 };
 
 const setupRecaptcha = () => {
@@ -384,26 +448,16 @@ const requestOtp = async () => {
   }
 };
 
-// ====== BƯỚC CUỐI: SUBMIT DATA + ẢNH ======
 const confirmAndSubmit = async () => {
   if (!form.otpCode || !confirmationResult.value) return alert("Vui lòng nhập mã OTP để xác nhận!");
 
   try {
     const result = await confirmationResult.value.confirm(form.otpCode);
-    const user = result.user;
-    const firebaseToken = await user.getIdToken();
+    const firebaseToken = await result.user.getIdToken();
 
-    // 🔥 1. LẤY TOKEN TỪ LOCAL STORAGE CỦA BẠN ĐỂ VƯỢT TRẠM
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      alert("Vui lòng đăng nhập để thực hiện chức năng này!");
-      return;
-    }
     const jwtToken = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
 
-    // ==========================================
-    // BƯỚC 2: GÁN ID ĐỘNG VÀO PAYLOAD GỬI LÊN
-    // ==========================================
     const payload = {
       nguoiDungId: currentUserId, 
       danhMucId: form.category,
@@ -419,48 +473,27 @@ const confirmAndSubmit = async () => {
       firebaseToken: firebaseToken 
     };
 
-    // 🔥 3. GỌI API LƯU SẢN PHẨM (Gắn thêm thẻ Authorization)
     const response = await fetch('http://localhost:8080/api/products', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwtToken}` // <--- CHÌA KHÓA VÀO CỬA ĐÂY NÀY!
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
       body: JSON.stringify(payload)
     });
 
-    if (response.status === 201 || response.status === 200) {
+    if (response.ok) {
       const data = await response.json();
-      const newSanPhamId = data.sanPhamId || data.id; // Lấy ID linh hoạt
-
-      // 🔥 4. NẾU CÓ ẢNH THÌ TIẾP TỤC GỌI API LƯU ẢNH (Cũng phải gắn Authorization)
+      const newId = data.sanPhamId || data.id;
       if (selectedFiles.value.length > 0) {
         const formData = new FormData();
-        selectedFiles.value.forEach(file => {
-          formData.append('files', file); 
-        });
-
-        const imgResponse = await fetch(`http://localhost:8080/api/products/${newSanPhamId}/hinh-anh`, {
+        selectedFiles.value.forEach(file => formData.append('files', file));
+        await fetch(`http://localhost:8080/api/products/${newId}/hinh-anh`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${jwtToken}` // <--- BẢO VỆ CỬA SỐ 2
-            // ⚠️ Lưu ý: Tuyệt đối không tự set 'Content-Type': 'multipart/form-data' ở đây. 
-            // Trình duyệt sẽ tự động làm việc đó và thêm chuỗi boundary bảo mật!
-          },
+          headers: { 'Authorization': `Bearer ${jwtToken}` },
           body: formData
         });
-
-        if (!imgResponse.ok) {
-          alert("Sản phẩm đã đăng nhưng quá trình tải ảnh bị lỗi!");
-          return;
-        }
       }
-
-      alert("🎉 Đăng bán thành công kèm theo hình ảnh!");
+      alert("🎉 Đăng bán thành công!");
       showOtpModal.value = false;
-      
       router.push('/'); 
-      
     } else {
       const errorText = await response.text();
       alert("❌ Lỗi đăng bán: " + errorText);
@@ -470,4 +503,6 @@ const confirmAndSubmit = async () => {
     alert("Mã OTP bạn nhập không đúng hoặc đã hết hạn!");
   }
 };
+
+
 </script>
