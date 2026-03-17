@@ -10,6 +10,7 @@
               <th>ID</th>
               <th>Họ và Tên</th>
               <th>Email / SĐT</th>
+              <th>Vai trò</th>
               <th>Trạng thái</th>
               <th class="text-center">Thao tác</th>
             </tr>
@@ -21,6 +22,11 @@
               <td>
                 <div>{{ user.email }}</div>
                 <small class="text-muted">{{ user.soDienThoai }}</small>
+              </td>
+              <td>
+                <span :class="user.vaiTro?.tenVaiTro === 'ADMIN' ? 'badge bg-dark' : 'badge bg-secondary'">
+                  {{ user.vaiTro?.tenVaiTro || 'USER' }}
+                </span>
               </td>
                 <td>
                   <span :class="(user.trangThaiNguoiMua === 'HOAT_DONG' || !user.trangThaiNguoiMua) ? 'badge bg-success' : 'badge bg-danger'">
@@ -61,22 +67,25 @@ const fetchUsers = async () => {
   }
 };
 
-// Trong script setup của Users.vue
-const handleToggle = async (user, newStatus) => {
-  const action = newStatus === 1 ? 'Mở khóa' : 'Khóa';
-  if (confirm(`Bạn có chắc chắn muốn ${action} tài khoản ${user.hoVaTen}?`)) {
+const handleToggle = async (user) => {
+  if (confirm(`Thay đổi trạng thái tài khoản ${user.hoVaTen}?`)) {
     try {
-      // Gửi status là 1 (mở) hoặc 0 (khóa)
-      await axios.put(`http://localhost:8080/api/admin/users/${user.nguoiDungId}/toggle-status?status=${newStatus}`);
+      const res = await axios.put(`http://localhost:8080/api/admin/users/${user.nguoiDungId}/toggle-status`);
       
-      // Cập nhật lại giao diện ngay lập tức để người dùng thấy thay đổi
-      user.isEnable = newStatus; 
-      alert(action + " thành công!");
+      // ✅ CẬP NHẬT TRỰC TIẾP TRÊN UI:
+      // Tìm vị trí user trong mảng và thay đổi trạng thái ngay lập tức
+      const newStatus = user.trangThaiNguoiMua === 'BI_KHOA' ? 'HOAT_DONG' : 'BI_KHOA';
+      user.trangThaiNguoiMua = newStatus;
+      
+      alert("Cập nhật thành công!");
     } catch (error) {
-      alert("Lỗi khi thực hiện thao tác!");
+      console.error(error);
+      alert("Lỗi thao tác!");
     }
   }
 };
 
-onMounted(fetchUsers);
+onMounted(() => {
+  fetchUsers(); // Đối với trang Users
+})
 </script>

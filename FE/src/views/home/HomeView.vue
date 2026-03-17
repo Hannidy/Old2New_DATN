@@ -36,47 +36,53 @@
         </div>
 
         <div v-else class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
-          <div v-for="product in products" :key="product.id" class="col">
+          <div v-for="product in products" :key="product.sanPhamId" class="col">
             <div class="card h-100 shadow-sm product-card border-0">
               
-              <div class="bg-light d-flex align-items-center justify-content-center border-bottom overflow-hidden position-relative" style="height: 180px;">
-                <img v-if="product.hinhAnh" :src="product.hinhAnh" class="w-100 h-100 object-fit-cover" alt="Sản phẩm">
-                <div v-else class="text-muted small d-flex flex-column align-items-center">
-                   <span class="fs-2">🖼️</span>
-                   <span>Chưa có ảnh</span>
-                </div>
-                <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2 small" style="font-size: 0.7rem;">
-                  {{ product.tinhTrang || 'Đồ cũ' }}
-                </span>
-              </div>
+                <div class="bg-light d-flex align-items-center justify-content-center border-bottom overflow-hidden position-relative" style="height: 180px;">
+                  
+                  <img v-if="product.hinhAnh" 
+                      :src="product.hinhAnh" 
+                      class="w-100 h-100 object-fit-cover" alt="Sản phẩm">
+                  <img v-else-if="product.danhSachHinhAnh && product.danhSachHinhAnh.length > 0 && product.danhSachHinhAnh[0].duongDanAnh" 
+                      :src="product.danhSachHinhAnh[0].duongDanAnh" 
+                      class="w-100 h-100 object-fit-cover" alt="Sản phẩm">
+                  <div v-else class="text-muted small d-flex flex-column align-items-center">
+                    <span class="fs-2">🖼️</span>
+                    <span>Chưa có ảnh</span>
+                  </div>
 
-              <div class="card-body p-2 d-flex flex-column">
-                <h6 class="card-title text-dark text-truncate mb-1" style="font-size: 0.9rem;" :title="product.tenSanPham">
-                  {{ product.tenSanPham }}
-                </h6>
-                <div class="mb-2">
-                  <span class="text-danger fw-bold d-block fs-6">{{ formatCurrency(product.gia) }}</span>
-                  <small class="text-muted"><i class="bi bi-person"></i> {{ product.nguoiBan || 'Ẩn danh' }}</small>
+                  <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2 small" style="font-size: 0.7rem;">
+                    {{ product.tinhTrang || 'Đồ cũ' }}
+                  </span>
                 </div>
 
-                <div class="d-flex gap-1 mt-auto">
-                  <button 
-                    @click="goToDetail(product.id)" 
-                    class="btn btn-outline-primary btn-sm flex-grow-1 py-1 fw-bold"
-                    style="font-size: 0.75rem;"
-                  >
-                    Chi tiết
-                  </button>
-                  <!-- <button 
-                    @click="addToCart(product)" 
-                    class="btn btn-primary btn-sm px-2 py-1"
-                    title="Thêm vào giỏ hàng"
-                  >
-                    🛒
-                  </button> -->
+                <div class="card-body p-2 d-flex flex-column">
+                  
+                  <h6 class="card-title text-dark text-truncate mb-1" style="font-size: 0.9rem;" :title="product.tenSanPham">
+                    {{ product.tenSanPham || 'Sản phẩm chưa cập nhật tên' }}
+                  </h6>
+                  
+                  <div class="mb-2">
+                    <span class="text-danger fw-bold d-block fs-6">{{ formatCurrency(product.gia || 0) }}</span>
+                    
+                    <small class="text-muted">
+                      <i class="bi bi-person"></i> 
+                      {{ product.nguoiBan || (product.nguoiDung && product.nguoiDung.hoVaTen) || 'Ẩn danh' }}
+                    </small>
+                  </div>
+
+                  <div class="d-flex gap-1 mt-auto">
+                    <button 
+                      @click="goToDetail(product.sanPhamId || product.id)" 
+                      class="btn btn-outline-primary btn-sm flex-grow-1 py-1 fw-bold"
+                      style="font-size: 0.75rem;"
+                    >
+                      Chi tiết
+                    </button>
+                  </div>
                 </div>
 
-              </div>
             </div>
           </div>
         </div>
@@ -103,22 +109,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, watch } from 'vue'; 
+import { useRouter, useRoute } from 'vue-router'; 
 import axios from 'axios';
 
-// ĐIỀU CHỈNH LẠI CHỮ HOA/CHỮ THƯỜNG CHO KHỚP VỚI MÁY BẠN NẾU CẦN NHÉ!
 import AppHeader from '@/layouts/Header.vue';
 import AppFooter from '@/layouts/Footer.vue';
 
 const router = useRouter();
+const route = useRoute(); 
+
 const products = ref([]);
 const isLoading = ref(true);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const itemsPerPage = 30;
 
-// Format tiền tệ
+// 🔥 1. ĐÃ BỔ SUNG LẠI HÀM FORMAT TIỀN (Vô cùng quan trọng để Vue không bị lỗi)
 const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 };
@@ -127,45 +134,53 @@ const formatCurrency = (val) => {
 const fetchProducts = async (page = 1) => {
   isLoading.value = true;
   try {
-    const res = await axios.get(`http://localhost:8080/api/products/home?page=${page - 1}&size=${itemsPerPage}`);
-    products.value = res.data.products;
-    currentPage.value = res.data.currentPage + 1;
-    totalPages.value = res.data.totalPages;
+    const categoryId = route.query.category;
+    let url = `http://localhost:8080/api/products/home?page=${page - 1}&size=${itemsPerPage}`;
+    
+    if (categoryId) {
+      url = `http://localhost:8080/api/public/products/category/${categoryId}?page=${page - 1}&size=${itemsPerPage}`;
+    }
+
+    const res = await axios.get(url);
+    
+    // 🔥 2. BỘ LỌC DỮ LIỆU ĐA NĂNG (Bắt được cả API Trang chủ lẫn API Danh mục)
+    if (res.data && res.data.content !== undefined) { 
+       // Dành cho API Danh Mục (Spring Boot Page)
+       products.value = res.data.content;
+       currentPage.value = res.data.number + 1; 
+       totalPages.value = res.data.totalPages === 0 ? 1 : res.data.totalPages;
+    } 
+    else if (res.data && res.data.products !== undefined) {
+       // Dành cho API Trang Chủ gốc của Duy (trả về res.data.products)
+       products.value = res.data.products;
+       currentPage.value = (res.data.currentPage || 0) + 1;
+       totalPages.value = res.data.totalPages === 0 ? 1 : res.data.totalPages;
+    }
+    else if (Array.isArray(res.data)) { 
+       // Dành cho Mảng trực tiếp
+       products.value = res.data;
+       currentPage.value = 1;
+       totalPages.value = 1;
+    } else {
+       products.value = [];
+    }
+
   } catch (error) {
     console.error("Lỗi kết nối Backend:", error);
+    products.value = [];
+    currentPage.value = 1;
+    totalPages.value = 1;
   } finally {
     isLoading.value = false;
   }
 };
 
-// Chuyển trang chi tiết
 const goToDetail = (id) => {
-  router.push(`/product/${id}`);
-};
-
-// Thêm vào giỏ hàng (Local Storage)
-// Thêm vào giỏ hàng (Hàng độc bản)
-const addToCart = (product) => {
-  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const existingItem = cart.find(item => item.id === product.id);
-
-  if (existingItem) {
-    // Nếu đã có trong giỏ -> Báo lỗi không cho thêm
-    alert(`Sản phẩm "${product.tenSanPham}" là hàng độc bản và đã nằm trong giỏ hàng của bạn rồi!`);
-  } else {
-    // Nếu chưa có -> Thêm vào giỏ với số lượng mặc định luôn là 1
-    cart.push({
-      id: product.id,
-      tenSanPham: product.tenSanPham,
-      gia: product.gia,
-      hinhAnh: product.hinhAnh
-    });
-    localStorage.setItem('cart', JSON.stringify(cart));
-    alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+  if(id) {
+    router.push(`/product/${id}`);
   }
 };
 
-// Đổi trang
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     fetchProducts(page);
@@ -176,11 +191,18 @@ const changePage = (page) => {
   }
 };
 
-// Khởi chạy khi mở web
 onMounted(() => {
   fetchProducts(1);
 });
+
+watch(() => route.query.category, (newCategory, oldCategory) => {
+  currentPage.value = 1; 
+  fetchProducts(1);
+});
 </script>
+
+
+
 
 <style scoped>
 /* Đẩy nội dung xuống không bị Header (fixed) đè */

@@ -43,87 +43,52 @@
         </div>
       </div>
 
-          <!-- Hiện danh thu lấy từ bên database  -->
-        <div class="col-md-3">
+      <div class="col-md-3">
         <div class="card border-0 shadow-sm rounded-4 p-3 bg-danger text-white">
-            <div class="d-flex align-items-center">
+          <div class="d-flex align-items-center">
             <div class="icon-box bg-white bg-opacity-25 rounded-3 p-3 me-3">
-                <i class="bi bi-currency-dollar fs-3"></i>
+              <i class="bi bi-currency-dollar fs-3"></i>
             </div>
             <div>
-                <h6 class="mb-0 opacity-75">Doanh thu</h6>
-                <h3 class="fw-bold mb-0">
+              <h6 class="mb-0 opacity-75">Doanh thu</h6>
+              <h3 class="fw-bold mb-0">
                 {{ stats.totalRevenue ? stats.totalRevenue.toLocaleString('vi-VN') : 0 }} ₫
-                </h3>
+              </h3>
             </div>
-            </div>
-        </div>
-        </div>
-    </div>
-  </div>
-
-
-
-  <!--  Biểu đồ  -->
-
-
-  <div class="dashboard-page">
-    <div class="row mt-4">
-      <div class="col-md-8">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-          <h5 class="fw-bold mb-4">Hoạt động đơn hàng (7 ngày qua)</h5>
-          <div style="height: 300px;">
-            <Line v-if="loaded" :data="chartData" :options="chartOptions" />
-            <p v-else class="text-center mt-5">Đang tải biểu đồ...</p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
-          <h5 class="fw-bold mb-4">Tỷ lệ Danh mục</h5>
-          <div style="height: 250px;">
-            <Doughnut v-if="loaded" :data="pieData" />
           </div>
         </div>
       </div>
     </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+      <h5 class="fw-bold mb-4">Thống kê đơn hàng hàng tuần</h5>
+      <div style="height: 400px;">
+        <Bar v-if="loaded" :data="chartData" :options="chartOptions" />
+      </div>
+    </div>
   </div>
-
-
-
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-// 🔥 Import thư viện biểu đồ
-import { Line, Doughnut } from 'vue-chartjs';
-import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, ArcElement } from 'chart.js';
+// 🔥 Chỉ import Bar và BarElement
+import { Bar } from 'vue-chartjs';
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, ArcElement);
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 const loaded = ref(false);
-const stats = ref({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0});
+const stats = ref({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalRevenue: 0 });
 
-// 📊 Dữ liệu biểu đồ đường (Line Chart)
+// 📊 Dữ liệu biểu đồ cột
 const chartData = ref({
   labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'],
   datasets: [{
     label: 'Số đơn hàng',
     backgroundColor: '#dc3545',
-    borderColor: '#dc3545',
-    data: [10, 25, 15, 40, 30, 50, 36], // Con số 36 khớp với stats của Duy
-    tension: 0.4
-  }]
-});
-
-// 🥧 Dữ liệu biểu đồ tròn (Pie Chart)
-const pieData = ref({
-  labels: ['Sách', 'Đồ nam', 'Thời trang nữ'],
-  datasets: [{
-    backgroundColor: ['#0d6efd', '#198754', '#ffc107'],
-    data: [40, 20, 40]
+    borderRadius: 6, // Bo góc cột cho đẹp
+    data: [10, 25, 15, 40, 30, 50, 36] 
   }]
 });
 
@@ -133,13 +98,16 @@ const fetchStats = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/admin/stats');
     stats.value = response.data;
-    loaded.value = true; // Hiện biểu đồ sau khi lấy dữ liệu xong
+    loaded.value = true;
   } catch (error) {
     console.error("Lỗi:", error);
   }
 };
 
-onMounted(() => fetchStats());
+// 🔥 SỬA CHỖ NÀY: Phải gọi fetchStats, không gọi hàm của trang khác!
+onMounted(() => {
+  fetchStats(); 
+});
 </script>
 
 <style scoped>

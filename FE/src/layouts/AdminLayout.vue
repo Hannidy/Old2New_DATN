@@ -30,7 +30,7 @@
 
       <div class="mt-auto p-3 w-100 border-top border-secondary">
         <button @click="router.push('/')" class="btn btn-outline-light w-100 btn-sm">
-          <i class="bi bi-box-arrow-left me-2"></i> Đăng xuất
+          <i class="bi bi-box-arrow-left me-2"></i> Home
         </button>
       </div>
     </aside>

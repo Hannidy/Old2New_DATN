@@ -61,31 +61,31 @@
           <span class="fw-semibold">Tất cả danh mục</span> 
           <span class="small text-muted ms-1">▾</span>
         </div>
-
+          <!-- Cây Danh Mục  -->
         <ul class="main-menu shadow-sm rounded-bottom">
           <li v-for="category in categories" :key="category.id" class="menu-item border-bottom-dashed">
-            <a href="#" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
+            <a href="#" @click.prevent="goToCategory(category.id)" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
               {{ category.name }}
               <span v-if="category.children && category.children.length > 0" class="text-muted small">›</span>
             </a>
 
             <ul class="sub-menu shadow-sm" v-if="category.children && category.children.length > 0">
               <li v-for="child in category.children" :key="child.id" class="menu-item-child">
-                <a href="#" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
+                <a href="#" @click.prevent="goToCategory(child.id)" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
                   {{ child.name }}
                   <span v-if="child.children && child.children.length > 0" class="text-muted small">›</span>
                 </a>
 
                 <ul class="sub-menu-3 shadow-sm" v-if="child.children && child.children.length > 0">
                   <li v-for="grandchild in child.children" :key="grandchild.id" class="menu-item-grandchild">
-                    <a href="#" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
+                    <a href="#" @click.prevent="goToCategory(grandchild.id)" class="d-flex justify-content-between align-items-center text-decoration-none py-2 px-3">
                       {{ grandchild.name }}
                       <span v-if="grandchild.children && grandchild.children.length > 0" class="text-muted small">›</span>
                     </a>
 
                     <ul class="sub-menu-4 shadow-sm" v-if="grandchild.children && grandchild.children.length > 0">
                       <li v-for="greatgrandchild in grandchild.children" :key="greatgrandchild.id">
-                        <a href="#" class="text-decoration-none py-2 px-3 d-block">{{ greatgrandchild.name }}</a>
+                        <a href="#" @click.prevent="goToCategory(greatgrandchild.id)" class="text-decoration-none py-2 px-3 d-block">{{ greatgrandchild.name }}</a>
                       </li>
                     </ul>
 
@@ -99,20 +99,20 @@
 
       <div class="d-flex flex-wrap gap-4 quick-links flex-grow-1 align-items-center h-100">
         <div v-for="cat in categories.slice(0, 8)" :key="'nav-'+cat.id" class="nav-item dropdown custom-dropdown position-relative h-100">
-          <a href="#" class="text-dark text-decoration-none py-2 d-inline-block hover-orange">
+          <a href="#" @click.prevent="goToCategory(cat.id)" class="text-dark text-decoration-none py-2 d-inline-block hover-orange">
             {{ cat.name }}
           </a>
           
           <ul class="dropdown-menu shadow-sm custom-dropdown-menu rounded-0 border-top-orange" v-if="cat.children && cat.children.length > 0">
             <li v-for="child in cat.children" :key="'nav-child-'+child.id" class="position-relative child-dropdown-item">
-              <a class="dropdown-item py-2 d-flex justify-content-between align-items-center" href="#">
+              <a class="dropdown-item py-2 d-flex justify-content-between align-items-center" href="#" @click.prevent="goToCategory(child.id)">
                 {{ child.name }}
                 <span v-if="child.children && child.children.length > 0" class="text-muted small">›</span>
               </a>
 
               <ul class="dropdown-menu shadow-sm custom-sub-dropdown-menu rounded-0" v-if="child.children && child.children.length > 0">
                 <li v-for="grandchild in child.children" :key="'nav-grandchild-'+grandchild.id">
-                  <a class="dropdown-item py-2" href="#">{{ grandchild.name }}</a>
+                  <a class="dropdown-item py-2" href="#" @click.prevent="goToCategory(grandchild.id)" >{{ grandchild.name }}</a>
                 </li>
               </ul>
             </li>
@@ -163,6 +163,13 @@ const fetchCategories = async () => {
     console.error("Lỗi tải Danh mục:", error);
   }
 };
+
+//  Hàm xử lý khi bấm vào 1 danh mục
+const goToCategory = (id) => {
+  // Đẩy ID danh mục lên thanh URL (VD: localhost:5173/?category=5)
+  router.push({ path: '/', query: { category: id } });
+};
+
 </script>
 
 <style scoped>

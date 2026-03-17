@@ -66,35 +66,43 @@ public class AuthServiceImpl implements AuthService {
         AuthResponseDto response = new AuthResponseDto();
         Optional<NguoiDung> userOpt = nguoiDungRepository.findByEmail(request.getEmail());
 
-        // Dùng hàm matches() của BCrypt để đọ mật khẩu thô với mật khẩu đã mã hóa
-        if (userOpt.isEmpty() || !passwordEncoder.matches(request.getMatKhau(), userOpt.get().getMatKhauMaHoa())) {
+        // 1. Kiểm tra xem email có tồn tại không
+        if (userOpt.isEmpty()) {
             response.setThongBao("Lỗi: Sai email hoặc mật khẩu!");
             return response;
         }
 
-        // Nếu đúng mật khẩu, đóng gói dữ liệu trả về
         NguoiDung user = userOpt.get();
+
+        // 2. 🔥 KIỂM TRA TÀI KHOẢN BỊ KHÓA
+        if ("BI_KHOA".equals(user.getTrangThaiNguoiMua())) {
+            // Trả về DTO chứa thông báo lỗi thay vì dùng ResponseEntity
+            response.setThongBao("Lỗi: Tài khoản của bạn đã bị khóa do vi phạm chính sách!");
+            return response;
+        }
+
+        // 3. Kiểm tra mật khẩu
+        if (!passwordEncoder.matches(request.getMatKhau(), user.getMatKhauMaHoa())) {
+            response.setThongBao("Lỗi: Sai email hoặc mật khẩu!");
+            return response;
+        }
+
+        // 4. Nếu qua hết các bước trên -> Đăng nhập thành công
         response.setThongBao("Thành công");
         response.setNguoiDungId(user.getNguoiDungId());
         response.setEmail(user.getEmail());
         response.setHoVaTen(user.getHoVaTen());
 
-        // Lấy tên vai trò (nếu có)
+        // Lấy tên vai trò
         if (user.getVaiTro() != null) {
             response.setTenVaiTro(user.getVaiTro().getTenVaiTro());
         } else {
-            response.setTenVaiTro("USER"); // Mặc định là USER nếu chưa gán vai trò
+            response.setTenVaiTro("USER");
         }
 
-        // ==========================================
-        // 🔥 2. THÊM ĐOẠN TẠO VÀ TRẢ VỀ TOKEN Ở ĐÂY
-        // ==========================================
-        // Tùy vào hàm generateToken của team bạn yêu cầu truyền vào nguyên Object User hay chỉ truyền Email nhé:
+        // Tạo và trả về Token
         String token = jwtService.generateToken(user);
-
-        // Nhét Token vào DTO để trả về cho Vue.js
         response.setToken(token);
-        // ==========================================
 
         return response;
     }
@@ -135,6 +143,11 @@ public class AuthServiceImpl implements AuthService {
                 } else {
                     // Nếu CÓ RỒI: Lấy tài khoản cũ ra dùng luôn
                     user = userOpt.get();
+                    //  ĐỂ CHẶN ĐĂNG NHẬP GOOGLE NẾU BỊ KHÓA
+                    if ("BI_KHOA".equals(user.getTrangThaiNguoiMua())) {
+                        response.setThongBao("Lỗi: Tài khoản của bạn đã bị khóa do vi phạm chính sách!");
+                        return response;
+                    }
                 }
 
                 // Đóng gói dữ liệu trả về cho Vue (Giống hệt đăng nhập Local)

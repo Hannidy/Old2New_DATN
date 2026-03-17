@@ -1,5 +1,6 @@
 package poly.edu.o2n.shop.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class HinhAnhSanPham {
     private Integer hinhAnhId;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "san_pham_id", nullable = false)
     private SanPham sanPham;
 

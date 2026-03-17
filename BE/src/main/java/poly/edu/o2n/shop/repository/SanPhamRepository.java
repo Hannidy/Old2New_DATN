@@ -16,4 +16,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     // Tìm sản phẩm dựa trên cột nguoi_dung_id trong table san_pham
     List<SanPham> findByNguoiDung_NguoiDungId(Integer nguoiDungId);
 
+    // Tìm sản phẩm theo danh_muc_id VÀ trạng thái phải là 'DA_DUYET'
+    Page<SanPham> findByDanhMuc_DanhMucIdAndTrangThai(Integer danhMucId, String trangThai, Pageable pageable);
+
 }
