@@ -11,6 +11,7 @@ public class ProductDetailResponseDto {
     private BigDecimal gia;
     private String danhMuc;
     private String tinhTrang;
+    private String trangThai;
     private Integer trongLuongGram;
     private String kichThuoc; // Gộp chung D x R x C
     private String nguoiBan;

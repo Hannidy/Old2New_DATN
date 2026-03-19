@@ -110,7 +110,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         sanPham.setChieuRongCm(request.getChieuRongCm());
         sanPham.setChieuCaoCm(request.getChieuCaoCm());
 
-        sanPham.setTrangThai("DANG_BAN");
+        sanPham.setTrangThai("CHO_DUYET");
         sanPham.setNgayDang(LocalDateTime.now());
 
         // Lưu xuống Database
@@ -204,6 +204,7 @@ public class SanPhamServiceImpl implements SanPhamService {
         dto.setTenSanPham(sp.getTenSanPham());
         dto.setGia(sp.getGia());
         dto.setTinhTrang(sp.getTinhTrang());
+        dto.setTrangThai(sp.getTrangThai());
         dto.setTrongLuongGram(sp.getTrongLuongGram());
         dto.setMoTa(sp.getMoTa());
 
@@ -273,6 +274,18 @@ public class SanPhamServiceImpl implements SanPhamService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
         sp.setTrangThai(status);
         sanPhamRepository.save(sp);
+    }
+
+    /*Xóa sản phẩm trong quản lý sản phẩm hồ sơ hop*/
+
+    @Override
+    @Transactional
+    public void xoaSanPham(Integer id) {
+        // Kiểm tra xem sản phẩm có tồn tại không trước khi xóa
+        if (!sanPhamRepository.existsById(id)) {
+            throw new RuntimeException("Sản phẩm không tồn tại!");
+        }
+        sanPhamRepository.deleteById(id);
     }
 
 }

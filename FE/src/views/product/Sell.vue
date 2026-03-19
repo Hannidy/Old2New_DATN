@@ -54,7 +54,7 @@
             onmouseover="this.style.backgroundColor='#e2e6ea'"
             onmouseout="this.style.backgroundColor='#f8f9fa'"
           >
-            <h3 class="fs-4 fw-medium text-secondary mb-2">📸 Tải hình ảnh/video</h3>
+            <h3 class="fs-4 fw-medium text-secondary mb-2">Tải hình ảnh/video</h3>
             <p class="small mb-0">Kéo thả hoặc nhấn để chọn file từ thiết bị</p>
           </div>
 
@@ -76,10 +76,10 @@
           <div class="mb-3">
             <label class="form-label fw-bold text-dark">Danh mục</label>
             <select v-model="form.category" required class="form-select border-secondary text-muted">
-              <option value="" disabled>Chọn danh mục phù hợp</option>
+              <option value="" disabled>Chọn danh mục chi tiết nhất</option>
               
-              <option v-for="cat in categories" :key="cat.danhMucId || cat.id" :value="cat.danhMucId || cat.id">
-                {{ cat.tenDanhMuc || cat.name }}
+              <option v-for="cat in flattenedCategories" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
               </option>
               
             </select>
@@ -224,7 +224,7 @@
 
 <script setup>
 
-import { reactive, ref, nextTick, onMounted } from 'vue';
+import { reactive, ref, nextTick, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
@@ -240,6 +240,27 @@ const errors = reactive({
 });
 
 const categories = ref([]);
+
+//  THÊM ĐOẠN NÀY ĐỂ TẠO DANH SÁCH THỤT LỀ CHO ĐẸP
+const flattenedCategories = computed(() => {
+  const result = [];
+  const flatten = (cats, prefix = '') => {
+    if (!cats) return;
+    for (const cat of cats) {
+      result.push({
+        id: cat.danhMucId || cat.id,
+        name: prefix + (cat.tenDanhMuc || cat.name)
+      });
+      // Nếu có danh mục con, gọi lại hàm và cộng thêm dấu "--- "
+      if (cat.children && cat.children.length > 0) {
+        flatten(cat.children, prefix + '- '); 
+      }
+    }
+  };
+  flatten(categories.value);
+  return result;
+});
+
 
 const fetchCategories = async () => {
   try {
@@ -398,7 +419,7 @@ const confirmAndSubmitNoOtp = async () => {
       body: JSON.stringify(payload)
     });
 
-    if (response.ok) {
+if (response.ok) {
       const data = await response.json();
       const newId = data.sanPhamId || data.id;
       if (selectedFiles.value.length > 0) {
@@ -410,8 +431,10 @@ const confirmAndSubmitNoOtp = async () => {
           body: formData
         });
       }
-      alert("🎉 Đăng bài thành công!");
-      router.push('/');
+      
+      //  SỬA TẠI ĐÂY: Đổi câu thông báo và đường dẫn chuyển trang
+      alert("🎉 Đăng tin thành công!\nSản phẩm của bạn đang chờ Admin kiểm duyệt. Chúng tôi sẽ thông báo khi sản phẩm được lên trang chủ.");
+      router.push('/'); // Chuyển về trang Quản lý tin đăng (nếu chưa có trang này, bạn có thể để tạm '/')
     }
   } catch (error) {
     console.error("Lỗi:", error);
@@ -479,7 +502,7 @@ const confirmAndSubmit = async () => {
       body: JSON.stringify(payload)
     });
 
-    if (response.ok) {
+      if (response.ok) {
       const data = await response.json();
       const newId = data.sanPhamId || data.id;
       if (selectedFiles.value.length > 0) {
@@ -491,9 +514,11 @@ const confirmAndSubmit = async () => {
           body: formData
         });
       }
-      alert("🎉 Đăng bán thành công!");
+      
+      // 🔥 SỬA TẠI ĐÂY: Đổi câu thông báo và đường dẫn chuyển trang
+      alert("🎉 Đăng tin thành công!\nSản phẩm của bạn đang chờ Admin kiểm duyệt. Chúng tôi sẽ thông báo khi sản phẩm được lên trang chủ.");
       showOtpModal.value = false;
-      router.push('/'); 
+      router.push('/'); // Chuyển về trang Quản lý tin đăng
     } else {
       const errorText = await response.text();
       alert("❌ Lỗi đăng bán: " + errorText);

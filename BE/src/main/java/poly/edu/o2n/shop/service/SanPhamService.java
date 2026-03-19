@@ -32,4 +32,8 @@ public interface SanPhamService {
 
 
     void updateStatus(Integer id, String status);
+
+//    Xóa sản phẩm trong Quản lý sản phẩm
+
+    void xoaSanPham(Integer id);
 }

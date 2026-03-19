@@ -24,7 +24,7 @@
       <section id="product-section">
         <div class="d-flex justify-content-between align-items-end mb-4 border-start border-4 border-danger ps-3">
           <div>
-            <h2 class="fs-4 fw-bold mb-0 text-dark">🛍️ Khám phá sản phẩm</h2>
+            <h2 class="fs-4 fw-bold mb-0 text-dark"> Khám phá sản phẩm</h2>
             <small class="text-muted">Đồ cũ chất lượng - Giá rẻ cho mọi nhà</small>
           </div>
           <span class="text-muted small bg-light px-2 py-1 rounded">Trang {{ currentPage }} / {{ totalPages }}</span>
