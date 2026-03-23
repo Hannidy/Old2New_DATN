@@ -66,6 +66,22 @@
         <div class="bg-white rounded shadow-sm p-4 p-md-5">
           
           <div v-if="currentTab === 'profile'">
+            
+            <div class="card text-white mb-5 rounded-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #2b2d42 0%, #8d99ae 100%);">
+              <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                  <h6 class="mb-2 text-white-50 fw-medium text-uppercase tracking-wide" style="font-size: 0.85rem; letter-spacing: 1px;">Số dư Ví OLD2NEW</h6>
+                  <h2 class="mb-0 fw-bold display-6">{{ formatCurrency(walletBalance) }}</h2>
+                </div>
+                <div class="opacity-50" style="font-size: 3.5rem;">
+                  💳
+                </div>
+              </div>
+              <div class="card-footer border-0 bg-transparent py-3 px-4 d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,0.1) !important;">
+                <small class="text-white-50">Sử dụng số dư này để rút tiền về tài khoản ngân hàng</small>
+                <button class="btn btn-sm btn-light fw-bold rounded-pill px-4">Rút tiền</button>
+              </div>
+            </div>
             <h2 class="h4 fw-bold mb-1 text-dark">Hồ sơ của tôi</h2>
             <p class="text-muted small mb-4 pb-3 border-bottom">Quản lý thông tin hồ sơ để bảo mật tài khoản</p>
 
@@ -82,8 +98,7 @@
                   <input type="text" v-model="userProfile.hoVaTen" class="form-control" required>
                 </div>
               </div>
-              <!-- Xác minh só diện thoại -->
-                  <div class="row mb-4 align-items-center">
+              <div class="row mb-4 align-items-center">
                     <div class="col-md-3 text-md-end text-muted fw-medium small">Số điện thoại</div>
                     <div class="col-md-8">
                       <div class="input-group">
@@ -100,8 +115,7 @@
                       </div>
                     </div>
                   </div>
-                    <!--  Xác thưc số điện thoại -->
-                  <div v-if="showOtpModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.6); z-index: 1060;">
+                    <div v-if="showOtpModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.6); z-index: 1060;">
                     <div class="modal-dialog modal-dialog-centered">
                       <div class="modal-content border-0 shadow">
                         <div class="modal-header">
@@ -295,6 +309,28 @@ const confirmationResult = ref(null); // Lưu kết quả xác thực từ Fireb
 const otpCode = ref(''); // Lưu mã 6 số người dùng nhập
 const isVerifiedLocal = ref(localStorage.getItem('isPhoneVerified') === 'true');
 
+// 🔥 BIẾN VÀ HÀM CHO VÍ TIỀN
+const walletBalance = ref(0);
+
+const formatCurrency = (val) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+};
+
+const fetchWalletBalance = async () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (!storedUser) return;
+    
+    // Sử dụng getAuthHeaders() để gửi kèm token xuống Backend
+    const response = await axios.get(`http://localhost:8080/api/vi-tien/so-du/${currentUserId}`, getAuthHeaders());
+    walletBalance.value = response.data.soDu || 0;
+  } catch (error) {
+    console.error("Lỗi lấy số dư ví:", error);
+    walletBalance.value = 0;
+  }
+};
+
+
 // 1. Hàm mở Modal
 const openOtpModal = async () => {
   showOtpModal.value = true;
@@ -348,7 +384,7 @@ const verifyAndSaveLocal = async () => {
       isVerifiedLocal.value = true;
       showOtpModal.value = false;
       
-      alert("🎉 Xác minh thành công! Từ giờ Duy có thể đăng bán mà không cần OTP nữa.");
+      alert("🎉 Xác minh thành công! Từ giờ bạn có thể đăng bán mà không cần OTP nữa.");
     }
   } catch (error) {
     console.error("Lỗi xác minh:", error);
@@ -378,7 +414,6 @@ const getAuthHeaders = () => {
 
   // 3. Nếu tìm thấy thì tự tin xuất trình thẻ
   if (token) {
-    console.log("✅ Đã tìm thấy Token:", token);
     return { headers: { Authorization: `Bearer ${token}` } };
   }
 
@@ -407,6 +442,7 @@ onMounted(() => {
   fetchUserData();     
   fetchProvinces();    
   fetchUserAddresses();
+  fetchWalletBalance(); // 🔥 Gọi hàm lấy Ví khi trang vừa load xong
 });
 
 // 1. LẤY THÔNG TIN

@@ -261,25 +261,29 @@ const checkout = async () => {
     giaLucMua: item.gia
   }));
 
-  // Đã cập nhật tiền ship và địa chỉ động vào Payload
   const orderPayload = {
     nguoiDungId: currentUserId,
-    diaChiId: selectedAddressId.value, // ĐÃ ĐỘNG
+    diaChiId: selectedAddressId.value,
     tongTienHang: totalPrice.value,
-    tongTienShip: shippingFee.value, // ĐÃ ĐỘNG
-    tongThanhTien: totalPrice.value + shippingFee.value, // ĐÃ ĐỘNG
+    tongTienShip: shippingFee.value,
+    tongThanhTien: totalPrice.value + shippingFee.value,
     phuongThucThanhToan: paymentMethod.value,
     chiTietDonHangs: chiTietDonHangs
   };
 
   try {
     const response = await axios.post('http://localhost:8080/api/don-hang/tao-don', orderPayload);
-    if (response.status === 201) {
-      cartItems.value = [];
-      localStorage.removeItem('cart');
+    
+    // Ghi chú: Có thể Spring Boot trả về 200 hoặc 201 tùy bạn cấu hình
+    if (response.status === 201 || response.status === 200) { 
+      
       if (response.data.paymentUrl) {
+         //  CHỈ CHUYỂN HƯỚNG SANG VNPAY - KHOAN XÓA GIỎ HÀNG!
          window.location.href = response.data.paymentUrl; 
       } else {
+         //  NẾU LÀ COD THÌ XÓA GIỎ HÀNG VÀ BÁO THÀNH CÔNG
+         cartItems.value = [];
+         localStorage.removeItem('cart');
          alert("🎉 Đặt hàng COD thành công! Mã đơn: " + response.data.donHangId);
          router.push('/');
       }
@@ -291,7 +295,7 @@ const checkout = async () => {
 
 onMounted(() => {
   loadCart();
-  fetchUserAddresses(); // 💥 Gọi lấy địa chỉ ngay khi vào giỏ hàng
+  fetchUserAddresses(); //  Gọi lấy địa chỉ ngay khi vào giỏ hàng
   window.scrollTo(0, 0);
 });
 

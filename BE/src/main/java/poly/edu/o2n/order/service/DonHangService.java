@@ -13,7 +13,10 @@ public interface DonHangService {
 
     List<DonHangResponse> layDanhSachDonHangCuaUser(Integer nguoiDungId);
     DonHangResponse xemChiTietDonHang(Integer donHangId);
-    void capNhatTrangThaiDonHang(Integer donHangId, String trangThaiMoi);
 
     List<DonHangResponse> layDanhSachDonBanCuaUser(Integer sellerId);
+
+    void capNhatTrangThaiThanhToan(Integer donHangId, String trangThai, String maGiaoDichVnpay);
+
+    void xacNhanNhanHangVaGiaiNgan(Integer donHangId);
 }

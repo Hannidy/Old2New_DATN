@@ -48,31 +48,31 @@ public class DonHangController {
 
 
 //    Trả về kết quả giao dịch VNPAY
-    @GetMapping("/vnpay-return")
-    public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
-        try {
-            String vnp_ResponseCode = params.get("vnp_ResponseCode");
-            String vnp_TxnRef = params.get("vnp_TxnRef"); // Dữ liệu sẽ là "28_177237..."
+@GetMapping("/vnpay-return")
+public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
+    try {
+        String vnp_ResponseCode = params.get("vnp_ResponseCode");
+        String vnp_TxnRef = params.get("vnp_TxnRef");
+        String vnp_TransactionNo = params.get("vnp_TransactionNo"); // Mã GD của VNPAY
 
-            if (vnp_TxnRef != null && vnp_ResponseCode != null) {
-                // Cắt lấy số 28 ở đầu chuỗi
-                Integer donHangId = Integer.parseInt(vnp_TxnRef.split("_")[0]);
+        if (vnp_TxnRef != null && vnp_ResponseCode != null) {
+            Integer donHangId = Integer.parseInt(vnp_TxnRef.split("_")[0]);
 
-                if ("00".equals(vnp_ResponseCode)) {
-                    // Nếu thành công (00) -> Cập nhật DA_THANH_TOAN
-                    donHangService.capNhatTrangThaiThanhToan(donHangId, "DA_THANH_TOAN");
-                    return ResponseEntity.ok(Map.of("status", "success", "message", "Thanh toán thành công"));
-                } else {
-                    // Khách hủy hoặc thanh toán lỗi -> THANH_TOAN_THAT_BAI
-                    donHangService.capNhatTrangThaiThanhToan(donHangId, "THANH_TOAN_THAT_BAI");
-                    return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Thanh toán thất bại"));
-                }
+            if ("00".equals(vnp_ResponseCode)) {
+                // Gọi 1 hàm duy nhất xử lý từ A-Z
+                donHangService.capNhatTrangThaiThanhToan(donHangId, "DA_THANH_TOAN", vnp_TransactionNo);
+                return ResponseEntity.ok(Map.of("status", "success", "message", "Thanh toán thành công"));
+            } else {
+                // Khách hủy giao dịch
+                donHangService.capNhatTrangThaiThanhToan(donHangId, "THANH_TOAN_THAT_BAI", null);
+                return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Thanh toán thất bại"));
             }
-            return ResponseEntity.badRequest().body("Thiếu tham số VNPAY");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Lỗi xử lý: " + e.getMessage());
         }
+        return ResponseEntity.badRequest().body("Thiếu tham số VNPAY");
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body("Lỗi xử lý: " + e.getMessage());
     }
+}
 
     // 1. API Lấy danh sách đơn hàng của 1 user (Để hiển thị ra bảng Quản lý)
     @GetMapping("/danh-sach/{nguoiDungId}")
@@ -104,7 +104,7 @@ public class DonHangController {
             @PathVariable Integer donHangId,
             @RequestParam String trangThaiMoi) {
         try {
-            donHangService.capNhatTrangThaiDonHang(donHangId, trangThaiMoi);
+            donHangService.capNhatTrangThaiThanhToan(donHangId, trangThaiMoi);
             return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi cập nhật trạng thái: " + e.getMessage());
@@ -120,6 +120,18 @@ public class DonHangController {
             return ResponseEntity.ok(listDonHang);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi lấy danh sách đơn bán: " + e.getMessage());
+        }
+    }
+
+
+    // API Khách hàng xác nhận đã nhận hàng -> Hệ thống giải ngân cho người bán
+    @PutMapping("/xac-nhan-nhan-hang/{donHangId}")
+    public ResponseEntity<?> xacNhanNhanHang(@PathVariable Integer donHangId) {
+        try {
+            donHangService.xacNhanNhanHangVaGiaiNgan(donHangId);
+            return ResponseEntity.ok(Map.of("message", "Đã xác nhận nhận hàng và giải ngân cho người bán thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi giải ngân: " + e.getMessage());
         }
     }
 

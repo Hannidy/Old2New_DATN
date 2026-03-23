@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import poly.edu.o2n.order.entity.DonHang;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -19,7 +20,11 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
             "WHERE sp.nguoi_dung_id = :sellerId", nativeQuery = true)
     List<DonHang> findDonHangByNguoiBanId(@Param("sellerId") Integer sellerId);
 
-// Tính tổng doanh thu trong Thông kế
-@Query("SELECT SUM(d.tongThanhTien) FROM DonHang d WHERE d.trangThaiDonHang = 'HOAN_THANH'")
-Double sumTotalRevenue();
+    // Tính tổng doanh thu trong Thông kế
+    @Query("SELECT SUM(d.tongThanhTien) FROM DonHang d WHERE d.trangThaiDonHang = 'HOAN_THANH'")
+    Double sumTotalRevenue();
+
+    // Tìm các đơn hàng đã 'GIAO_THANH_CONG' hoặc 'CHO_XAC_NHAN' quá 2 ngày
+    @Query("SELECT d FROM DonHang d WHERE d.trangThaiDonHang = 'DA_GIAO_HANG' AND d.ngayTao <= :haiNgayTruoc")
+    List<DonHang> timDonHangCanGiaiNganTuDong(@Param("haiNgayTruoc") LocalDateTime haiNgayTruoc);
 }
