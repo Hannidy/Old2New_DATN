@@ -3,6 +3,7 @@ package poly.edu.o2n.user.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import poly.edu.o2n.media.CloudinaryService;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 import poly.edu.o2n.user.service.UserService;
@@ -15,6 +16,9 @@ public class NguoiDungController {
 
     @Autowired
     private NguoiDungRepository nguoiDungRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     // Xem thông tin người dùng theo ID
     @GetMapping("/nguoi-dung/{id}")
@@ -45,7 +49,7 @@ public class NguoiDungController {
         }).orElse(ResponseEntity.badRequest().body(Map.of("message", "Không tìm thấy người dùng!")));
     }
 
-    // 3. API Tải ảnh đại diện lên
+    // 3. API Tải ảnh đại diện lên (Phiên bản Cloudinary)
     @PostMapping("/nguoi-dung/{id}/avatar")
     public ResponseEntity<?> uploadAvatar(@PathVariable Integer id, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         try {
@@ -53,23 +57,14 @@ public class NguoiDungController {
             NguoiDung user = nguoiDungRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
 
-            // 2. Tạo thư mục lưu ảnh nếu chưa có
-            java.nio.file.Path path = java.nio.file.Paths.get("uploads/avatars/");
-            java.nio.file.Files.createDirectories(path);
+            // 🔥 2. Bắn ảnh thẳng lên Mây chỉ với 1 dòng code!
+            String avatarUrl = cloudinaryService.uploadImage(file);
 
-            // 3. Đổi tên file để không bị trùng (Thêm timestamp vào trước tên gốc)
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            java.nio.file.Path filePath = path.resolve(fileName);
-
-            // 4. Copy file từ request vào thư mục vừa tạo
-            java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-            // 5. Cập nhật đường dẫn URL vào Database
-            // URL này sẽ khớp với WebConfig ta vừa cấu hình ở Bước 1
-            String avatarUrl = "http://localhost:8080/uploads/avatars/" + fileName;
+            // 🔥 3. Cập nhật đường dẫn URL mới (HTTPS) vào Database
             user.setAnhDaiDien(avatarUrl);
             nguoiDungRepository.save(user);
 
+            // 4. Trả về kết quả cho Vue (Giữ nguyên format cũ để Frontend không bị lỗi)
             return ResponseEntity.ok(java.util.Map.of(
                     "message", "Cập nhật ảnh đại diện thành công!",
                     "anhDaiDien", avatarUrl

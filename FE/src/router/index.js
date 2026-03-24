@@ -124,4 +124,32 @@ const router = createRouter({
   ]
 })
 
+// Thêm "Bảo vệ cổng" (Navigation Guard) cho Router
+router.beforeEach((to, from, next) => {
+  // Lấy thông tin user từ LocalStorage
+  const storedUser = localStorage.getItem('user');
+  let userRole = null;
+
+  if (storedUser) {
+    const user = JSON.parse(storedUser);
+    // Lưu ý: Tên biến 'vaiTro' hoặc 'role' phụ thuộc vào cách bạn lưu lúc Login
+    userRole = user.vaiTro || user.role || user.quyen; 
+  }
+
+  // Nếu người dùng cố tình truy cập vào đường dẫn bắt đầu bằng "/admin"
+  if (to.path.startsWith('/admin')) {
+    
+    // Nếu chưa đăng nhập, hoặc đăng nhập rồi mà vai trò là USER
+    if (!storedUser || userRole !== 'ADMIN') {
+      alert("⛔ CẢNH BÁO: Bạn không có quyền truy cập khu vực Quản trị!");
+      next('/'); // Đá thẳng về trang chủ
+    } else {
+      next(); // Là ADMIN thì mở cửa cho vào
+    }
+    
+  } else {
+    next(); // Với các trang khác (Trang chủ, Giỏ hàng, Hồ sơ) thì cho đi bình thường
+  }
+});
+
 export default router

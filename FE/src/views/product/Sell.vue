@@ -182,7 +182,9 @@
         <div class="mt-5 pt-4 border-top d-flex justify-content-center gap-3">
           <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white"><router-link to="/">Trở lại</router-link></button>
           <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white">Lưu nháp</button>
-          <button type="submit" class="btn btn-dark fw-medium px-5">Đăng</button>
+          <button type="submit" class="btn btn-dark fw-medium px-5" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Đang xử lý...' : 'Đăng' }}
+          </button>
         </div>
       </form>
     </main>
@@ -213,7 +215,9 @@
           </div>
           <div class="modal-footer border-top bg-light justify-content-end gap-2 p-3">
             <button type="button" @click="showOtpModal = false" class="btn btn-outline-secondary bg-white px-4">Hủy</button>
-            <button type="button" @click="confirmAndSubmit" class="btn btn-dark px-4">Xác nhận & Đăng</button>
+            <button type="button" @click="confirmAndSubmit" class="btn btn-dark px-4" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận & Đăng' }}
+            </button>
           </div>
         </div>
       </div>
@@ -223,17 +227,18 @@
 </template>
 
 <script setup>
-
 import { reactive, ref, nextTick, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import AppHeader from '@/layouts/Header.vue';
 
+// 🔥 Ổ KHÓA CHỐNG DOUBLE-CLICK (CHỐNG ĐẺ SINH ĐÔI)
+const isSubmitting = ref(false);
+
 const router = useRouter();
 let currentUserId = null;
 
-// 🔥 THÊM BIẾN NÀY ĐỂ CHỨA THÔNG BÁO LỖI (Fix lỗi errors is not defined)
 const errors = reactive({
   category: '', name: '', price: '', images: '',
   shippingAddress: '', length: '', width: '', height: '', weight: ''
@@ -241,7 +246,6 @@ const errors = reactive({
 
 const categories = ref([]);
 
-//  THÊM ĐOẠN NÀY ĐỂ TẠO DANH SÁCH THỤT LỀ CHO ĐẸP
 const flattenedCategories = computed(() => {
   const result = [];
   const flatten = (cats, prefix = '') => {
@@ -251,7 +255,6 @@ const flattenedCategories = computed(() => {
         id: cat.danhMucId || cat.id,
         name: prefix + (cat.tenDanhMuc || cat.name)
       });
-      // Nếu có danh mục con, gọi lại hàm và cộng thêm dấu "--- "
       if (cat.children && cat.children.length > 0) {
         flatten(cat.children, prefix + '- '); 
       }
@@ -260,7 +263,6 @@ const flattenedCategories = computed(() => {
   flatten(categories.value);
   return result;
 });
-
 
 const fetchCategories = async () => {
   try {
@@ -292,7 +294,6 @@ onMounted(async () => {
     
     if (response.ok) {
       const dbUser = await response.json();
-      // 🔥 CHỈ CẬP NHẬT NHỮNG THỨ CẦN THIẾT, KHÔNG RESET TOÀN BỘ CỤC USER
       storedUser.soDienThoai = dbUser.soDienThoai;
       localStorage.setItem('user', JSON.stringify(storedUser));
     }
@@ -358,7 +359,6 @@ const conditions = [
   { value: 5, title: 'Kém', desc: 'Đã qua sử dụng. Nhiều sai sót. Có thể bị hư hỏng.' }
 ];
 
-// 🔥 BỔ SUNG HÀM NÀY (Fix lỗi validateForm is not defined)
 const validateForm = () => {
   let isValid = true;
   Object.keys(errors).forEach(key => errors[key] = '');
@@ -372,27 +372,34 @@ const validateForm = () => {
   return isValid;
 };
 
+// ==========================================
+// 🔥 LUỒNG GỌI API ĐĂNG BÁN ĐÃ ĐƯỢC BỌC Ổ KHÓA
+// ==========================================
+
 const submitForm = async () => {
   if (!validateForm()) return;
 
-  // 🔍 KIỂM TRA CỰC KỲ CHI TIẾT
-  const isVerified = localStorage.getItem('isPhoneVerified') === 'true'; // Đọc từ Profile
+  // 🔒 Kiểm tra xem ổ khóa có đang đóng không. Nếu đang đóng (đang xử lý) thì chặn click tiếp
+  if (isSubmitting.value) return; 
+
+  const isVerified = localStorage.getItem('isPhoneVerified') === 'true'; 
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const hasPhone = !!(storedUser.soDienThoai || localStorage.getItem('verifiedPhone'));
 
-  console.log("🔍 Kiểm tra trạng thái - Đã xác minh:", isVerified, "| Có SĐT:", hasPhone);
-
   if (isVerified || hasPhone) {
-    // ✅ ĐÃ XÁC MINH: Đăng thẳng cánh!
+    // ✅ TH 1: Đã xác minh -> Đóng khóa và gọi hàm đăng
+    isSubmitting.value = true;
     await confirmAndSubmitNoOtp(); 
+    // Mở khóa được xử lý bên trong hàm confirmAndSubmitNoOtp
   } else {
-    // ❌ CHƯA XÁC MINH: Hiện Modal OTP
+    // ❌ TH 2: Chưa xác minh -> Mở Modal OTP
     showOtpModal.value = true;
     await nextTick();
     setupRecaptcha();
   }
 };
 
+// Hàm đăng bán TRỰC TIẾP (Không cần OTP)
 const confirmAndSubmitNoOtp = async () => {
   try {
     const storedUser = localStorage.getItem('user');
@@ -419,7 +426,7 @@ const confirmAndSubmitNoOtp = async () => {
       body: JSON.stringify(payload)
     });
 
-if (response.ok) {
+    if (response.ok) {
       const data = await response.json();
       const newId = data.sanPhamId || data.id;
       if (selectedFiles.value.length > 0) {
@@ -432,13 +439,15 @@ if (response.ok) {
         });
       }
       
-      //  SỬA TẠI ĐÂY: Đổi câu thông báo và đường dẫn chuyển trang
-      alert("🎉 Đăng tin thành công!\nSản phẩm của bạn đang chờ Admin kiểm duyệt. Chúng tôi sẽ thông báo khi sản phẩm được lên trang chủ.");
-      router.push('/'); // Chuyển về trang Quản lý tin đăng (nếu chưa có trang này, bạn có thể để tạm '/')
+      alert("🎉 Đăng tin thành công!\nSản phẩm của bạn đang chờ Admin kiểm duyệt.");
+      router.push('/'); 
     }
   } catch (error) {
     console.error("Lỗi:", error);
     alert("Có lỗi xảy ra khi đăng bài!");
+  } finally {
+    // 🔓 Dù lỗi hay thành công cũng phải mở khóa nút bấm
+    isSubmitting.value = false;
   }
 };
 
@@ -471,9 +480,15 @@ const requestOtp = async () => {
   }
 };
 
+// Hàm đăng bán SAU KHI XÁC NHẬN OTP
 const confirmAndSubmit = async () => {
   if (!form.otpCode || !confirmationResult.value) return alert("Vui lòng nhập mã OTP để xác nhận!");
+  
+  // 🔒 Kiểm tra ổ khóa
+  if (isSubmitting.value) return;
 
+  isSubmitting.value = true; // Đóng khóa nút bấm
+  
   try {
     const result = await confirmationResult.value.confirm(form.otpCode);
     const firebaseToken = await result.user.getIdToken();
@@ -502,7 +517,7 @@ const confirmAndSubmit = async () => {
       body: JSON.stringify(payload)
     });
 
-      if (response.ok) {
+    if (response.ok) {
       const data = await response.json();
       const newId = data.sanPhamId || data.id;
       if (selectedFiles.value.length > 0) {
@@ -515,10 +530,9 @@ const confirmAndSubmit = async () => {
         });
       }
       
-      // 🔥 SỬA TẠI ĐÂY: Đổi câu thông báo và đường dẫn chuyển trang
-      alert("🎉 Đăng tin thành công!\nSản phẩm của bạn đang chờ Admin kiểm duyệt. Chúng tôi sẽ thông báo khi sản phẩm được lên trang chủ.");
+      alert("🎉 Đăng tin thành công!\nSản phẩm của bạn đang chờ Admin kiểm duyệt.");
       showOtpModal.value = false;
-      router.push('/'); // Chuyển về trang Quản lý tin đăng
+      router.push('/'); 
     } else {
       const errorText = await response.text();
       alert("❌ Lỗi đăng bán: " + errorText);
@@ -526,8 +540,9 @@ const confirmAndSubmit = async () => {
   } catch (error) {
     console.error(error);
     alert("Mã OTP bạn nhập không đúng hoặc đã hết hạn!");
+  } finally {
+    // 🔓 Dù lỗi hay thành công cũng phải mở khóa nút bấm
+    isSubmitting.value = false;
   }
 };
-
-
 </script>

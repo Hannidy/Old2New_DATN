@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import poly.edu.o2n.media.CloudinaryService;
 import poly.edu.o2n.shop.dto.request.SanPhamRequestDto;
 import poly.edu.o2n.shop.dto.response.ProductDetailResponseDto;
 import poly.edu.o2n.shop.dto.response.ProductResponseDto;
@@ -45,6 +46,9 @@ public class SanPhamServiceImpl implements SanPhamService {
 
     @Autowired
     private NguoiDungRepository nguoiDungRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Override
     @Transactional(readOnly = true)
@@ -128,33 +132,22 @@ public class SanPhamServiceImpl implements SanPhamService {
         SanPham sanPham = sanPhamRepository.findById(sanPhamId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
-        // Tạo thư mục "uploads" ở thư mục gốc của dự án nếu chưa có
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
-        File dir = new File(uploadDir);
-        if (!dir.exists()) dir.mkdirs();
-
         for (MultipartFile file : files) {
             try {
-                // Đổi tên file để không bị trùng (dùng UUID)
-                String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-                Path filePath = Paths.get(uploadDir + fileName);
+                // 🔥 1. Đẩy thẳng ảnh lên Mây và lấy về link an toàn (HTTPS)
+                String imageUrl = cloudinaryService.uploadImage(file);
 
-                // Lưu file vật lý vào ổ cứng
-                Files.write(filePath, file.getBytes());
-
-                // Lưu đường dẫn vào Database
+                // 🔥 2. Lưu đường dẫn Cloudinary vào Database
                 HinhAnhSanPham hinhAnh = new HinhAnhSanPham();
                 hinhAnh.setSanPham(sanPham);
-                // Đường dẫn này lát nữa ta sẽ cấu hình Spring Boot để Vue đọc được
-                hinhAnh.setDuongDanAnh("http://localhost:8080/uploads/" + fileName);
+                hinhAnh.setDuongDanAnh(imageUrl); // Dùng đúng hàm setter của bạn
                 hinhAnhSanPhamRepository.save(hinhAnh);
 
             } catch (IOException e) {
-                throw new RuntimeException("Lỗi khi lưu file: " + e.getMessage());
+                throw new RuntimeException("Lỗi upload ảnh lên Cloudinary: " + e.getMessage());
             }
         }
     }
-
 
     @Override
     @Transactional(readOnly = true)

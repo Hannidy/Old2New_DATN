@@ -27,24 +27,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. Mở cửa cho toàn bộ API và ÁP DỤNG LUẬT CORS
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                // Bật tính năng CORS và áp dụng cái "Danh sách khách VIP" ở bên dưới
-//                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//
-//                // Tắt CSRF để Vue gọi API không bị lỗi
-//                .csrf(csrf -> csrf.disable())
-//
-//                // Tạm thời cho phép tất cả các đường dẫn đi qua
-//                .authorizeHttpRequests(auth -> auth
-//                        .anyRequest().permitAll()
-//                );
-//
-//        return http.build();
-//    }
-
 
     // 2. Mở cửa cho toàn bộ API và ÁP DỤNG LUẬT CORS
     @Bean
@@ -67,9 +49,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/products/**").permitAll() // Xem sản phẩm (home, chi tiết)
                         .requestMatchers("/api/don-hang/vnpay-return").permitAll() // Nhận kết quả từ VNPay
                         .requestMatchers("/uploads/**").permitAll() // Xem ảnh đại diện, ảnh sản phẩm
+                        .requestMatchers("/api/public/**").permitAll()
 
                         // 2. NHÓM ADMIN
                         .requestMatchers("/api/admin/**").authenticated() // Quản lý user
+                        // Chỉ những ai mang thẻ ADMIN mới được gọi API này
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
                         // 3. NHÓM NGƯỜI BÁN & NGƯỜI MUA (Phải đăng nhập)
                         .requestMatchers("/api/san-pham/**").authenticated() // Đăng bán sản phẩm
