@@ -147,10 +147,20 @@ const selectedAddressId = ref("null");
 const shippingFee = ref(0);
 const isCalculatingFee = ref(false);
 
-const loadCart = () => {
-  const savedCart = localStorage.getItem('cart');
-  if (savedCart) {
-    cartItems.value = JSON.parse(savedCart);
+const loadCart = async () => {
+  const storedUser = JSON.parse(localStorage.getItem('user'));
+  if (!storedUser) return;
+  
+  const userId = storedUser.id || storedUser.nguoiDungId;
+  const token = storedUser.token || storedUser.accessToken;
+
+  try {
+    const response = await axios.get(`http://localhost:8080/api/cart/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    cartItems.value = response.data || [];
+  } catch (error) {
+    console.error("Lỗi tải giỏ hàng từ Redis:", error);
   }
 };
 
@@ -158,11 +168,26 @@ const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 };
 
-const removeItem = (index) => {
+const removeItem = async (index) => {
   if (confirm("Bạn muốn bỏ sản phẩm này khỏi giỏ?")) {
+    // 1. Xóa ở giao diện trước
     cartItems.value.splice(index, 1);
-    localStorage.setItem('cart', JSON.stringify(cartItems.value));
-    calculateShippingFee(); // Xóa đi thì tính lại tiền ship (vì giảm cân nặng)
+    
+    // 2. Lấy thông tin User
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const userId = storedUser.id || storedUser.nguoiDungId;
+    const token = storedUser.token || storedUser.accessToken;
+    
+    // 3. Cập nhật lại mảng mới lên Redis
+    try {
+      await axios.post(`http://localhost:8080/api/cart/${userId}`, cartItems.value, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      calculateShippingFee(); 
+    } catch (error) {
+      console.error("Lỗi cập nhật Redis khi xóa:", error);
+      alert("Có lỗi khi xóa sản phẩm!");
+    }
   }
 };
 
@@ -278,15 +303,20 @@ const checkout = async () => {
     if (response.status === 201 || response.status === 200) { 
       
       if (response.data.paymentUrl) {
-         //  CHỈ CHUYỂN HƯỚNG SANG VNPAY - KHOAN XÓA GIỎ HÀNG!
-         window.location.href = response.data.paymentUrl; 
-      } else {
-         //  NẾU LÀ COD THÌ XÓA GIỎ HÀNG VÀ BÁO THÀNH CÔNG
-         cartItems.value = [];
-         localStorage.removeItem('cart');
-         alert("🎉 Đặt hàng COD thành công! Mã đơn: " + response.data.donHangId);
-         router.push('/');
-      }
+           window.location.href = response.data.paymentUrl; 
+         } else {
+           // NẾU LÀ COD THÌ XÓA GIỎ HÀNG TRÊN REDIS VÀ BÁO THÀNH CÔNG
+           cartItems.value = [];
+           const token = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
+           
+           // 🔥 Gọi API dọn dẹp Redis
+           await axios.delete(`http://localhost:8080/api/cart/${currentUserId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+           });
+           
+           alert("🎉 Đặt hàng COD thành công! Mã đơn: " + response.data.donHangId);
+           router.push('/');
+         }
     } 
   } catch (error) {
     alert("❌ Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!");
@@ -308,7 +338,17 @@ onMounted(async () => {
       if (response.data.status === 'success') {
         alert('🎉 CHÚC MỪNG! Thanh toán VNPAY thành công!');
         cartItems.value = [];
-        localStorage.removeItem('cart');
+        
+        // 🔥 Gọi API dọn dẹp Redis
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        const userId = storedUser ? (storedUser.id || storedUser.nguoiDungId) : null;
+        const token = storedUser ? (storedUser.token || storedUser.accessToken) : null;
+        
+        if(userId && token) {
+           await axios.delete(`http://localhost:8080/api/cart/${userId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+           });
+        }
       }
     } catch (error) {
       alert('❌ Giao dịch bị hủy hoặc thanh toán thất bại!');

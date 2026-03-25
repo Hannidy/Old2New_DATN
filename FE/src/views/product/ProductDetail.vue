@@ -181,28 +181,49 @@ const fetchProductDetail = async () => {
   }
 };
 
-const addToCart = (product) => {
-  // Kiểm tra đăng nhập (tùy chọn nhưng khuyến khích)
+const addToCart = async (product) => {
   if (!currentUserId.value) {
     alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
     router.push('/login');
     return;
   }
 
-  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const existingItem = cart.find(item => item.id === product.id || item.id === product.sanPhamId);
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    const token = storedUser.token || storedUser.accessToken;
+    const userId = currentUserId.value;
 
-  if (existingItem) {
-    alert(`Sản phẩm "${product.tenSanPham}" là hàng độc bản và đã nằm trong giỏ hàng của bạn rồi!`);
-  } else {
+    // 1. Lấy giỏ hàng hiện tại từ Redis về
+    const getRes = await axios.get(`http://localhost:8080/api/cart/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    let cart = getRes.data || [];
+
+    // 2. Kiểm tra trùng lặp
+    const existingItem = cart.find(item => item.id === product.id || item.id === product.sanPhamId);
+    if (existingItem) {
+      alert(`Sản phẩm "${product.tenSanPham}" là hàng độc bản và đã nằm trong giỏ hàng của bạn rồi!`);
+      return;
+    }
+
+    // 3. Thêm sản phẩm mới vào mảng
     cart.push({
-      id: product.sanPhamId || product.id, // Linh hoạt lấy đúng ID
+      id: product.sanPhamId || product.id,
       tenSanPham: product.tenSanPham,
       gia: product.gia,
       hinhAnh: product.hinhAnh
     });
-    localStorage.setItem('cart', JSON.stringify(cart));
+
+    // 4. Đồng bộ ngược mảng mới lên Redis
+    await axios.post(`http://localhost:8080/api/cart/${userId}`, cart, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
     alert(`Đã thêm "${product.tenSanPham}" vào giỏ hàng!`);
+    
+  } catch (error) {
+    console.error("Lỗi thêm giỏ hàng:", error);
+    alert("Không thể thêm vào giỏ hàng lúc này. Vui lòng thử lại!");
   }
 };
 

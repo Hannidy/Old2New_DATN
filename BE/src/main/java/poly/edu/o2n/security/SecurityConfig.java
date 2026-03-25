@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/san-pham/**").authenticated() // Đăng bán sản phẩm
                         .requestMatchers("/api/nguoi-dung/**").authenticated() // Sửa hồ sơ, đổi avatar
                         .requestMatchers("/api/dia-chi/**").authenticated() // Quản lý sổ địa chỉ
+                        .requestMatchers("/api/cart/**").authenticated() // Quản lý giỏ hàng trên Redis
 
                         // Cấu hình riêng cho Đơn hàng (Khóa toàn bộ ngoại trừ VNPay return ở trên)
                         .requestMatchers("/api/don-hang/**").authenticated()
