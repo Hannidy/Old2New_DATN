@@ -96,15 +96,44 @@ const chartOptions = { responsive: true, maintainAspectRatio: false };
 
 const fetchStats = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/admin/stats');
-    stats.value = response.data;
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+    const token = JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // 1. Gọi API lấy 4 con số tổng quan
+    const responseSummary = await axios.get('http://localhost:8080/api/admin/dashboard/summary', { headers });
+    stats.value = {
+      totalUsers: responseSummary.data.totalUsers,
+      totalProducts: responseSummary.data.totalProducts,
+      totalOrders: responseSummary.data.totalOrders,
+      totalRevenue: responseSummary.data.totalRevenue
+    };
+
+    // 2. Gọi API lấy mảng dữ liệu 7 ngày cho Biểu đồ
+    const responseChart = await axios.get('http://localhost:8080/api/admin/dashboard/chart', { headers });
+    
+    // 3. Cập nhật lại biểu đồ với dữ liệu THẬT (responseChart.data sẽ là 1 mảng [x, y, z...])
+    chartData.value = {
+      labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'],
+      datasets: [{
+        label: 'Số đơn hàng',
+        backgroundColor: '#dc3545',
+        borderRadius: 6,
+        data: responseChart.data // 🔥 Dữ liệu thật từ Database được nhét vào đây!
+      }]
+    };
+
     loaded.value = true;
+
   } catch (error) {
-    console.error("Lỗi:", error);
+    console.error("Lỗi khi lấy dữ liệu Thống kê:", error);
   }
 };
 
-// 🔥 SỬA CHỖ NÀY: Phải gọi fetchStats, không gọi hàm của trang khác!
+
+// SỬA CHỖ NÀY: Phải gọi fetchStats, không gọi hàm của trang khác!
 onMounted(() => {
   fetchStats(); 
 });

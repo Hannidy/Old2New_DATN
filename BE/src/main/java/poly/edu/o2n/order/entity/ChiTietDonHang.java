@@ -2,7 +2,7 @@ package poly.edu.o2n.order.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import poly.edu.o2n.shop.entity.SanPham;
+import poly.edu.o2n.product.entity.SanPham;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

@@ -32,7 +32,16 @@
               <span class="badge info">{{ order.trangThaiDonHang || 'Chờ xác nhận' }}</span>
             </td>
             <td>
-              <button class="btn-view" @click="viewDetails(order.donHangId)">👁️ Xem Chi Tiết</button>
+              <div class="action-buttons">
+                <button class="btn-view" @click="viewDetails(order.donHangId)">👁️ Xem Chi Tiết</button>
+                
+                <button 
+                  v-if="order.trangThaiDonHang === 'DA_GIAO'" 
+                  class="btn-return" 
+                  @click="openReturnModal(order)">
+                  🔄 Trả Hàng
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -52,7 +61,6 @@
         </div>
         
         <div class="modal-body" v-if="selectedOrder">
-          
           <div class="stepper-wrapper">
             <div class="stepper-item completed">
               <div class="step-counter">📝</div>
@@ -116,47 +124,156 @@
               <span class="payment-method-text">Phương thức Thanh toán: <strong>{{ selectedOrder.phuongThucThanhToan }}</strong></span>
             </div>
           </div>
-
         </div>
       </div>
     </div>
+
+    <div v-if="isReturnModalOpen" class="modal-overlay" @click.self="closeReturnModal">
+      <div class="modal-content return-modal">
+        <h3 class="return-title">Yêu Cầu Trả Hàng / Hoàn Tiền</h3>
+        <p class="return-subtitle">Mã đơn: <strong>#{{ orderToReturn?.donHangId }}</strong></p>
+
+        <form @submit.prevent="submitReturnRequest" class="return-form">
+          <div class="form-group">
+            <label>Lý do trả hàng <span class="text-danger">*</span></label>
+            <select v-model="returnForm.lyDo" required class="form-control">
+              <option value="" disabled>-- Chọn lý do --</option>
+              <option value="Hàng bị lỗi / Không hoạt động">Hàng bị lỗi / Không hoạt động</option>
+              <option value="Giao sai sản phẩm / Phân loại">Giao sai sản phẩm / Phân loại</option>
+              <option value="Hàng bị bể vỡ do vận chuyển">Hàng bị bể vỡ do vận chuyển</option>
+              <option value="Hàng khác với mô tả">Hàng khác với mô tả</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Mô tả chi tiết tình trạng</label>
+            <textarea v-model="returnForm.moTaChiTiet" rows="3" placeholder="Ví dụ: Áo bị rách ở phần tay, màn hình bật không lên..." class="form-control"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Hình ảnh chứng cứ <span class="text-danger">*</span></label>
+            <input 
+              type="file" 
+              @change="handleFileUpload($event, 'image')" 
+              accept="image/*" 
+              class="form-control" 
+              :disabled="isUploadingImage" 
+              required
+            />
+            <div v-if="isUploadingImage" class="upload-status">⏳ Đang tải ảnh lên mây...</div>
+            <img v-if="returnForm.hinhAnhBangChung" :src="returnForm.hinhAnhBangChung" class="preview-img" alt="Bằng chứng" />
+          </div>
+
+          <div class="form-group">
+            <label>Video chứng cứ (Tùy chọn)</label>
+            <input 
+              type="file" 
+              @change="handleFileUpload($event, 'video')" 
+              accept="video/*" 
+              class="form-control" 
+              :disabled="isUploadingVideo" 
+            />
+            <div v-if="isUploadingVideo" class="upload-status">⏳ Đang tải video lên mây...</div>
+            <video v-if="returnForm.videoBangChung" :src="returnForm.videoBangChung" controls class="preview-video"></video>
+          </div>
+
+          <div class="return-actions">
+            <button type="button" class="btn-cancel" @click="closeReturnModal">Hủy</button>
+            <button type="submit" class="btn-submit" :disabled="isUploadingImage || isUploadingVideo">Gửi Yêu Cầu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; // Import thêm router để đá về trang đăng nhập nếu chưa login
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 const router = useRouter();
-
-// Các biến lưu trữ dữ liệu
 const orders = ref([]);
 const selectedOrder = ref(null);
 const isModalOpen = ref(false);
 
-// ==========================================
-// BƯỚC 1: LẤY ID NGƯỜI DÙNG TỪ LOCAL STORAGE
-// ==========================================
+// 🔥 CÁC BIẾN CHO TÍNH NĂNG TRẢ HÀNG
+const isReturnModalOpen = ref(false);
+const orderToReturn = ref(null);
+const returnForm = ref({
+  lyDo: '',
+  moTaChiTiet: '',
+  hinhAnhBangChung: '',
+  videoBangChung: ''
+});
+
+// Biến trạng thái để khóa nút khi đang tải file
+const isUploadingImage = ref(false);
+const isUploadingVideo = ref(false);
+
+// Hàm xử lý khi người dùng chọn file
+const handleFileUpload = async (event, type) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Đóng gói file thành form data để gửi lên Backend
+  const formData = new FormData();
+  formData.append('file', file); // Đảm bảo backend của bạn nhận tham số tên là 'file'
+
+  try {
+    if (type === 'image') isUploadingImage.value = true;
+    if (type === 'video') isUploadingVideo.value = true;
+
+    const storedUserData = JSON.parse(localStorage.getItem('user'));
+    const token = storedUserData.token || storedUserData.accessToken;
+
+    // 🔥 SỬA CHỖ NÀY: Dùng câu lệnh IF để gọi ĐÚNG đường dẫn API
+    const apiUrl = type === 'image' 
+          ? 'http://localhost:8080/api/media/upload-image' 
+          : 'http://localhost:8080/api/media/upload-video';
+
+    // Đổi chữ /upload cũ thành apiUrl động vừa tạo
+    const response = await axios.post(apiUrl, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const fileUrl = response.data.url; 
+
+    // Gán URL vào form
+    if (type === 'image') {
+      returnForm.value.hinhAnhBangChung = fileUrl;
+    } else {
+      returnForm.value.videoBangChung = fileUrl;
+    }
+
+  } catch (error) {
+    console.error("Lỗi upload file:", error);
+    alert("Upload thất bại! Vui lòng kiểm tra lại mạng hoặc dung lượng file.");
+  } finally {
+    if (type === 'image') isUploadingImage.value = false;
+    if (type === 'video') isUploadingVideo.value = false;
+  }
+};
+
 let userId = null;
-const storedUser = localStorage.getItem('user'); // Chữ 'user' này phụ thuộc vào lúc bạn setItem ở trang Login nhé
+const storedUser = localStorage.getItem('user');
 
 if (storedUser) {
   const userData = JSON.parse(storedUser);
-  // Lấy ID (Tùy vào API Login của bạn trả về tên biến là id hay nguoiDungId)
   userId = userData.nguoiDungId || userData.id; 
 }
 
-// Hàm gọi API lấy danh sách đơn hàng
 const fetchOrders = async () => {
   if (!userId) {
     alert("Vui lòng đăng nhập để xem đơn hàng của bạn!");
-    router.push('/login'); // Chưa đăng nhập thì đá văng ra trang Login
+    router.push('/login');
     return;
   }
-
   try {
-    // Lúc này userId đã là số động (của bạn là 18, 19...) chứ không còn là 1 nữa
     const response = await axios.get(`http://localhost:8080/api/don-hang/danh-sach/${userId}`);
     orders.value = response.data;
   } catch (error) {
@@ -164,45 +281,87 @@ const fetchOrders = async () => {
   }
 };
 
-// Hàm gọi API xem chi tiết 1 đơn hàng
 const viewDetails = async (donHangId) => {
   try {
     const response = await axios.get(`http://localhost:8080/api/don-hang/chi-tiet/${donHangId}`);
     selectedOrder.value = response.data;
-    isModalOpen.value = true; // Mở cửa sổ Modal
+    isModalOpen.value = true;
   } catch (error) {
     console.error("Lỗi khi tải chi tiết đơn hàng:", error);
-    alert("Không thể tải chi tiết đơn hàng lúc này!");
   }
 };
 
-// Đóng Modal
 const closeModal = () => {
   isModalOpen.value = false;
   selectedOrder.value = null;
 };
 
-// Tiện ích format Tiền tệ (VNĐ)
+// ==========================================
+// 🔥 CÁC HÀM XỬ LÝ YÊU CẦU TRẢ HÀNG
+// ==========================================
+const openReturnModal = (order) => {
+  orderToReturn.value = order;
+  // Reset lại form cho sạch sẽ
+  returnForm.value = { lyDo: '', moTaChiTiet: '', hinhAnhBangChung: '', videoBangChung: '' };
+  isReturnModalOpen.value = true;
+};
+
+const closeReturnModal = () => {
+  isReturnModalOpen.value = false;
+  orderToReturn.value = null;
+};
+
+const submitReturnRequest = async () => {
+  if (!returnForm.value.lyDo) {
+    alert("Vui lòng chọn lý do trả hàng!");
+    return;
+  }
+
+  // Đóng gói dữ liệu gửi xuống Backend
+  const requestData = {
+    donHangId: orderToReturn.value.donHangId,
+    lyDo: returnForm.value.lyDo,
+    moTaChiTiet: returnForm.value.moTaChiTiet,
+    hinhAnhBangChung: returnForm.value.hinhAnhBangChung,
+    videoBangChung: returnForm.value.videoBangChung
+  };
+
+  try {
+    // Lấy Token bảo vệ giống y hệt phần Người Bán hôm nọ anh em mình fix
+    const storedUserData = JSON.parse(localStorage.getItem('user'));
+    const token = storedUserData.token || storedUserData.accessToken;
+
+    const response = await axios.post('http://localhost:8080/api/don-hang/yeu-cau-tra-hang', requestData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    alert(response.data.message || "Đã gửi yêu cầu trả hàng thành công!");
+    closeReturnModal();
+    fetchOrders(); // Tải lại danh sách đơn hàng (lúc này đơn sẽ đổi trạng thái sang YEU_CAU_TRA_HANG)
+  } catch (error) {
+    console.error("Lỗi gửi yêu cầu trả hàng:", error);
+    alert("Có lỗi xảy ra: " + (error.response?.data?.error || "Vui lòng thử lại sau!"));
+  }
+};
+
 const formatCurrency = (value) => {
   if (!value) return '0 ₫';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
-// Tiện ích format Ngày tháng
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleString('vi-VN');
 };
 
-// Tự động chạy khi mở trang
 onMounted(() => {
   fetchOrders();
 });
 </script>
 
 <style scoped>
-/* ================= CSS CHUNG CHO TRANG ================= */
+/* ================= CSS CŨ (GIỮ NGUYÊN) ================= */
 .order-container { max-width: 1100px; margin: 0 auto; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
 .title { border-bottom: 2px solid #ee4d2d; padding-bottom: 10px; color: #333; text-transform: uppercase; font-size: 20px;}
 .table-wrapper { overflow-x: auto; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 8px; background: white;}
@@ -214,23 +373,22 @@ onMounted(() => {
 .badge.success { background-color: #28a745; }
 .badge.warning { background-color: #ffc107; color: #333; }
 .badge.info { background-color: #17a2b8; }
-.btn-view { background-color: #ee4d2d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: bold;}
+.action-buttons { display: flex; gap: 8px; align-items: center;}
+.btn-view { background-color: #ee4d2d; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: bold;}
 .btn-view:hover { background-color: #d73a27; transform: translateY(-1px); }
 .empty-message { text-align: center; color: #888; padding: 30px; }
 
-/* ================= LỚP PHỦ TỐI & MODAL BẬT LÊN ================= */
+/* Modal chung */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(2px); }
 .modal-content { max-height: 90vh; overflow-y: auto; }
 
-/* ================= CSS MODAL SHOPEE STYLE ================= */
+/* CSS Modal Shopee */
 .shopee-modal { width: 95%; max-width: 850px; padding: 0; background: #f5f5f5; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 5px 20px rgba(0,0,0,0.2);}
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 25px; background: white; border-bottom: 1px solid #eaeaea; position: sticky; top: 0; z-index: 10;}
 .back-btn { background: none; border: none; font-weight: bold; color: #ee4d2d; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;}
 .back-btn:hover { opacity: 0.8; }
 .status-text { color: #ee4d2d; font-weight: bold; text-transform: uppercase; font-size: 15px;}
 .modal-body { padding: 25px; overflow-y: auto; }
-
-/* Stepper Tracker (Thanh Tiến Trình) */
 .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 25px; background: white; padding: 35px 20px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.05); position: relative;}
 .stepper-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; z-index: 1;}
 .stepper-item::before { position: absolute; content: ""; border-bottom: 4px solid #e0e0e0; width: 100%; top: 20px; left: -50%; z-index: -1; }
@@ -240,15 +398,11 @@ onMounted(() => {
 .stepper-item.completed::before { border-color: #26aa99; }
 .step-name { font-size: 13px; color: #888; text-align: center; font-weight: 500;}
 .stepper-item.completed .step-name { color: #26aa99; font-weight: bold;}
-
-/* Address Section (Địa chỉ) */
 .address-section { background: white; padding: 25px; border-radius: 4px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.05);}
 .section-title { margin-top: 0; font-size: 18px; color: #333; border-bottom: 1px solid #eaeaea; padding-bottom: 12px; margin-bottom: 15px; font-weight: 500;}
 .user-info strong { font-size: 18px; color: #333; margin-bottom: 8px; display: inline-block;}
 .phone-text { color: #888; font-size: 14px; margin-bottom: 8px; display: inline-block;}
 .address-text { color: #555; font-size: 15px; line-height: 1.6; display: block; margin-top: 5px;}
-
-/* Product Section (Sản phẩm) */
 .product-section { background: white; padding: 25px; border-radius: 4px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.05);}
 .product-table { width: 100%; border-collapse: collapse; }
 .product-info { padding: 20px 0; border-bottom: 1px dashed #eaeaea; text-align: left; }
@@ -256,8 +410,6 @@ onMounted(() => {
 .product-qty { font-size: 14px; color: #888; }
 .product-price { text-align: right; vertical-align: middle; border-bottom: 1px dashed #eaeaea; padding: 20px 0;}
 .sale-price { color: #ee4d2d; font-weight: bold; font-size: 16px;}
-
-/* Summary Section (Tổng kết tiền) */
 .summary-section { background: #fffcf5; padding: 25px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.05); border: 1px solid #faebd7;}
 .summary-row { display: flex; justify-content: flex-end; padding: 10px 0; font-size: 15px; color: #555;}
 .summary-row span:last-child { width: 200px; text-align: right; }
@@ -265,4 +417,24 @@ onMounted(() => {
 .final-price { color: #ee4d2d; font-size: 28px; font-weight: bold; }
 .payment-method-row { border-top: 1px solid #eaeaea; margin-top: 20px; padding-top: 20px; text-align: right; font-size: 14px; color: #555;}
 .payment-method-row strong { color: #333; font-size: 15px; margin-left: 5px;}
+
+/* ================= 🔥 CSS CHO NÚT & FORM TRẢ HÀNG MỚI ================= */
+.btn-return { background-color: #26aa99; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: bold;}
+.btn-return:hover { background-color: #208d7f; transform: translateY(-1px); }
+
+.return-modal { width: 95%; max-width: 500px; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);}
+.return-title { margin-top: 0; color: #ee4d2d; font-size: 20px; border-bottom: 1px solid #eaeaea; padding-bottom: 10px;}
+.return-subtitle { font-size: 14px; color: #555; margin-bottom: 20px;}
+.form-group { margin-bottom: 15px; text-align: left; }
+.form-group label { display: block; font-weight: 500; margin-bottom: 8px; color: #333; font-size: 14px;}
+.text-danger { color: red; }
+.form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; font-family: inherit; box-sizing: border-box;}
+.form-control:focus { border-color: #ee4d2d; outline: none; }
+.return-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;}
+.btn-cancel { padding: 10px 20px; background: #f5f5f5; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold;}
+.btn-submit { padding: 10px 20px; background: #ee4d2d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
+.btn-submit:hover { background: #d73a27; }
+.upload-status { font-size: 13px; color: #ee4d2d; margin-top: 5px; font-weight: bold; font-style: italic; }
+.preview-img { max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 4px; border: 1px solid #eaeaea; object-fit: cover; }
+.preview-video { max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 4px; border: 1px solid #eaeaea; background: #000; }
 </style>

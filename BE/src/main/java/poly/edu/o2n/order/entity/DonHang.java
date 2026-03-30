@@ -48,4 +48,11 @@ public class DonHang {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Thời điểm shipper giao hàng thành công (Bắt đầu đếm ngược 48h)
+    private LocalDateTime ngayNhanHang;
+
+    // Đánh dấu xem Admin đã kiểm tra tiền về tài khoản ngân hàng thật chưa
+    @Column(name = "da_doi_soat", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean daDoiSoat = false;
 }

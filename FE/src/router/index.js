@@ -19,6 +19,7 @@ import AdminLayout from '@/layouts/AdminLayout.vue';
 import Users from '../views/admin/Users.vue'
 import Categories from '../views/admin/Categories.vue'
 import VerifyProducts from '../views/admin/VerifyProducts.vue'
+import Payments from '@/views/admin/Payments.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,7 +61,13 @@ const router = createRouter({
           name: 'admin-verify',
           component: VerifyProducts,
           meta: { title: 'Kiểm duyệt tin đăng' }
-        }
+        },
+        {
+        path: 'payments', 
+        name: 'admin-paymants',
+        component: Payments,
+        meta: { title: 'Đối Xoát Thanh Toán' }
+       }
       ]
     },
     // ==========================================

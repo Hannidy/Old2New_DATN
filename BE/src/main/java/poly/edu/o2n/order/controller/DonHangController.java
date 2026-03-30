@@ -5,9 +5,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import poly.edu.o2n.order.dto.request.OrderRequestDto;
+import poly.edu.o2n.order.dto.request.YeuCauTraHangRequest;
 import poly.edu.o2n.order.dto.response.DonHangResponse;
 import poly.edu.o2n.order.service.DonHangService;
-import poly.edu.o2n.order.service.VNPayService; // Import Service mới
+import poly.edu.o2n.payment.service.VNPayService; // Import Service mới
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -98,19 +99,20 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
+
     // 3. API Cập nhật trạng thái đơn hàng (Dành cho Người bán xác nhận, giao hàng...)
     @PutMapping("/cap-nhat-trang-thai/{donHangId}")
     public ResponseEntity<?> capNhatTrangThaiDonHang(
             @PathVariable Integer donHangId,
             @RequestParam String trangThaiMoi) {
         try {
-            donHangService.capNhatTrangThaiThanhToan(donHangId, trangThaiMoi);
+            // ✅ SỬA LẠI: Gọi đúng hàm cập nhật ĐƠN HÀNG
+            donHangService.capNhatTrangThaiDonHang(donHangId, trangThaiMoi);
             return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi cập nhật trạng thái: " + e.getMessage());
         }
     }
-
 
     // Lấy danh sách ĐƠN BÁN (Dành cho người bán)
     @GetMapping("/danh-sach-ban/{sellerId}")
@@ -132,6 +134,51 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
             return ResponseEntity.ok(Map.of("message", "Đã xác nhận nhận hàng và giải ngân cho người bán thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi giải ngân: " + e.getMessage());
+        }
+    }
+
+
+    @PostMapping("/yeu-cau-tra-hang")
+    public ResponseEntity<?> guiYeuCauTraHang(@RequestBody YeuCauTraHangRequest request) {
+        try {
+            donHangService.taoYeuCauTraHang(request);
+            return ResponseEntity.ok(Map.of("message", "Gửi yêu cầu trả hàng thành công! Đang chờ người bán xử lý."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    // 1. API cho Người bán lấy thông tin chi tiết của yêu cầu trả hàng
+    @GetMapping("/yeu-cau-tra-hang/{donHangId}")
+    public ResponseEntity<?> layChiTietYeuCauTraHang(@PathVariable Integer donHangId) {
+        try {
+            return ResponseEntity.ok(donHangService.layChiTietYeuCauTraHang(donHangId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // 2. API cho Người bán chốt Đồng ý hay Từ chối
+    @PostMapping("/xu-ly-tra-hang")
+    public ResponseEntity<?> xuLyYeuCauTraHang(@RequestBody poly.edu.o2n.order.dto.request.XuLyYeuCauRequest request) {
+        try {
+            donHangService.xuLyYeuCauTraHang(request);
+            return ResponseEntity.ok(Map.of("message", "Xử lý yêu cầu trả hàng thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    // 3. API cho Người Bán bấm xác nhận đã nhận lại cục hàng
+    @PutMapping("/xac-nhan-hoan-hang/{donHangId}")
+    public ResponseEntity<?> xacNhanNhanLaiHangVaHoanTien(@PathVariable Integer donHangId) {
+        try {
+            donHangService.xacNhanNhanLaiHangVaHoanTien(donHangId);
+            return ResponseEntity.ok(Map.of("message", "Đã xác nhận nhận lại hàng và hoàn tiền cho người mua!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

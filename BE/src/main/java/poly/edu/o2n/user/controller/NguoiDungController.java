@@ -3,10 +3,9 @@ package poly.edu.o2n.user.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import poly.edu.o2n.media.CloudinaryService;
+import poly.edu.o2n.media.service.CloudinaryService;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
-import poly.edu.o2n.user.service.UserService;
 
 import java.util.Map;
 

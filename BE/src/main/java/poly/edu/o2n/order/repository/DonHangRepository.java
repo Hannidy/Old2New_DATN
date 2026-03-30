@@ -27,4 +27,21 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
     // Tìm các đơn hàng đã 'GIAO_THANH_CONG' hoặc 'CHO_XAC_NHAN' quá 2 ngày
     @Query("SELECT d FROM DonHang d WHERE d.trangThaiDonHang = 'DA_GIAO_HANG' AND d.ngayTao <= :haiNgayTruoc")
     List<DonHang> timDonHangCanGiaiNganTuDong(@Param("haiNgayTruoc") LocalDateTime haiNgayTruoc);
+
+    // Tìm các đơn hàng có trạng thái cụ thể và đã giao TRƯỚC một mốc thời gian
+    List<DonHang> findByTrangThaiDonHangAndNgayNhanHangBefore(String trangThai, java.time.LocalDateTime thoiGianMoc);
+
+    // Tính tổng doanh thu (GMV) của các đơn hàng đã HOAN_THANH
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(d.tongThanhTien) FROM DonHang d WHERE d.trangThaiDonHang = 'HOAN_THANH'")
+    java.math.BigDecimal calculateTotalRevenue();
+
+    // Lấy danh sách đơn hàng được tạo trong khoảng thời gian từ startDate đến endDate
+    @org.springframework.data.jpa.repository.Query("SELECT d FROM DonHang d WHERE d.ngayTao >= :startDate AND d.ngayTao <= :endDate")
+    java.util.List<DonHang> findByNgayTaoBetween(
+            @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
+            @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate
+    );
+
+    // Tìm các đơn hàng thanh toán qua VNPAY đã thành công để đối soát
+    java.util.List<DonHang> findByPhuongThucThanhToanAndTrangThaiThanhToanOrderByNgayTaoDesc(String phuongThuc, String trangThai);
 }

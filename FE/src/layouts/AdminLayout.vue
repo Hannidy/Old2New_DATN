@@ -40,10 +40,7 @@
         <h5 class="mb-0 fw-bold text-dark text-uppercase">
           {{ currentPageName }}
         </h5>
-        <div class="d-flex align-items-center gap-3">
-          <span class="text-muted small">Chào, <b>Admin</b></span>
-          <img src="https://i.pravatar.cc/150?u=admin" class="rounded-circle" width="35" alt="Avatar">
-        </div>
+
       </header>
 
       <div class="p-4">

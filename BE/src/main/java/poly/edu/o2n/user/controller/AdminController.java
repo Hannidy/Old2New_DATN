@@ -5,10 +5,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import poly.edu.o2n.shop.entity.SanPham;
+import poly.edu.o2n.product.entity.SanPham;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
-import poly.edu.o2n.shop.repository.SanPhamRepository;
+import poly.edu.o2n.product.repository.SanPhamRepository;
 import poly.edu.o2n.order.repository.DonHangRepository;
 import poly.edu.o2n.user.dto.AdminStatsDTO;
 

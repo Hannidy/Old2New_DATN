@@ -10,7 +10,10 @@
             <img class="w-100 h-100 object-fit-cover" src="https://i.pinimg.com/1200x/02/90/7a/02907ad6256dc7cf4e80e3ace6084f4b.jpg" alt="Banner 1">
           </div>
           <div class="carousel-item h-100">
-            <img class="w-100 h-100 object-fit-cover" src="https://i.pinimg.com/1200x/e2/2f/a8/e22fa8b21cfd5c6420aceaba337f9623.jpg" alt="Banner 2">
+            <img class="w-100 h-100 object-fit-cover" src="https://t4.ftcdn.net/jpg/03/39/60/67/360_F_339606710_pFQOII8MwyEVqXK5vb4XsIaJr13cipWO.jpg" alt="Banner 2">
+          </div>
+          <div class="carousel-item h-100">
+            <img class="w-100 h-100 object-fit-cover" src="https://cdn.vectorstock.com/i/500p/57/56/shopping-cart-banner-online-store-vector-42935756.jpg" alt="Banner 2">
           </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#homeBanner" data-bs-slide="prev">
@@ -138,7 +141,7 @@ const fetchProducts = async (page = 1) => {
     let url = `http://localhost:8080/api/products/home?page=${page - 1}&size=${itemsPerPage}`;
     
     if (categoryId) {
-      url = `http://localhost:8080/api/public/products/category/${categoryId}?page=${page - 1}&size=${itemsPerPage}`;
+      url = `http://localhost:8080/api/products/category/${categoryId}?page=${page - 1}&size=${itemsPerPage}`;
     }
 
     const res = await axios.get(url);

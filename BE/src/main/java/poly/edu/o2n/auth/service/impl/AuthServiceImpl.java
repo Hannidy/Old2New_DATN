@@ -10,7 +10,7 @@ import poly.edu.o2n.auth.dto.request.ResetPasswordRequestDto;
 import poly.edu.o2n.auth.dto.response.AuthResponseDto;
 import poly.edu.o2n.auth.service.AuthService;
 import poly.edu.o2n.auth.service.EmailService;
-import poly.edu.o2n.security.JwtService;
+import poly.edu.o2n.auth.security.JwtService;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 

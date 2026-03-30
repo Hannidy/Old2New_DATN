@@ -5,16 +5,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import poly.edu.o2n.order.dto.request.OrderItemDto;
 import poly.edu.o2n.order.dto.request.OrderRequestDto;
+import poly.edu.o2n.order.dto.request.XuLyYeuCauRequest;
+import poly.edu.o2n.order.dto.request.YeuCauTraHangRequest;
 import poly.edu.o2n.order.dto.response.ChiTietDonHangResponse;
 import poly.edu.o2n.order.dto.response.DonHangResponse;
+import poly.edu.o2n.order.dto.response.YeuCauTraHangResponse;
 import poly.edu.o2n.order.entity.ChiTietDonHang;
 import poly.edu.o2n.order.entity.DonHang;
-import poly.edu.o2n.order.repository.DiaChiRepository;
+import poly.edu.o2n.order.entity.YeuCauTraHang;
+import poly.edu.o2n.shipping.repository.DiaChiRepository;
 import poly.edu.o2n.order.service.DonHangService;
 import poly.edu.o2n.order.repository.ChiTietDonHangRepository; // Import đúng package repo của bạn
 import poly.edu.o2n.order.repository.DonHangRepository;
-import poly.edu.o2n.shop.repository.SanPhamRepository; // Import repo sản phẩm
-import poly.edu.o2n.shop.entity.SanPham;
+import poly.edu.o2n.product.repository.SanPhamRepository; // Import repo sản phẩm
+import poly.edu.o2n.product.entity.SanPham;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository; // Import repo người dùng
 import poly.edu.o2n.wallet.entity.LichSuGiaoDich;
@@ -114,13 +118,28 @@ public class DonHangServiceImpl implements DonHangService {
     }
 
     @Override
-    @Transactional
-    public void capNhatTrangThaiThanhToan(Integer donHangId, String trangThaiThanhToan) {
+    public void capNhatTrangThaiDonHang(Integer donHangId, String trangThaiMoi) {
+        // 1. Tìm đơn hàng trong Database
         DonHang donHang = donHangRepository.findById(donHangId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng: " + donHangId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + donHangId));
 
-        donHang.setTrangThaiThanhToan(trangThaiThanhToan);
-        donHangRepository.save(donHang);
+        // 2. Xử lý theo từng loại trạng thái
+        if ("DA_GIAO".equals(trangThaiMoi)) {
+            // Shipper giao xong -> Bắt đầu đếm ngược thời gian
+            donHang.setTrangThaiDonHang("DA_GIAO");
+            donHang.setNgayNhanHang(LocalDateTime.now());
+            donHangRepository.save(donHang);
+        }
+        else if ("HOAN_THANH".equals(trangThaiMoi)) {
+            // Khách chủ động bấm "Đã nhận hàng" -> Chốt đơn & Giải ngân ngay lập tức
+            // TÁI SỬ DỤNG LẠI HÀM BẠN ĐÃ VIẾT SẴN BÊN DƯỚI!
+            this.xacNhanNhanHangVaGiaiNgan(donHangId);
+        }
+        else {
+            // Cập nhật các trạng thái bình thường khác (DANG_GIAO, DA_HUY...)
+            donHang.setTrangThaiDonHang(trangThaiMoi);
+            donHangRepository.save(donHang);
+        }
     }
 
 
@@ -315,6 +334,148 @@ public class DonHangServiceImpl implements DonHangService {
         // 6. Chốt đơn hàng
         donHang.setTrangThaiDonHang("HOAN_THANH");
         donHangRepository.save(donHang);
+    }
+
+
+
+    @Autowired
+    private poly.edu.o2n.order.repository.YeuCauTraHangRepository yeuCauTraHangRepository;
+
+    @Override
+    @Transactional
+    public void taoYeuCauTraHang(YeuCauTraHangRequest request) {
+        // 1. Tìm đơn hàng
+        DonHang donHang = donHangRepository.findById(request.getDonHangId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        YeuCauTraHang yeuCauCu = yeuCauTraHangRepository.findByDonHang_DonHangId(request.getDonHangId());
+        if (yeuCauCu != null) {
+            throw new RuntimeException("Đơn hàng này đã được gửi yêu cầu trả hàng trước đó! Không thể gửi thêm.");
+        }
+
+
+        // 2. Kiểm tra điều kiện: Chỉ cho trả khi trạng thái là DA_GIAO
+        if (!"DA_GIAO".equals(donHang.getTrangThaiDonHang())) {
+            throw new RuntimeException("Chỉ có thể yêu cầu trả hàng đối với đơn đã giao thành công!");
+        }
+
+        // 3. Lưu vào bảng Yêu cầu
+        YeuCauTraHang yeuCau = new YeuCauTraHang();
+        yeuCau.setDonHang(donHang);
+        yeuCau.setLyDo(request.getLyDo());
+        yeuCau.setMoTaChiTiet(request.getMoTaChiTiet());
+        yeuCau.setHinhAnhBangChung(request.getHinhAnhBangChung());
+        yeuCau.setVideoBangChung(request.getVideoBangChung());
+        yeuCau.setTrangThai("CHO_XU_LY");
+        yeuCau.setNgayYeuCau(LocalDateTime.now());
+
+        yeuCauTraHangRepository.save(yeuCau);
+
+        // 4. Cập nhật trạng thái Đơn hàng để Người bán biết mà vào check
+        donHang.setTrangThaiDonHang("YEU_CAU_TRA_HANG");
+        donHangRepository.save(donHang);
+    }
+
+
+    @Override
+    public YeuCauTraHangResponse layChiTietYeuCauTraHang(Integer donHangId) {
+        YeuCauTraHang yeuCau = yeuCauTraHangRepository.findByDonHang_DonHangId(donHangId);
+        if (yeuCau == null) {
+            throw new RuntimeException("Không tìm thấy yêu cầu trả hàng cho đơn này!");
+        }
+
+        YeuCauTraHangResponse response = new YeuCauTraHangResponse();
+        response.setId(yeuCau.getId());
+        response.setDonHangId(yeuCau.getDonHang().getDonHangId());
+        response.setLyDo(yeuCau.getLyDo());
+        response.setMoTaChiTiet(yeuCau.getMoTaChiTiet());
+        response.setHinhAnhBangChung(yeuCau.getHinhAnhBangChung());
+        response.setVideoBangChung(yeuCau.getVideoBangChung());
+        response.setTrangThai(yeuCau.getTrangThai());
+        response.setNgayYeuCau(yeuCau.getNgayYeuCau());
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public void xuLyYeuCauTraHang(XuLyYeuCauRequest request) {
+        DonHang donHang = donHangRepository.findById(request.getDonHangId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        YeuCauTraHang yeuCau = yeuCauTraHangRepository.findByDonHang_DonHangId(request.getDonHangId());
+        if (yeuCau == null) {
+            throw new RuntimeException("Đơn hàng này chưa có yêu cầu trả hàng!");
+        }
+
+        if ("DONG_Y".equals(request.getHanhDong())) {
+            // Người bán đồng ý -> Chờ người mua gửi hàng lại
+            yeuCau.setTrangThai("DA_DUYET");
+            donHang.setTrangThaiDonHang("DANG_HOAN_HANG");
+        } else if ("TU_CHOI".equals(request.getHanhDong())) {
+            // Người bán từ chối -> Đơn hàng coi như Đã Giao xong, kết thúc tranh chấp
+            yeuCau.setTrangThai("TU_CHOI");
+            donHang.setTrangThaiDonHang("DA_GIAO");
+        } else {
+            throw new RuntimeException("Hành động không hợp lệ!");
+        }
+
+        yeuCau.setNgayXuLy(LocalDateTime.now());
+        yeuCauTraHangRepository.save(yeuCau);
+        donHangRepository.save(donHang);
+    }
+
+    @Override
+    @Transactional
+    public void xacNhanNhanLaiHangVaHoanTien(Integer donHangId) {
+        // 1. Tìm đơn hàng & Kiểm tra trạng thái
+        DonHang donHang = donHangRepository.findById(donHangId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        if (!"DANG_HOAN_HANG".equals(donHang.getTrangThaiDonHang())) {
+            throw new RuntimeException("Đơn hàng chưa ở trạng thái chờ hoàn hàng!");
+        }
+
+        // 2. Chuyển trạng thái Đơn hàng và Yêu cầu trả hàng thành công
+        donHang.setTrangThaiDonHang("DA_HOAN_TIEN"); // Chốt sổ đơn hàng
+        donHangRepository.save(donHang);
+
+        YeuCauTraHang yeuCau = yeuCauTraHangRepository.findByDonHang_DonHangId(donHangId);
+        if (yeuCau != null) {
+            yeuCau.setTrangThai("HOAN_THANH");
+            yeuCauTraHangRepository.save(yeuCau);
+        }
+
+        // 3. Xử lý Hoàn Tiền vào Ví Người Mua
+        NguoiDung nguoiMua = donHang.getNguoiDung();
+        // Lấy lại toàn bộ số tiền khách đã thanh toán lúc đầu
+        BigDecimal tienHoan = donHang.getTongThanhTien();
+
+        // Tìm hoặc tạo Ví cho người mua (giống hệt cách bạn làm cho người bán)
+        ViTien viNguoiMua = viTienRepository.findByNguoiDung_NguoiDungId(nguoiMua.getNguoiDungId());
+        if (viNguoiMua == null) {
+            viNguoiMua = new ViTien();
+            viNguoiMua.setNguoiDung(nguoiMua);
+            viNguoiMua.setSoDu(BigDecimal.ZERO);
+            viNguoiMua.setNgayCapNhat(LocalDateTime.now());
+            viNguoiMua = viTienRepository.save(viNguoiMua);
+        }
+
+        // Cộng tiền hoàn vào số dư ví
+        viNguoiMua.setSoDu(viNguoiMua.getSoDu().add(tienHoan));
+        viNguoiMua.setNgayCapNhat(LocalDateTime.now());
+        viTienRepository.save(viNguoiMua);
+
+        // 4. Ghi sổ Lịch Sử Giao Dịch
+        LichSuGiaoDich giaoDich = new LichSuGiaoDich();
+        giaoDich.setViTien(viNguoiMua);
+        giaoDich.setDonHang(donHang);
+        giaoDich.setSoTien(tienHoan);
+        giaoDich.setLoaiGiaoDich("HOAN_TIEN");
+        giaoDich.setNoiDung("Hoàn tiền do trả hàng thành công đơn O2N-" + donHangId);
+        giaoDich.setTrangThai("THANH_CONG");
+        giaoDich.setNgayTao(LocalDateTime.now());
+        lichSuGiaoDichRepository.save(giaoDich);
     }
 
 

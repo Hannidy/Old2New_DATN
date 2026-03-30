@@ -19,17 +19,6 @@
           <button class="btn btn-outline-dark fw-medium btn-sm px-4">Đăng bán</button>
         </div>
       </div>
-      <div class="container">
-        <nav class="nav nav-fill text-muted small fw-medium pb-2 border-top pt-2">
-          <a class="nav-link text-secondary" href="#">Sách</a>
-          <a class="nav-link text-secondary" href="#">Đồ cho nam</a>
-          <a class="nav-link text-secondary" href="#">Thời trang nữ</a>
-          <a class="nav-link text-secondary" href="#">Đồ làm đẹp</a>
-          <a class="nav-link text-secondary" href="#">Đồ cho mẹ</a>
-          <a class="nav-link text-secondary" href="#">Đồ chơi</a>
-          <a class="nav-link text-secondary" href="#">Đồ dùng nhà cửa</a>
-        </nav>
-      </div>
     </header>
 
     <main class="container bg-white shadow-sm p-4 p-md-5 rounded">
@@ -181,7 +170,6 @@
 
         <div class="mt-5 pt-4 border-top d-flex justify-content-center gap-3">
           <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white"><router-link to="/">Trở lại</router-link></button>
-          <button type="button" class="btn btn-outline-dark fw-medium px-4 bg-white">Lưu nháp</button>
           <button type="submit" class="btn btn-dark fw-medium px-5" :disabled="isSubmitting">
             {{ isSubmitting ? 'Đang xử lý...' : 'Đăng' }}
           </button>

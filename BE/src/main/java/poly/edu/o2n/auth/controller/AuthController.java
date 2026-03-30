@@ -1,18 +1,14 @@
 package poly.edu.o2n.auth.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import poly.edu.o2n.auth.dto.request.*;
 import poly.edu.o2n.auth.dto.response.AuthResponseDto;
 import poly.edu.o2n.auth.service.AuthService;
-import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 
-import java.util.Map;
-import java.util.Optional;
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
