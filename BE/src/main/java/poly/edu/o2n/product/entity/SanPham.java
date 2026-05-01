@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import poly.edu.o2n.address.entity.DiaChiCuaHang;
 import poly.edu.o2n.category.entity.DanhMuc;
 import poly.edu.o2n.user.entity.NguoiDung;
 
@@ -41,6 +42,10 @@ public class SanPham {
     @JoinColumn(name = "danh_muc_id")
     private DanhMuc danhMuc;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_dia_chi_cua_hang")
+    private DiaChiCuaHang diaChiCuaHang;
+
     @Column(name = "gia", nullable = false)
     private BigDecimal gia; // Dùng BigDecimal cho tiền tệ để không bị sai số
 
@@ -63,7 +68,7 @@ public class SanPham {
     private Integer chieuCaoCm;
 
     @Column(name = "trang_thai", length = 50)
-    private String trangThai ;
+    private String trangThai;
 
     @Column(name = "ngay_dang", updatable = false)
     private LocalDateTime ngayDang;

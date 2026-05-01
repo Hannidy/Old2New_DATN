@@ -1,6 +1,7 @@
 package poly.edu.o2n.product.dto.request;
 
 import lombok.Data;
+
 import java.math.BigDecimal;
 
 @Data
@@ -16,6 +17,7 @@ public class SanPhamRequestDto {
     private Integer chieuRongCm;
     private Integer chieuCaoCm;
     private String soDienThoai;
+    private Integer idDiaChiCuaHang;
     // Tạm thời chưa xử lý FirebaseToken ở Backend, ta cứ hứng vào đã
     private String firebaseToken;
 }

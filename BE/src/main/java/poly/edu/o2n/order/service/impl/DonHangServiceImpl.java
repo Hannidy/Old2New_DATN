@@ -3,6 +3,7 @@ package poly.edu.o2n.order.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import poly.edu.o2n.address.repository.DiaChiRepository;
 import poly.edu.o2n.order.dto.request.OrderItemDto;
 import poly.edu.o2n.order.dto.request.OrderRequestDto;
 import poly.edu.o2n.order.dto.request.XuLyYeuCauRequest;
@@ -13,14 +14,13 @@ import poly.edu.o2n.order.dto.response.YeuCauTraHangResponse;
 import poly.edu.o2n.order.entity.ChiTietDonHang;
 import poly.edu.o2n.order.entity.DonHang;
 import poly.edu.o2n.order.entity.YeuCauTraHang;
-import poly.edu.o2n.shipping.repository.DiaChiRepository;
-import poly.edu.o2n.order.service.DonHangService;
-import poly.edu.o2n.order.repository.ChiTietDonHangRepository; // Import đúng package repo của bạn
+import poly.edu.o2n.order.repository.ChiTietDonHangRepository;
 import poly.edu.o2n.order.repository.DonHangRepository;
-import poly.edu.o2n.product.repository.SanPhamRepository; // Import repo sản phẩm
+import poly.edu.o2n.order.service.DonHangService;
 import poly.edu.o2n.product.entity.SanPham;
+import poly.edu.o2n.product.repository.SanPhamRepository;
 import poly.edu.o2n.user.entity.NguoiDung;
-import poly.edu.o2n.user.repository.NguoiDungRepository; // Import repo người dùng
+import poly.edu.o2n.user.repository.NguoiDungRepository;
 import poly.edu.o2n.wallet.entity.LichSuGiaoDich;
 import poly.edu.o2n.wallet.entity.ViTien;
 import poly.edu.o2n.wallet.repository.LichSuGiaoDichRepository;
@@ -53,11 +53,10 @@ public class DonHangServiceImpl implements DonHangService {
     private DiaChiRepository diaChiRepository; // (Dành cho việc lấy địa chỉ sau này)
 
     @Autowired
-    private ViTienRepository viTienRepository ;
+    private ViTienRepository viTienRepository;
 
     @Autowired
     private LichSuGiaoDichRepository lichSuGiaoDichRepository;
-
 
 
     @Override
@@ -129,13 +128,11 @@ public class DonHangServiceImpl implements DonHangService {
             donHang.setTrangThaiDonHang("DA_GIAO");
             donHang.setNgayNhanHang(LocalDateTime.now());
             donHangRepository.save(donHang);
-        }
-        else if ("HOAN_THANH".equals(trangThaiMoi)) {
+        } else if ("HOAN_THANH".equals(trangThaiMoi)) {
             // Khách chủ động bấm "Đã nhận hàng" -> Chốt đơn & Giải ngân ngay lập tức
             // TÁI SỬ DỤNG LẠI HÀM BẠN ĐÃ VIẾT SẴN BÊN DƯỚI!
             this.xacNhanNhanHangVaGiaiNgan(donHangId);
-        }
-        else {
+        } else {
             // Cập nhật các trạng thái bình thường khác (DANG_GIAO, DA_HUY...)
             donHang.setTrangThaiDonHang(trangThaiMoi);
             donHangRepository.save(donHang);
@@ -337,7 +334,6 @@ public class DonHangServiceImpl implements DonHangService {
     }
 
 
-
     @Autowired
     private poly.edu.o2n.order.repository.YeuCauTraHangRepository yeuCauTraHangRepository;
 
@@ -477,7 +473,6 @@ public class DonHangServiceImpl implements DonHangService {
         giaoDich.setNgayTao(LocalDateTime.now());
         lichSuGiaoDichRepository.save(giaoDich);
     }
-
 
 
 }

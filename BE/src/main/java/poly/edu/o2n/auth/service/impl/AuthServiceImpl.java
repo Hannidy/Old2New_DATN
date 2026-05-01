@@ -1,6 +1,10 @@
 package poly.edu.o2n.auth.service.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import poly.edu.o2n.auth.dto.request.GoogleLoginRequestDto;
@@ -8,38 +12,29 @@ import poly.edu.o2n.auth.dto.request.LoginRequestDto;
 import poly.edu.o2n.auth.dto.request.RegisterRequestDto;
 import poly.edu.o2n.auth.dto.request.ResetPasswordRequestDto;
 import poly.edu.o2n.auth.dto.response.AuthResponseDto;
+import poly.edu.o2n.auth.security.JwtService;
 import poly.edu.o2n.auth.service.AuthService;
 import poly.edu.o2n.auth.service.EmailService;
-import poly.edu.o2n.auth.security.JwtService;
+import poly.edu.o2n.shop.entity.CuaHang;
+import poly.edu.o2n.shop.repository.CuaHangRepository;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 
- import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
- import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
- import com.google.api.client.http.javanet.NetHttpTransport;
- import com.google.api.client.json.gson.GsonFactory;
- import java.util.Collections;
-
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private NguoiDungRepository nguoiDungRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    @Autowired
-    private EmailService emailService;
-
-    // THÊM DÒNG NÀY:
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtService jwtService;
-
+    private final CuaHangRepository cuaHangRepository;
 
     @Override
     public String register(RegisterRequestDto request) {
@@ -57,7 +52,11 @@ public class AuthServiceImpl implements AuthService {
         newUser.setSoDienThoai(request.getSoDienThoai());
         newUser.setNgayTao(LocalDateTime.now());
 
-        nguoiDungRepository.save(newUser);
+        NguoiDung savedUser = nguoiDungRepository.save(newUser);
+
+        // 🔥 LOGIC TỰ TẠO SHOP MẶC ĐỊNH
+        taoShopMacDinhChoUser(savedUser);
+
         return "Đăng ký tài khoản thành công!";
     }
 
@@ -139,7 +138,13 @@ public class AuthServiceImpl implements AuthService {
                     user.setHoVaTen(name);
                     user.setMatKhauMaHoa(""); // Mật khẩu rỗng vì đăng nhập bằng Google
                     user.setNgayTao(LocalDateTime.now());
-                    user = nguoiDungRepository.save(user); // Lưu thẳng xuống MySQL
+                    NguoiDung saveUser = nguoiDungRepository.save(user); // Lưu thẳng xuống MySQL
+
+                    // 🔥 LOGIC TỰ TẠO SHOP MẶC ĐỊNH CHO TÀI KHOẢN GOOGLE
+                    taoShopMacDinhChoUser(saveUser);
+
+                    user = saveUser;
+
                 } else {
                     // Nếu CÓ RỒI: Lấy tài khoản cũ ra dùng luôn
                     user = userOpt.get();
@@ -174,8 +179,18 @@ public class AuthServiceImpl implements AuthService {
         return response;
     }
 
-
-
+    // Viết một hàm dùng chung cho gọn code:
+    private void taoShopMacDinhChoUser(NguoiDung user) {
+        CuaHang shop = new CuaHang();
+        shop.setNguoiDung(user);
+        // Tên mặc định: Tên người dùng + Shop
+        shop.setTenShop(user.getHoVaTen() + " Shop");
+        shop.setAnhDaiDien("https://ui-avatars.com/api/?name=" + shop.getTenShop().replace(" ", "+") + "&background=random");
+        shop.setTrangThaiCuaHang(1);
+        shop.setNgayTao(LocalDateTime.now());
+        // Chưa có địa chỉ, để trống.
+        cuaHangRepository.save(shop);
+    }
 
     @Override
     public String forgotPassword(String email) {

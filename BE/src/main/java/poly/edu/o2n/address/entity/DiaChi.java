@@ -1,4 +1,4 @@
-package poly.edu.o2n.shipping.entity;
+package poly.edu.o2n.address.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

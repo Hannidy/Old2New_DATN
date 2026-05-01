@@ -9,14 +9,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import poly.edu.o2n.address.entity.DiaChiCuaHang;
+import poly.edu.o2n.address.repository.DiaChiCuaHangRepository;
+import poly.edu.o2n.category.entity.DanhMuc;
+import poly.edu.o2n.category.repository.DanhMucRepository;
 import poly.edu.o2n.media.service.CloudinaryService;
 import poly.edu.o2n.product.dto.request.SanPhamRequestDto;
 import poly.edu.o2n.product.dto.response.ProductDetailResponseDto;
 import poly.edu.o2n.product.dto.response.ProductResponseDto;
-import poly.edu.o2n.category.entity.DanhMuc;
 import poly.edu.o2n.product.entity.HinhAnhSanPham;
 import poly.edu.o2n.product.entity.SanPham;
-import poly.edu.o2n.category.repository.DanhMucRepository;
 import poly.edu.o2n.product.repository.HinhAnhSanPhamRepository;
 import poly.edu.o2n.product.repository.SanPhamRepository;
 import poly.edu.o2n.product.service.SanPhamService;
@@ -45,6 +47,9 @@ public class SanPhamServiceImpl implements SanPhamService {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private DiaChiCuaHangRepository diaChiCuaHangRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -110,13 +115,25 @@ public class SanPhamServiceImpl implements SanPhamService {
         sanPham.setChieuRongCm(request.getChieuRongCm());
         sanPham.setChieuCaoCm(request.getChieuCaoCm());
 
+
         sanPham.setTrangThai("CHO_DUYET");
         sanPham.setNgayDang(LocalDateTime.now());
 
-        // Lưu xuống Database
+
+// 🔥 2. ĐOẠN CODE CẬP NHẬT: Lấy ID địa chỉ cửa hàng và gán vào Sản Phẩm
+        if (request.getIdDiaChiCuaHang() != null) {
+            // Tìm địa chỉ trong DB
+            DiaChiCuaHang diaChi = diaChiCuaHangRepository.findById(request.getIdDiaChiCuaHang())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ cửa hàng!"));
+
+            // Gán địa chỉ vào Sản Phẩm
+            sanPham.setDiaChiCuaHang(diaChi);
+        }
+
+// 3. Cuối cùng mới lưu xuống DB và hứng kết quả
         SanPham savedSanPham = sanPhamRepository.save(sanPham);
 
-        // Trả về đúng format Vue đang chờ: { "sanPhamId": 123 }
+// Trả về đúng format Vue đang chờ
         Map<String, Object> response = new HashMap<>();
         response.put("sanPhamId", savedSanPham.getSanPhamId());
         return response;

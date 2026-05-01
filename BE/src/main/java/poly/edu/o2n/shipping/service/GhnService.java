@@ -1,5 +1,6 @@
 package poly.edu.o2n.shipping.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,15 @@ import java.util.Map;
 @Service
 public class GhnService {
 
+    @Value("${ghn.api.url}")
+    private String ghnUrl;
+
+    @Value("${ghn.api.token}")
+    private String ghnToken;
+
+    @Value("${ghn.api.shop-id}")
+    private String ghnShopId;
+
 
     // Đường dây nóng của GHN để hỏi giá ship
     private static final String GHN_FEE_API = "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee";
@@ -23,11 +33,12 @@ public class GhnService {
 
     /**
      * Hàm gọi GHN để tính phí ship
+     *
      * @param fromDistrictId: Mã Huyện nhà Người Bán
-     * @param fromWardCode: Mã Xã nhà Người Bán
-     * @param toDistrictId: Mã Huyện nhà Người Mua
-     * @param toWardCode: Mã Xã nhà Người Mua
-     * @param weight: Cân nặng sản phẩm (gram)
+     * @param fromWardCode:   Mã Xã nhà Người Bán
+     * @param toDistrictId:   Mã Huyện nhà Người Mua
+     * @param toWardCode:     Mã Xã nhà Người Mua
+     * @param weight:         Cân nặng sản phẩm (gram)
      */
     public Integer calculateShippingFee(Integer fromDistrictId, String fromWardCode,
                                         Integer toDistrictId, String toWardCode,
@@ -38,13 +49,13 @@ public class GhnService {
 
         // 1. Chuẩn bị Thẻ VIP (Headers)
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Token", TOKEN);
-        headers.set("ShopId", SHOP_ID);
+        headers.set("Token", ghnToken);
+        headers.set("ShopId", ghnShopId);
         headers.set("Content-Type", "application/json");
 
         // 2. Gói gém thông tin kiện hàng (Body)
         Map<String, Object> body = new HashMap<>();
-        body.put("shop_id", Integer.parseInt(SHOP_ID));
+        body.put("shop_id", Integer.parseInt(ghnShopId));
         body.put("service_type_id", 2); // 2 là Giao Chuẩn, 1 là Giao Nhanh (Mình dùng chuẩn cho rẻ)
 
         // Địa chỉ bưu cục gửi (Nhà người bán)
@@ -65,7 +76,7 @@ public class GhnService {
 
         try {
             // 3. Bấm nút gọi cho GHN
-            ResponseEntity<Map> response = restTemplate.exchange(GHN_FEE_API, HttpMethod.POST, entity, Map.class);
+            ResponseEntity<Map> response = restTemplate.exchange(ghnUrl, HttpMethod.POST, entity, Map.class);
             Map<String, Object> responseBody = response.getBody();
 
             // 4. Mổ xẻ câu trả lời để lấy đúng số tiền (Total)
