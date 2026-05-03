@@ -1,4 +1,5 @@
 <template>
+    <div class="header">     <AppHeader />   </div>
   <div class="order-container">
     <h2 class="title text-primary">🛍️ Quản lý Đơn Bán (Dành cho Người bán)</h2>
     <p class="text-muted mb-4">Danh sách các đơn hàng khách đã đặt mua sản phẩm của bạn.</p>
@@ -18,7 +19,7 @@
           <tr v-if="orders.length === 0">
             <td colspan="5" class="empty-message">Hiện chưa có khách nào đặt mua sản phẩm của bạn.</td>
           </tr>
-          <tr v-for="order in orders" :key="order.donHangId">
+          <tr v-for="order in paginatedOrders" :key="order.donHangId">
             <td><strong>O2N-{{ order.donHangId }}</strong></td>
             <td>{{ formatDate(order.ngayTao) }}</td>
             <td class="price">{{ formatCurrency(order.tongThanhTien) }}</td>
@@ -59,6 +60,23 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Phân Trang -->
+
+      <div v-if="totalPages > 1" class="pagination-wrapper">
+        <button @click="prevPage" :disabled="currentPage === 1" class="btn-page">« Trước</button>
+        
+        <button v-for="page in totalPages" :key="page" 
+                @click="goToPage(page)" 
+                :class="['btn-page', { active: currentPage === page }]">
+          {{ page }}
+        </button>
+        
+        <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-page">Sau »</button>
+      </div>
+
+
+
     </div>
 
     <div v-if="isDisputeModalOpen" class="modal-overlay" @click.self="closeDisputeModal">
@@ -109,7 +127,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import AppHeader from "@/layouts/Header.vue";
+import { ref, onMounted, computed } from 'vue'; 
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -133,6 +152,30 @@ onMounted(() => {
   currentUserId = JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
   fetchSellerOrders();
 });
+
+
+// ==========================================
+// 🔥 THÊM ĐOẠN LOGIC PHÂN TRANG NÀY VÀO DƯỚI KHAI BÁO BIẾN
+// ==========================================
+const currentPage = ref(1);
+const itemsPerPage = ref(5); // Số đơn hiển thị trên 1 trang (bạn có thể đổi thành 10)
+
+// Tính toán tổng số trang
+const totalPages = computed(() => {
+  return Math.ceil(orders.value.length / itemsPerPage.value);
+});
+
+// Lọc ra các đơn hàng dành riêng cho trang hiện tại
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return orders.value.slice(start, end);
+});
+
+const goToPage = (page) => { currentPage.value = page; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+// ==========================================
 
 const fetchSellerOrders = async () => {
   try {
@@ -348,4 +391,45 @@ const getStatusClass = (status) => {
 .btn-refund { background-color: #fd7e14; color: white; box-shadow: 0 2px 4px rgba(253,126,20,0.3); }
 .btn-refund:hover { background-color: #e86e04; transform: translateY(-1px); }
 .text-secondary { color: #6c757d; }
+
+
+/* ================= 🔥 CSS CHO PHÂN TRANG ================= */
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 10px 0;
+}
+
+.btn-page {
+  padding: 8px 14px;
+  border: 1px solid #dee2e6;
+  background-color: white;
+  color: #007bff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.btn-page:hover:not(:disabled) {
+  background-color: #e9ecef;
+}
+
+.btn-page.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.btn-page:disabled {
+  color: #6c757d;
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  border-color: #dee2e6;
+}
+
+ .header {   padding: 80px; }
+
 </style>

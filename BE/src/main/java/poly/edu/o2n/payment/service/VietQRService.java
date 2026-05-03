@@ -11,8 +11,8 @@ public class VietQRService {
     // Bạn hãy thay đổi các thông tin này thành của bạn nhé!
     // =======================================================
         private final String MA_NGAN_HANG_ADMIN = "970422"; // Mã BIN (VD: 970422 là MBBank, 970436 là Vietcombank)
-    private final String STK_ADMIN = "0876497494";      // Số tài khoản thật của bạn
-    private final String TEN_ADMIN = "HOANG DANG ANH KHOA";    // Tên chủ tài khoản (Viết hoa, KHÔNG DẤU)
+    private final String STK_ADMIN = "0379185939";      // Số tài khoản thật của bạn
+    private final String TEN_ADMIN = "DINH TUAN DUY";    // Tên chủ tài khoản (Viết hoa, KHÔNG DẤU)
 
     /**
      * Tạo đường link ảnh mã VietQR cho đơn hàng

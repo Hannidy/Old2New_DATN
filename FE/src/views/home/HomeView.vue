@@ -25,13 +25,19 @@
       </div>
 
       <section id="product-section">
+
         <div class="d-flex justify-content-between align-items-end mb-4 border-start border-4 border-danger ps-3">
-          <div>
-            <h2 class="fs-4 fw-bold mb-0 text-dark"> Khám phá sản phẩm</h2>
-            <small class="text-muted">Đồ cũ chất lượng - Giá rẻ cho mọi nhà</small>
-          </div>
-          <span class="text-muted small bg-light px-2 py-1 rounded">Trang {{ currentPage }} / {{ totalPages }}</span>
-        </div>
+    <div>
+      <!-- 🔥 TIÊU ĐỀ THAY ĐỔI THEO TRẠNG THÁI TÌM KIẾM -->
+      <h2 class="fs-4 fw-bold mb-0 text-dark"> 
+        {{ isSearching ? 'Kết quả tìm kiếm cho: "' + route.query.search + '"' : 'Khám phá sản phẩm' }}
+      </h2>
+      <small class="text-muted">
+        {{ isSearching ? 'Tìm thấy ' + products.length + ' sản phẩm khớp với từ khóa' : 'Đồ cũ chất lượng - Giá rẻ cho mọi nhà' }}
+      </small>
+    </div>
+    <span class="text-muted small bg-light px-2 py-1 rounded">Trang {{ currentPage }} / {{ totalPages }}</span>
+  </div>
         
         <div v-if="isLoading" class="text-center py-5">
           <div class="spinner-border text-danger" role="status"></div>
@@ -121,6 +127,7 @@ import AppFooter from '@/layouts/Footer.vue';
 
 const router = useRouter();
 const route = useRoute(); 
+const isSearching = ref(false); // Biến để kiểm tra xem có đang search không
 
 const products = ref([]);
 const isLoading = ref(true);
@@ -133,50 +140,61 @@ const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 };
 
-// Gọi API lấy danh sách sản phẩm
+
+
+// Gọi API lấy danh sách sản phẩm (Đã tích hợp Tìm kiếm + Danh mục + Trang chủ)
 const fetchProducts = async (page = 1) => {
   isLoading.value = true;
   try {
     const categoryId = route.query.category;
+    const searchKeyword = route.query.search; // 🔥 Lấy từ khóa search từ URL
+
     let url = `http://localhost:8080/api/products/home?page=${page - 1}&size=${itemsPerPage}`;
     
-    if (categoryId) {
+    // --- ƯU TIÊN LOGIC GỌI API ---
+    if (searchKeyword) {
+      // 🔍 1. Nếu có từ khóa tìm kiếm
+      isSearching.value = true;
+      url = `http://localhost:8080/api/products/search?keyword=${searchKeyword}&page=${page - 1}&size=${itemsPerPage}`;
+    } else if (categoryId) {
+      // 📂 2. Nếu có danh mục
+      isSearching.value = false;
       url = `http://localhost:8080/api/products/category/${categoryId}?page=${page - 1}&size=${itemsPerPage}`;
+    } else {
+      // 🏠 3. Mặc định trang chủ
+      isSearching.value = false;
     }
 
     const res = await axios.get(url);
     
-    // 🔥 2. BỘ LỌC DỮ LIỆU ĐA NĂNG (Bắt được cả API Trang chủ lẫn API Danh mục)
+    // 🔥 BỘ LỌC DỮ LIỆU (Giữ nguyên logic thông minh Duy đang dùng)
     if (res.data && res.data.content !== undefined) { 
-       // Dành cho API Danh Mục (Spring Boot Page)
        products.value = res.data.content;
        currentPage.value = res.data.number + 1; 
        totalPages.value = res.data.totalPages === 0 ? 1 : res.data.totalPages;
     } 
     else if (res.data && res.data.products !== undefined) {
-       // Dành cho API Trang Chủ gốc của Duy (trả về res.data.products)
        products.value = res.data.products;
        currentPage.value = (res.data.currentPage || 0) + 1;
        totalPages.value = res.data.totalPages === 0 ? 1 : res.data.totalPages;
     }
-    else if (Array.isArray(res.data)) { 
-       // Dành cho Mảng trực tiếp
-       products.value = res.data;
-       currentPage.value = 1;
-       totalPages.value = 1;
-    } else {
-       products.value = [];
+    else {
+       products.value = Array.isArray(res.data) ? res.data : [];
     }
 
   } catch (error) {
     console.error("Lỗi kết nối Backend:", error);
     products.value = [];
-    currentPage.value = 1;
-    totalPages.value = 1;
   } finally {
     isLoading.value = false;
   }
 };
+
+// 🔥 WATCH CẢ SEARCH VÀ CATEGORY: Khi URL thay đổi bất kể cái nào, tự động load lại
+watch(() => [route.query.category, route.query.search], () => {
+  currentPage.value = 1; 
+  fetchProducts(1);
+});
 
 const goToDetail = (id) => {
   if(id) {

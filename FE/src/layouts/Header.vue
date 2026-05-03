@@ -131,7 +131,56 @@
         >
           🛒
         </router-link>
-        <a href="#" class="text-dark text-decoration-none fs-5">🔔</a>
+
+        <!-- PHẦN THÔNG BÁO MỚI CỦA DUY -->
+      <div v-if="currentUser" class="notification-dropdown dropdown position-relative me-3">
+          <div class="text-dark text-decoration-none fs-5 position-relative" style="cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
+            🔔
+            <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </div>
+
+          <div class="dropdown-menu dropdown-menu-end shadow custom-noti-menu rounded p-0">
+            <div class="p-3 border-bottom bg-light fw-bold text-dark d-flex justify-content-between align-items-center">
+              <span>Thông báo mới nhận</span>
+              </div>
+            
+            <div class="noti-list" style="max-height: 400px; overflow-y: auto;">
+              <div v-if="notifications.length === 0" class="p-4 text-center text-muted small">
+                <div class="fs-1 mb-2">🔕</div>
+                Chưa có thông báo nào
+              </div>
+
+              <div v-for="noti in notifications" :key="noti.id" 
+                   class="noti-item p-3 border-bottom d-flex gap-3 position-relative"
+                   :class="{'bg-light-subtle': !noti.daDoc}"
+                   @click="handleNotiClick(noti)"
+                   style="cursor: pointer; transition: background 0.2s;">
+                
+                <div class="fs-3">
+                   <span v-if="noti.loai === 'ORDER_BUYER'">🛍️</span>
+                   <span v-else-if="noti.loai === 'ORDER_SELLER'">💰</span>
+                   <span v-else-if="noti.loai === 'WALLET'">💳</span>
+                   <span v-else>📌</span>
+                </div>
+                
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-dark mb-1" :class="{'text-primary': !noti.daDoc}">{{ noti.tieuDe }}</div>
+                  <div class="small text-muted mb-2" style="line-height: 1.4;">{{ noti.noiDung }}</div>
+                  <div class="small text-black-50" style="font-size: 0.75rem;">{{ formatTime(noti.ngayTao) }}</div>
+                </div>
+                
+                <div v-if="!noti.daDoc" class="position-absolute rounded-circle bg-primary" style="width: 8px; height: 8px; top: 15px; right: 15px;"></div>
+              </div>
+            </div>
+            
+            <div class="p-2 text-center border-top bg-light">
+              <a href="#" class="text-decoration-none small text-muted">Xem tất cả</a>
+            </div>
+          </div>
+        </div>
+
         <button
           @click="router.push('/dang-ban')"
           class="btn btn-dark btn-sm px-3 fw-bold"
@@ -164,7 +213,6 @@
           <span class="fw-semibold">Tất cả danh mục</span>
           <span class="small text-muted ms-1">▾</span>
         </div>
-        <!-- Cây Danh Mục  -->
         <ul class="main-menu shadow-sm rounded-bottom">
           <li
             v-for="category in categories"
@@ -319,56 +367,111 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import axios from "axios";
+import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const router = useRouter();
-const searchQuery = ref("");
+const searchQuery = ref('');
 const categories = ref([]);
-const currentUser = ref(null);
+const currentUser = ref(null); 
+const notifications = ref([]);
+let notiTimer = null;
 
-onMounted(() => {
-  fetchCategories();
-
-  const storedUser = localStorage.getItem("user");
-  if (storedUser) {
-    currentUser.value = JSON.parse(storedUser);
-  }
+// TÍNH TOÁN SỐ TIN CHƯA ĐỌC (Dựa trên biến 'daDoc' từ BE)
+const unreadCount = computed(() => {
+  return notifications.value.filter(n => !n.daDoc).length;
 });
 
+
+const formatTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleString('vi-VN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+};
+
+const fetchNotifications = async () => {
+  if (!currentUser.value) return;
+  const userId = currentUser.value.id || currentUser.value.nguoiDungId;
+  
+  try {
+    const response = await axios.get(`http://localhost:8080/api/notifications/${userId}`);
+    notifications.value = response.data || [];
+  } catch (error) {
+    console.error("Lỗi lấy thông báo:", error);
+  }
+};
+
+const handleNotiClick = async (noti) => {
+  const userId = currentUser.value.id || currentUser.value.nguoiDungId;
+  
+  if (!noti.daDoc) {
+    try {
+      await axios.put(`http://localhost:8080/api/notifications/${userId}/read/${noti.id}`);
+      noti.daDoc = true; 
+    } catch (error) {
+      console.error("Lỗi cập nhật trạng thái thông báo:", error);
+    }
+  }
+
+  if (noti.duongDan) {
+    router.push(noti.duongDan);
+  }
+};
+
 const logout = () => {
-  localStorage.removeItem("user");
+  localStorage.removeItem('user');
   currentUser.value = null;
   alert("Bạn đã đăng xuất thành công!");
-  router.push("/");
+  router.push('/');
 };
 
 const handleSearch = () => {
-  if (searchQuery.value.trim() !== "")
-    alert("Đang tìm kiếm: " + searchQuery.value);
+  const query = searchQuery.value.trim();
+  router.push({ path: '/', query: { search: query } });
 };
 
 const fetchCategories = async () => {
   try {
-    const response = await axios.get(
-      "http://localhost:8080/api/categories/tree",
-    );
+    const response = await axios.get('http://localhost:8080/api/categories/tree');
     categories.value = response.data;
-    // console.log("KIỂM TRA CÂY DANH MỤC:", JSON.stringify(categories.value, null, 2));
   } catch (error) {
     console.error("Lỗi tải Danh mục:", error);
   }
 };
 
-//  Hàm xử lý khi bấm vào 1 danh mục
 const goToCategory = (id) => {
-  // Đẩy ID danh mục lên thanh URL (VD: localhost:5173/?category=5)
-  router.push({ path: "/", query: { category: id } });
+  router.push({ path: '/', query: { category: id } });
 };
+
+onMounted(() => {
+  fetchCategories();
+  
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    currentUser.value = JSON.parse(storedUser);
+    
+    // 1. Lấy thông báo ngay khi vừa tải trang
+    fetchNotifications();
+    
+    // 2. Thiết lập cơ chế tự động "hỏi" server mỗi 30 giây (Polling)
+    // Duy gán nó vào biến notiTimer để sau này dễ dàng xóa bỏ khi logout
+    notiTimer = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // 30000ms = 30 giây
+  }
+});
+
+// CỰC KỲ QUAN TRỌNG: Duy cần thêm hook này để tránh rò rỉ bộ nhớ
+onUnmounted(() => {
+  if (notiTimer) {
+    clearInterval(notiTimer);
+  }
+});
 </script>
 
 <style scoped>
+/* GIỮ NGUYÊN CSS CŨ CỦA DUY */
 .header-sticky {
   position: fixed;
   top: 0;
@@ -405,7 +508,6 @@ const goToCategory = (id) => {
   color: #dc3545 !important;
 }
 
-/* MENU TẤT CẢ DANH MỤC */
 .all-category-wrapper {
   position: relative;
 }
@@ -504,7 +606,6 @@ const goToCategory = (id) => {
   background-color: #f8f9fa;
 }
 
-/* CSS TẦNG 4 MỚI THÊM */
 .sub-menu-4 {
   display: none;
   position: absolute;
@@ -532,7 +633,6 @@ const goToCategory = (id) => {
   background-color: #f8f9fa;
 }
 
-/* MENU NGANG LIÊN KẾT NHANH */
 .quick-links a {
   color: #555;
   font-size: 0.95rem;
@@ -561,7 +661,6 @@ const goToCategory = (id) => {
   border-top: 3px solid #007bff !important;
 }
 
-/* CSS TẦNG 3 MENU NGANG MỚI THÊM */
 .child-dropdown-item:hover .custom-sub-dropdown-menu {
   display: block;
   animation: fadeIn 0.2s ease;
@@ -578,53 +677,95 @@ const goToCategory = (id) => {
   padding: 0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* --- PHẦN CSS THÔNG BÁO ĐÃ CẬP NHẬT CHO DUY --- */
 
-/* --- HIỆU ỨNG DI CHUỘT CHO TẦNG 3 ĐỂ HIỆN TẦNG 4 --- */
-.menu-item-grandchild {
-  position: relative;
-}
-
-/* Khi di chuột vào mục ở tầng 3, tầng 4 sẽ hiện ra */
-.menu-item-grandchild:hover > .sub-menu-4 {
-  display: block !important;
+/* Khung menu thông báo */
+.custom-noti-menu {
+  display: none; 
+  position: absolute; 
+  top: 100%; 
+  right: 0; 
+  width: 350px; /* Duy tăng độ rộng lên 350px để chữ không bị nhảy dòng */
+  border: none; 
+  z-index: 1050; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important; /* Đổ bóng cho xịn */
   animation: fadeIn 0.2s ease;
 }
 
-/* Style cho khung menu tầng 4 */
-.sub-menu-4 {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 100%; /* Đẩy sang bên phải của tầng 3 */
-  margin: 0;
-  padding: 0;
+/* Hiển thị khi có class show của Bootstrap hoặc hover (tùy Duy cấu hình) */
+.notification-dropdown:hover .custom-noti-menu {
+  display: block;
+}
+
+/* Danh sách thông báo */
+.noti-list {
+  max-height: 400px; 
+  overflow-y: auto;
   background-color: white;
-  border: 1px solid #eee;
-  min-width: 220px;
-  min-height: 100%;
-  list-style: none;
-  z-index: 1080;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.sub-menu-4 a {
-  color: #777;
+/* Từng mục thông báo */
+.noti-item {
+  padding: 15px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 12px;
+  transition: all 0.2s;
+  text-decoration: none !important;
+}
+
+.noti-item:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* Màu nền cho tin chưa đọc */
+.bg-light-subtle {
+  background-color: #f0f8ff !important; 
+}
+
+/* Icon trong thông báo */
+.noti-icon-wrapper {
+  font-size: 1.8rem;
+  flex-shrink: 0; /* Không cho icon bị co lại */
+}
+
+/* Tiêu đề và nội dung */
+.noti-title {
+  font-weight: 700;
+  color: #212529;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.noti-content {
   font-size: 0.85rem;
-  border-bottom: 1px solid #f9f9f9;
+  color: #6c757d;
+  line-height: 1.4;
 }
 
-.sub-menu-4 a:hover {
-  color: #007bff !important;
-  background-color: #f8f9fa;
+/* Dấu chấm xanh báo tin chưa đọc */
+.unread-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #007bff;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp */
+.noti-list::-webkit-scrollbar {
+  width: 6px;
+}
+.noti-list::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 10px;
+}
+.noti-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

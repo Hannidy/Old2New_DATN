@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/doi-soat/**").authenticated()
                         .requestMatchers("/api/vi-tien/**").authenticated()
                         .requestMatchers("/api/payment/**").authenticated()
+                        .requestMatchers("/api/products/reviews/**").authenticated()
 
 
                         // Cấu hình riêng cho Đơn hàng (Khóa toàn bộ ngoại trừ VNPay return ở trên)

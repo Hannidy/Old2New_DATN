@@ -26,9 +26,16 @@
         <router-link to="/admin/payments" class="nav-link admin-nav-item">
           <i class="bi bi-wallet2 me-2"></i> Đối soát thanh toán
         </router-link>
+
+        <!-- Thêm vào danh sách menu Admin của Duy -->
+      <router-link to="/admin/chat-support" class="nav-link admin-nav-item">
+        <i class="bi bi-chat-left-text"></i>
+        <span>Tin nhắn hỗ trợ</span>
+      </router-link>
       </nav>
 
-      <div class="mt-auto p-3 w-100 border-top border-secondary">
+
+      <div class="mt-auto p-4 w-100 border-top border-secondary">
         <button @click="router.push('/')" class="btn btn-outline-light w-100 btn-sm">
           <i class="bi bi-box-arrow-left me-2"></i> Home
         </button>

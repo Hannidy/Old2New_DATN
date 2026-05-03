@@ -101,9 +101,9 @@
                 <i class="bi bi-cart-plus"></i> Thêm vào giỏ
               </button>
 
-              <button class="btn btn-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
+           <button @click="buyNow(product)" class="btn btn-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
                 MUA NGAY
-              </button>
+              </button>on>
             </template>
           </div>
           </div>
@@ -133,6 +133,21 @@ const router = useRouter();
 const product = ref(null);
 const isLoading = ref(true);
 const selectedImage = ref(null); 
+
+
+const buyNow = async (product) => {
+  if (!currentUserId.value) {
+    alert("Vui lòng đăng nhập để mua sản phẩm này!");
+    router.push('/login');
+    return;
+  }
+
+  // Gọi hàm addToCart để đẩy đồ vào Redis trước
+  await addToCart(product);
+
+  // Sau đó chuyển hướng ngay lập tức sang trang Giỏ Hàng
+  router.push('/cart');
+};
 
 // 🔥 LOGIC MỚI: Lấy ID người dùng hiện tại đang đăng nhập
 const currentUserId = computed(() => {

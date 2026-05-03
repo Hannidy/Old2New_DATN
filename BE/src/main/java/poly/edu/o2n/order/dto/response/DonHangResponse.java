@@ -22,4 +22,5 @@ public class DonHangResponse {
 
     // Danh sách các sản phẩm nằm trong đơn hàng này
     private List<ChiTietDonHangResponse> chiTietDonHangs;
+    private String diaChiCuaHang;
 }

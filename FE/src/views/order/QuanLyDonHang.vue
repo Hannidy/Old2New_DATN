@@ -55,7 +55,7 @@
                       Bạn chưa có đơn hàng nào.
                     </td>
                   </tr>
-                  <tr v-for="order in orders" :key="order.donHangId">
+                  <tr v-for="order in paginatedOrders" :key="order.donHangId">
                     <td>
                       <strong>#{{ order.donHangId }}</strong>
                     </td>
@@ -95,6 +95,15 @@
                         >
                           👁️ Xem Chi Tiết
                         </button>
+
+                        <!-- Đánh giá shop -->
+                          <button 
+                              v-if="order.trangThaiDonHang === 'HOAN_THANH' && !order.daDanhGia" 
+                              class="btn-view bg-success text-white border-0" 
+                              @click="openReviewModal(order)">
+                              Đánh giá
+                          </button>
+
                         <button
                           v-if="order.trangThaiDonHang === 'DA_GIAO'"
                           class="btn-return"
@@ -107,12 +116,27 @@
                   </tr>
                 </tbody>
               </table>
+
+              <div v-if="totalPages > 1" class="pagination-wrapper">
+                <button @click="prevPage" :disabled="currentPage === 1" class="btn-page">« Trước</button>
+                
+                <button v-for="page in totalPages" :key="page" 
+                        @click="goToPage(page)" 
+                        :class="['btn-page', { active: currentPage === page }]">
+                  {{ page }}
+                </button>
+                
+                <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-page">Sau »</button>
+              </div>
+
+
             </div>
           </div>
         </div>
       </div>
     </div>
 
+<!-- BẮT ĐẦU MODAL CHI TIẾT ĐƠN HÀNG STYLE OREKA MỚI -->
     <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content shopee-modal">
         <div class="modal-header">
@@ -120,120 +144,119 @@
             <button class="back-btn" @click="closeModal">❮ TRỞ LẠI</button>
           </div>
           <div class="header-right">
-            <span>MÃ ĐƠN HÀNG. O2N{{ selectedOrder?.donHangId }}</span> |
-            <span class="status-text">{{
-              selectedOrder?.trangThaiDonHang || "CHỜ XÁC NHẬN"
-            }}</span>
+            <span>MÃ ĐƠN HÀNG. O2N{{ selectedOrder?.donHangId }}</span> | 
+            <span class="status-text">{{ selectedOrder?.trangThaiDonHang || 'CHỜ XÁC NHẬN' }}</span>
           </div>
         </div>
+        
+        <div class="modal-body oreka-body" v-if="selectedOrder">
+          
+          <div class="oreka-section">
+            <div class="oreka-order-header">
+              <div class="shop-name"><i class="bi bi-shop me-2"></i> Thông tin đơn hàng</div>
+              <div class="order-date">{{ formatDate(selectedOrder.ngayTao) }}</div>
+            </div>
 
-        <div class="modal-body" v-if="selectedOrder">
-          <div class="stepper-wrapper">
-            <div class="stepper-item completed">
-              <div class="step-counter">📝</div>
-              <div class="step-name">Đơn Hàng Đã Đặt</div>
-            </div>
-            <div
-              :class="[
-                'stepper-item',
-                selectedOrder.trangThaiThanhToan === 'DA_THANH_TOAN'
-                  ? 'completed'
-                  : '',
-              ]"
-            >
-              <div class="step-counter">💳</div>
-              <div class="step-name">Đã Xác Nhận Thanh Toán</div>
-            </div>
-            <div
-              :class="[
-                'stepper-item',
-                selectedOrder.trangThaiDonHang === 'DANG_GIAO' ||
-                selectedOrder.trangThaiDonHang === 'DA_GIAO'
-                  ? 'completed'
-                  : '',
-              ]"
-            >
-              <div class="step-counter">🚚</div>
-              <div class="step-name">Đã Giao Cho ĐVVC</div>
-            </div>
-            <div
-              :class="[
-                'stepper-item',
-                selectedOrder.trangThaiDonHang === 'DA_GIAO' ? 'completed' : '',
-              ]"
-            >
-              <div class="step-counter">⭐</div>
-              <div class="step-name">Đơn Hàng Đã Hoàn Thành</div>
-            </div>
-          </div>
+            <div class="oreka-product-list">
+              <div v-if="!selectedOrder.chiTietDonHangs || selectedOrder.chiTietDonHangs.length === 0" class="text-center text-muted py-4">
+                <i class="bi bi-box-seam fs-3 d-block mb-2"></i>
+                <em>Dữ liệu sản phẩm không tồn tại (Đơn test cũ)</em>
+              </div>
 
-          <div class="address-section border border-light-subtle">
-            <h3 class="section-title">Địa Chỉ Nhận Hàng</h3>
-            <div class="address-content">
-              <div class="user-info" v-if="selectedOrder.diaChiGiaoHang">
-                <strong>{{
-                  selectedOrder.diaChiGiaoHang.split(" | ")[0] || "Khách hàng"
-                }}</strong
-                ><br />
-                <span class="phone-text">{{
-                  selectedOrder.diaChiGiaoHang.split(" | ")[1] ||
-                  "Chưa cập nhật SĐT"
-                }}</span
-                ><br />
-                <span class="address-text">{{
-                  selectedOrder.diaChiGiaoHang.split(" | ")[2] ||
-                  selectedOrder.diaChiGiaoHang
-                }}</span>
+              <div v-else v-for="item in selectedOrder.chiTietDonHangs" :key="item.chiTietId" class="oreka-product-item">
+                <div class="product-img-box">
+                  <img :src="item.hinhAnh ? item.hinhAnh : 'https://via.placeholder.com/80?text=Chua+Co+Anh'" alt="Sản phẩm" class="product-img">
+                </div>
+                <div class="product-details">
+                  <h4 class="product-name">{{ item.tenSanPham }}</h4>
+                  <p class="product-meta">Số lượng: {{ item.soLuongMua }}</p>
+                  <p class="product-price">Giá: <strong>{{ formatCurrency(item.giaLucMua) }}</strong></p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="product-section border border-light-subtle">
-            <table class="product-table">
-              <tbody>
-                <tr
-                  v-for="item in selectedOrder.chiTietDonHangs"
-                  :key="item.chiTietId"
-                >
-                  <td class="product-info">
-                    <div class="product-name">{{ item.tenSanPham }}</div>
-                    <div class="product-qty">x{{ item.soLuongMua }}</div>
-                  </td>
-                  <td class="product-price">
-                    <span class="sale-price">{{
-                      formatCurrency(item.giaLucMua)
-                    }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <div class="oreka-grid-2col">
+            
+            <div class="oreka-col">
+              <h5 class="oreka-title">Thông tin vận chuyển:</h5>
+              <div class="shipping-info">
+                <p class="mb-3 text-muted" style="font-size: 13px;">Chi tiết vận chuyển:</p>
+                
+                <div class="vertical-timeline">
+                  <div class="v-timeline-item completed">
+                    <span class="v-dot"></span>
+                    <div class="v-content">Người mua đã đặt hàng</div>
+                  </div>
+                  
+                  <div v-if="selectedOrder.trangThaiThanhToan === 'DA_THANH_TOAN'" class="v-timeline-item completed">
+                    <span class="v-dot"></span>
+                    <div class="v-content">Đã xác nhận thanh toán</div>
+                  </div>
 
-          <div class="summary-section">
-            <div class="summary-row">
-              <span>Tổng tiền hàng</span>
-              <span>{{ formatCurrency(selectedOrder.tongTienHang) }}</span>
+                  <div v-if="selectedOrder.trangThaiDonHang === 'DANG_GIAO' || selectedOrder.trangThaiDonHang === 'DA_GIAO' || selectedOrder.trangThaiDonHang === 'HOAN_THANH'" class="v-timeline-item completed">
+                    <span class="v-dot"></span>
+                    <div class="v-content text-primary fw-bold">Đang giao cho ĐVVC</div>
+                  </div>
+
+                  <div v-if="selectedOrder.trangThaiDonHang === 'DA_GIAO' || selectedOrder.trangThaiDonHang === 'HOAN_THANH'" class="v-timeline-item completed">
+                    <span class="v-dot"></span>
+                    <div class="v-content text-success fw-bold">Giao hàng thành công</div>
+                  </div>
+                  
+                  <div v-if="selectedOrder.trangThaiDonHang === 'DA_HUY'" class="v-timeline-item cancel">
+                    <span class="v-dot"></span>
+                    <div class="v-content text-danger">Đơn hàng đã bị hủy</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="summary-row">
-              <span>Phí vận chuyển</span>
-              <span>{{ formatCurrency(selectedOrder.tongTienShip) }}</span>
+
+            <div class="oreka-col border-left-col">
+
+              <!-- 🔥 ĐỊA CHỈ CỦA SHOP (NGƯỜI BÁN) -->
+              <h5 class="oreka-title">Địa chỉ gửi hàng (Shop):</h5>
+              <div class="address-text-box mb-4">
+                <span class="d-block text-muted">
+                  <i class="bi bi-geo-alt-fill me-1 text-secondary"></i> 
+                  {{ selectedOrder.diaChiCuaHang || 'Shop chưa cập nhật địa chỉ' }}
+                </span>
+              </div>
+
+              <!-- ĐỊA CHỈ CỦA KHÁCH (NGƯỜI MUA) -->
+              <h5 class="oreka-title">Địa chỉ giao hàng:</h5>
+              <div class="address-text-box mb-4">
+                <strong class="d-block mb-1" style="font-size: 14px;">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[0] || 'Khách hàng' }}</strong>
+                <span class="d-block text-muted mb-1">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[1] || '' }}</span>
+                <span class="d-block text-muted">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[2] || selectedOrder.diaChiGiaoHang }}</span>
+              </div>
+
+              <h5 class="oreka-title mt-4">Chi tiết thanh toán:</h5>
+              <div class="payment-summary-box">
+                <div class="summary-line">
+                  <span class="text-muted">Tổng tiền hàng:</span> 
+                  <span>{{ formatCurrency(selectedOrder.tongTienHang) }}</span>
+                </div>
+                <div class="summary-line">
+                  <span class="text-muted">Phí vận chuyển:</span> 
+                  <span>{{ formatCurrency(selectedOrder.tongTienShip) }}</span>
+                </div>
+                <div class="summary-line total mt-2 pt-2 border-top">
+                  <span class="d-flex align-items-center gap-1">
+                    <i v-if="selectedOrder.phuongThucThanhToan === 'COD'" class="bi bi-cash-coin text-warning"></i>
+                    <i v-else class="bi bi-credit-card-2-front text-primary"></i>
+                    {{ selectedOrder.phuongThucThanhToan }}
+                  </span>
+                  <span class="text-danger fw-bold fs-5">{{ formatCurrency(selectedOrder.tongThanhTien) }}</span>
+                </div>
+              </div>
             </div>
-            <div class="summary-row total-row">
-              <span>Thành tiền</span>
-              <span class="final-price">{{
-                formatCurrency(selectedOrder.tongThanhTien)
-              }}</span>
-            </div>
-            <div class="payment-method-row">
-              <span class="payment-method-text"
-                >Phương thức Thanh toán:
-                <strong>{{ selectedOrder.phuongThucThanhToan }}</strong></span
-              >
-            </div>
+
           </div>
         </div>
       </div>
     </div>
+    <!-- KẾT THÚC MODAL CHI TIẾT ĐƠN HÀNG -->
 
     <div
       v-if="isReturnModalOpen"
@@ -331,10 +354,61 @@
       </div>
     </div>
   </div>
+
+
+
+  <!-- MODAL ĐÁNH GIÁ SHOP -->
+<div v-if="isReviewModalOpen" class="modal-overlay" @click.self="closeReviewModal">
+  <div class="modal-content shopee-modal" style="max-width: 450px; border-radius: 20px;">
+    <div class="modal-header border-0 pb-0 justify-content-between">
+      <h4 class="fw-bold text-success mb-0">Đánh giá trải nghiệm</h4>
+      <button class="btn-close" @click="closeReviewModal"></button>
+    </div>
+    
+    <div class="modal-body text-center pt-3">
+      <div class="mb-3">
+         <i class="bi bi-shop fs-1 text-success"></i>
+         <p class="text-muted small mt-2">Duy ơi, hãy chia sẻ cảm nhận của bạn về Shop nhé!</p>
+      </div>
+      
+      <!-- Hệ thống chọn sao linh hoạt -->
+      <div class="star-rating fs-1 mb-4">
+        <span v-for="star in 5" :key="star" 
+              @click="reviewForm.soSao = star"
+              :class="star <= reviewForm.soSao ? 'text-warning' : 'text-secondary'"
+              style="cursor: pointer; transition: transform 0.2s; display: inline-block;"
+              onmouseover="this.style.transform='scale(1.2)'"
+              onmouseout="this.style.transform='scale(1)'">
+          ★
+        </span>
+      </div>
+
+      <div class="form-group text-start px-2">
+        <label class="small fw-bold mb-2">Lời bình luận của Duy:</label>
+        <textarea v-model="reviewForm.binhLuan" 
+                  class="form-control border-success shadow-none" 
+                  rows="4" 
+                  style="border-radius: 12px;"
+                  placeholder="Ví dụ: Shop giao hàng nhanh, sản phẩm còn rất mới..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pb-4">
+      <button class="btn btn-light px-4 rounded-pill fw-bold" @click="closeReviewModal">Để sau</button>
+      <button class="btn btn-success px-4 rounded-pill shadow-sm fw-bold" 
+              @click="submitReview" 
+              :disabled="!reviewForm.soSao">
+        Gửi Đánh Giá Ngay
+      </button>
+    </div>
+  </div>
+</div>
+
+
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue"; 
 import { useRouter } from "vue-router";
 import axios from "axios";
 import UserSidebar from "@/layouts/UserSidebar.vue";
@@ -343,6 +417,7 @@ const router = useRouter();
 const orders = ref([]);
 const selectedOrder = ref(null);
 const isModalOpen = ref(false);
+const currentUser = ref(null);
 
 const isReturnModalOpen = ref(false);
 const orderToReturn = ref(null);
@@ -354,6 +429,87 @@ const returnForm = ref({
 });
 const isUploadingImage = ref(false);
 const isUploadingVideo = ref(false);
+
+
+// Khai báo các biến điều khiển Modal
+const isReviewModalOpen = ref(false);
+const selectedOrderForReview = ref(null);
+const reviewForm = ref({
+  soSao: 0,
+  binhLuan: ""
+});
+
+// 1. Hàm mở Modal khi Duy bấm vào nút Đánh giá
+const openReviewModal = (order) => {
+  selectedOrderForReview.value = order;
+  isReviewModalOpen.value = true;
+};
+
+// 2. Hàm đóng Modal và reset form
+const closeReviewModal = () => {
+  isReviewModalOpen.value = false;
+  reviewForm.value = { soSao: 0, binhLuan: "" };
+};
+
+// 3. 🔥 HÀM GỬI ĐÁNH GIÁ LÊN BACKEND
+const submitReview = async () => {
+  try {
+    // Kiểm tra nếu chưa đăng nhập thì báo lỗi
+    if (!currentUser.value) {
+      alert("Vui lòng đăng nhập để đánh giá!");
+      return;
+    }
+
+    const firstProduct = selectedOrderForReview.value.chiTietDonHangs?.[0];
+    
+    const payload = {
+      sanPham: { sanPhamId: firstProduct.sanPhamId },
+      // 🔥 Sửa lại chỗ này thành currentUser.value
+      nguoiMua: { nguoiDungId: currentUser.value.nguoiDungId || currentUser.value.id },
+      soSao: reviewForm.value.soSao,
+      binhLuan: reviewForm.value.binhLuan,
+      createdAt: new Date().toISOString()
+    };
+
+    await axios.post("http://localhost:8080/api/products/reviews", payload);
+    
+    alert("🎉 Đã gửi đánh giá thành công!");
+
+    // 🔥 Đánh dấu đơn hàng này đã đánh giá để ẩn nút
+    if (selectedOrderForReview.value) {
+      selectedOrderForReview.value.daDanhGia = true; 
+    }
+
+    closeReviewModal();
+    fetchOrders(); 
+  } catch (error) {
+    console.error("Lỗi khi gửi đánh giá:", error);
+    alert("Không thể gửi đánh giá, Bạn thử lại nhé!");
+  }
+};
+
+
+// ==========================================
+//  THÊM ĐOẠN LOGIC PHÂN TRANG NÀY VÀO TRƯỚC HÀM handleFileUpload
+// ==========================================
+const currentPage = ref(1);
+const itemsPerPage = ref(5); // Số đơn hiển thị trên 1 trang
+
+const totalPages = computed(() => {
+  return Math.ceil(orders.value.length / itemsPerPage.value);
+});
+
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return orders.value.slice(start, end);
+});
+
+const goToPage = (page) => { currentPage.value = page; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+// ==========================================
+
 
 const handleFileUpload = async (event, type) => {
   const file = event.target.files[0];
@@ -400,18 +556,36 @@ if (storedUser) {
   userId = userData.nguoiDungId || userData.id;
 }
 
+
 const fetchOrders = async () => {
-  if (!userId) {
-    router.push("/login");
-    return;
-  }
   try {
-    const response = await axios.get(
-      `http://localhost:8080/api/don-hang/danh-sach/${userId}`,
-    );
-    orders.value = response.data;
+    if (!currentUser.value) return;
+    const currentId = currentUser.value.nguoiDungId || currentUser.value.id;
+
+    // 1. ĐÃ SỬA URL: Thay "nguoi-dung" thành "danh-sach" cho đúng với Controller của Duy
+    const res = await axios.get(`http://localhost:8080/api/don-hang/danh-sach/${currentId}`); 
+    const ordersData = res.data;
+
+    // 2. Lấy danh sách đánh giá để đối chiếu ẩn nút
+    let myReviews = [];
+    try {
+        const reviewRes = await axios.get(`http://localhost:8080/api/products/reviews/buyer/${currentId}`);
+        myReviews = reviewRes.data;
+    } catch (revErr) {
+        console.warn("Chưa lấy được review:", revErr);
+    }
+
+    // 3. Khớp dữ liệu
+    orders.value = ordersData.map(order => {
+      // Trong DonHangResponse của Duy thường có chiTietDonHangs
+      const hasReviewed = myReviews.some(rev => 
+        order.chiTietDonHangs && order.chiTietDonHangs.some(detail => detail.sanPhamId === rev.sanPham?.sanPhamId)
+      );
+      return { ...order, daDanhGia: hasReviewed };
+    });
+
   } catch (error) {
-    console.error("Lỗi khi tải danh sách đơn hàng:", error);
+    console.error("Lỗi tải đơn hàng:", error);
   }
 };
 
@@ -496,7 +670,15 @@ const formatDate = (dateString) => {
   return date.toLocaleString("vi-VN");
 };
 
-onMounted(() => fetchOrders());
+onMounted(() => {
+  // Lấy thông tin Duy đang đăng nhập từ localStorage giống như bên ShopView
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    currentUser.value = JSON.parse(storedUser);
+  }
+  
+  fetchOrders(); // Hàm lấy danh sách đơn hàng của bạn
+});
 </script>
 
 <style scoped>
@@ -905,5 +1087,102 @@ onMounted(() => fetchOrders());
   margin-top: 10px;
   border-radius: 4px;
   border: 1px solid #eaeaea;
+}
+
+
+/* ================= 🔥 CSS CHO PHÂN TRANG (Tông Đỏ Cam) ================= */
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: white;
+  border-top: 1px solid #eaeaea;
+}
+
+.btn-page {
+  padding: 8px 14px;
+  border: 1px solid #dee2e6;
+  background-color: white;
+  color: #ee4d2d; 
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.btn-page:hover:not(:disabled) {
+  background-color: #fff5f5; /* Nền đỏ cam nhạt khi hover */
+}
+
+.btn-page.active {
+  background-color: #ee4d2d; /* Nền đỏ cam khi active */
+  color: white;
+  border-color: #ee4d2d;
+}
+
+.btn-page:disabled {
+  color: #6c757d;
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  border-color: #dee2e6;
+}
+
+
+/* ================= CSS MODAL CHI TIẾT STYLE OREKA ================= */
+.shopee-modal { width: 95%; max-width: 900px; padding: 0; background: #f8f9fa; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: white; border-bottom: 2px solid #ee4d2d; position: sticky; top: 0; z-index: 10;}
+.back-btn { background: none; border: none; font-weight: bold; color: #ee4d2d; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;}
+.back-btn:hover { opacity: 0.8; }
+.status-text { color: #ee4d2d; font-weight: bold; text-transform: uppercase; font-size: 15px;}
+.oreka-body { padding: 20px 30px; overflow-y: auto;}
+
+.oreka-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.oreka-order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eaeaea; padding-bottom: 15px; margin-bottom: 15px; }
+.shop-name { font-weight: 700; color: #333; font-size: 15px; }
+.order-date { color: #888; font-size: 13px; }
+
+.oreka-product-item { display: flex; gap: 15px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.oreka-product-item:last-child { border-bottom: none; }
+.product-img-box { width: 80px; height: 80px; flex-shrink: 0; border: 1px solid #eee; border-radius: 4px; overflow: hidden; }
+.product-img { width: 100%; height: 100%; object-fit: cover; }
+.product-details { display: flex; flex-direction: column; justify-content: center; }
+.product-details .product-name { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 5px; }
+.product-meta { font-size: 13px; color: #777; margin-bottom: 5px; }
+.product-price strong { color: #ee4d2d; font-size: 14px; }
+
+.oreka-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: white; padding: 25px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.oreka-title { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 15px; border-left: 3px solid #ee4d2d; padding-left: 8px; line-height: 1;}
+.border-left-col { border-left: 1px dashed #eaeaea; padding-left: 20px; }
+
+/* Timeline Vận chuyển dọc */
+.vertical-timeline { position: relative; padding-left: 15px; border-left: 2px solid #eee; margin-left: 5px; }
+.v-timeline-item { position: relative; padding-bottom: 20px; }
+.v-timeline-item:last-child { padding-bottom: 0; }
+.v-dot { position: absolute; left: -21px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #ccc; border: 2px solid white; box-shadow: 0 0 0 1px #eee; }
+.v-timeline-item.completed .v-dot { background: #007bff; box-shadow: 0 0 0 1px #007bff; }
+.v-timeline-item.cancel .v-dot { background: #dc3545; box-shadow: 0 0 0 1px #dc3545; }
+.v-content { font-size: 14px; color: #555; padding-left: 10px; line-height: 1.2; }
+
+/* Text & Tổng kết */
+.address-text-box { font-size: 13px; line-height: 1.5; }
+.payment-summary-box { background: #fdfdfd; padding: 15px; border-radius: 6px; border: 1px solid #f0f0f0; }
+.summary-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+.summary-line:last-child { margin-bottom: 0; }
+.summary-line.total { align-items: center; }
+
+/* Thích ứng cho thiết bị di động (Responsive) */
+@media (max-width: 768px) {
+    .oreka-grid-2col {
+        grid-template-columns: 1fr;
+    }
+    .border-left-col {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px dashed #eaeaea;
+        padding-top: 20px;
+        margin-top: 10px;
+    }
 }
 </style>

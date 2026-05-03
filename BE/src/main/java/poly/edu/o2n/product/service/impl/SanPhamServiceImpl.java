@@ -21,6 +21,7 @@ import poly.edu.o2n.product.entity.SanPham;
 import poly.edu.o2n.product.repository.HinhAnhSanPhamRepository;
 import poly.edu.o2n.product.repository.SanPhamRepository;
 import poly.edu.o2n.product.service.SanPhamService;
+import poly.edu.o2n.review.repository.DanhGiaRepository;
 import poly.edu.o2n.user.entity.NguoiDung;
 import poly.edu.o2n.user.repository.NguoiDungRepository;
 
@@ -49,6 +50,9 @@ public class SanPhamServiceImpl implements SanPhamService {
 
     @Autowired
     private DiaChiCuaHangRepository diaChiCuaHangRepository;
+
+    @Autowired
+    private DanhGiaRepository danhGiaRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -214,14 +218,24 @@ public class SanPhamServiceImpl implements SanPhamService {
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> getSellerInfo(Integer sellerId) {
-        NguoiDung nd = nguoiDungRepository.findById(sellerId)
-                .orElseThrow(() -> new RuntimeException("Chủ shop không tồn tại"));
+        // 1. Lấy thông tin người dùng (Shop)
+        NguoiDung seller = nguoiDungRepository.findById(sellerId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Shop"));
 
+        // 2. Gọi hàm tính trung bình sao từ Repository đã viết lúc nãy
+        Double avgStars = danhGiaRepository.getAverageStarsBySeller(sellerId);
+
+        // Nếu chưa có ai đánh giá thì mặc định là 0.0, nếu có thì làm tròn 1 chữ số
+        double finalStars = (avgStars != null) ? Math.round(avgStars * 10.0) / 10.0 : 0.0;
+
+        // 3. Đưa dữ liệu vào Map để trả về cho Frontend
         Map<String, Object> info = new HashMap<>();
-        info.put("id", nd.getNguoiDungId());
-        info.put("hoVaTen", nd.getHoVaTen());
-        info.put("anhDaiDien", nd.getAnhDaiDien());
-        info.put("ngayTao", nd.getNgayTao());
+        info.put("hoVaTen", seller.getHoVaTen());
+        info.put("anhDaiDien", seller.getAnhDaiDien());
+        info.put("ngayTao", seller.getNgayTao());
+        info.put("nguoiDungId", seller.getNguoiDungId());
+        info.put("soSaoTrungBinh", finalStars); //  Đây chính là con số thực tế
+
         return info;
     }
 

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import poly.edu.o2n.address.repository.DiaChiRepository;
+import poly.edu.o2n.notification.dto.ThongBaoDto;
+import poly.edu.o2n.notification.service.ThongBaoRedisService;
 import poly.edu.o2n.order.dto.request.OrderItemDto;
 import poly.edu.o2n.order.dto.request.OrderRequestDto;
 import poly.edu.o2n.order.dto.request.XuLyYeuCauRequest;
@@ -58,6 +60,20 @@ public class DonHangServiceImpl implements DonHangService {
     @Autowired
     private LichSuGiaoDichRepository lichSuGiaoDichRepository;
 
+    @Autowired
+    private poly.edu.o2n.address.repository.DiaChiCuaHangRepository diaChiCuaHangRepository;
+
+    @Autowired
+    private ThongBaoRedisService thongBaoRedisService;
+
+    @Autowired
+    private ThongBaoRedisService thongBaoService;
+
+    @Autowired
+    private poly.edu.o2n.order.repository.YeuCauTraHangRepository yeuCauTraHangRepository;
+
+
+
 
     @Override
     @Transactional // Đảm bảo lưu cả Cha và Con thành công, nếu lỗi 1 cái là rollback hết
@@ -107,11 +123,55 @@ public class DonHangServiceImpl implements DonHangService {
             chiTietDonHangRepository.save(chiTiet);
         }
 
+
         // 4. TRẢ VỀ KẾT QUẢ CHO VUE.JS
         Map<String, Object> response = new HashMap<>();
         response.put("donHangId", savedDonHang.getDonHangId());
         response.put("trangThai", "Thành công");
         response.put("thongBao", "Đã tạo đơn hàng thành công!");
+
+        // 4. GỬI THÔNG BÁO (Dùng requestDto để tránh lỗi getChiTietDonHangs)
+        try {
+            // Kiểm tra nếu có sản phẩm trong đơn
+            if (!requestDto.getChiTietDonHangs().isEmpty()) {
+                // Lấy ID sản phẩm đầu tiên từ DTO của Duy
+                Integer sanPhamId = requestDto.getChiTietDonHangs().get(0).getSanPhamId();
+
+                // Tìm sản phẩm đó để lấy ID chủ Shop
+                SanPham sp = sanPhamRepository.findById(sanPhamId).orElse(null);
+
+                if (sp != null && sp.getNguoiDung() != null) {
+                    Integer idNguoiBan = sp.getNguoiDung().getNguoiDungId();
+
+                    // Gửi cho người bán
+                    ThongBaoDto tbBan = new ThongBaoDto(
+                            null,
+                            "Ting ting! Có đơn hàng mới 💰",
+                            "Sản phẩm '" + sp.getTenSanPham() + "' vừa được khách đặt mua. Đơn #" + savedDonHang.getDonHangId(),
+                            "ORDER_SELLER",
+                            "/quan-ly-don-ban",
+                            false,
+                            null
+                    );
+                    thongBaoService.guiThongBao(idNguoiBan, tbBan);
+                }
+            }
+
+            // Gửi cho người mua (nguoiMua Duy đã tìm thấy ở đầu hàm)
+            ThongBaoDto tbMua = new ThongBaoDto(
+                    null,
+                    "Đặt hàng thành công! 🎉",
+                    "Đơn hàng #" + savedDonHang.getDonHangId() + " của bạn đã được ghi nhận.",
+                    "ORDER_BUYER",
+                    "/quan-ly-don-hang",
+                    false,
+                    null
+            );
+            thongBaoService.guiThongBao(nguoiMua.getNguoiDungId(), tbMua);
+
+        } catch (Exception e) {
+            System.err.println("Lỗi gửi thông báo Redis: " + e.getMessage());
+        }
 
         return response;
     }
@@ -168,60 +228,82 @@ public class DonHangServiceImpl implements DonHangService {
         response.setTrangThaiDonHang(donHang.getTrangThaiDonHang());
         response.setNgayTao(donHang.getNgayTao());
 
-        // --- 1. LẤY THÔNG TIN NGƯỜI NHẬN & ĐỊA CHỈ ---
-        String tenNguoiNhan = donHang.getNguoiDung().getHoVaTen();
-        if (tenNguoiNhan == null) tenNguoiNhan = "Khách hàng O2N";
+        // --- 1. LẤY VÀ XỬ LÝ ĐỊA CHỈ THÔNG MINH ---
+        String tenNguoiNhan = donHang.getNguoiDung().getHoVaTen() != null ? donHang.getNguoiDung().getHoVaTen() : "Khách hàng";
+        String sdtNguoiNhan = donHang.getNguoiDung().getSoDienThoai() != null ? donHang.getNguoiDung().getSoDienThoai() : "Chưa có SĐT";
+        String diaChiGiaoHangFinal = tenNguoiNhan + " | " + sdtNguoiNhan + " | Chưa cập nhật địa chỉ giao hàng";
 
-        String sdtNguoiNhan = donHang.getNguoiDung().getSoDienThoai();
-        if (sdtNguoiNhan == null) sdtNguoiNhan = "Chưa cập nhật SĐT";
-
-        String diaChiChiTiet = "Chưa cập nhật địa chỉ giao hàng";
         if (donHang.getDiaChiId() != null) {
             try {
-                // Chui vào bảng dia_chi lấy địa chỉ chi tiết
                 var diaChi = diaChiRepository.findById(donHang.getDiaChiId()).orElse(null);
-                if (diaChi != null && diaChi.getDiaChiChiTiet() != null) {
-                    diaChiChiTiet = diaChi.getDiaChiChiTiet();
+                if (diaChi != null) {
+                    String chiTiet = diaChi.getDiaChiChiTiet();
+                    String phuongXa = diaChi.getPhuongXaId();
+
+                    String rawAddress = "";
+                    // Nếu chi tiết là số 0 hoặc 1 (dữ liệu cũ lưu lỗi), thì lấy từ phuong_xa_id
+                    if (chiTiet != null && (chiTiet.trim().equals("0") || chiTiet.trim().equals("1"))) {
+                        rawAddress = phuongXa != null ? phuongXa : "";
+                    } else if (chiTiet != null) {
+                        rawAddress = chiTiet; // Lấy data mới chuẩn
+                    }
+
+                    // Nếu chuỗi đã có sẵn Tên và SĐT bên trong (được phân cách bởi " | ")
+                    if (rawAddress.contains(" | ")) {
+                        // Đổi dấu " - " thành " | " để biến format "Tên - SĐT | Địa chỉ" thành "Tên | SĐT | Địa chỉ"
+                        diaChiGiaoHangFinal = rawAddress.replace(" - ", " | ");
+                    } else {
+                        // Nếu DB chỉ lưu mỗi tên đường (sạch), thì tự ghép Tên và SĐT vào
+                        diaChiGiaoHangFinal = tenNguoiNhan + " | " + sdtNguoiNhan + " | " + rawAddress;
+                    }
                 }
             } catch (Exception e) {
                 System.out.println("Lỗi lấy địa chỉ: " + e.getMessage());
             }
         }
-        // Nối chuỗi y hệt format Shopee
-        response.setDiaChiGiaoHang(tenNguoiNhan + " | (+84) " + sdtNguoiNhan + " | " + diaChiChiTiet);
+        response.setDiaChiGiaoHang(diaChiGiaoHangFinal);
 
-        // --- 2. LẤY CHI TIẾT SẢN PHẨM (XỬ LÝ LỖI NULL DO ĐƠN CŨ) ---
+        // --- 2. LẤY CHI TIẾT SẢN PHẨM, ẢNH VÀ ĐỊA CHỈ SHOP ---
         List<ChiTietDonHang> chiTiets = chiTietDonHangRepository.findByDonHang_DonHangId(donHangId);
         List<ChiTietDonHangResponse> chiTietResponses = new ArrayList<>();
 
-        for (ChiTietDonHang ct : chiTiets) {
+        String diaChiShopFinal = "Chưa cập nhật địa chỉ gửi hàng";
+
+        for (int i = 0; i < chiTiets.size(); i++) {
+            ChiTietDonHang ct = chiTiets.get(i);
+
+            //  Lấy trực tiếp từ object quan hệ, không dùng ID lẻ nữa
+            if (i == 0 && ct.getSanPham().getDiaChiCuaHang() != null) {
+                diaChiShopFinal = ct.getSanPham().getDiaChiCuaHang().getDiaChiChiTiet();
+            }
+
             ChiTietDonHangResponse ctRes = new ChiTietDonHangResponse();
             ctRes.setChiTietId(ct.getChiTietId());
             ctRes.setSanPhamId(ct.getSanPham().getSanPhamId());
+            ctRes.setSoLuongMua(ct.getSoLuongMua() != null ? ct.getSoLuongMua() : 1);
 
-            // Ép số lượng = 1 nếu DB cũ bị null
-            Integer soLuong = ct.getSoLuongMua() != null ? ct.getSoLuongMua() : 1;
-            ctRes.setSoLuongMua(soLuong);
-
-            // Lấy giá lúc mua. Nếu null thì lấy thẳng giá gốc của sản phẩm
             BigDecimal gia = ct.getGiaLucMua();
-            if (gia == null && ct.getSanPham() != null) {
-                gia = ct.getSanPham().getGia();
-            }
-            if (gia == null) gia = BigDecimal.ZERO; // An toàn tuyệt đối
-            ctRes.setGiaLucMua(gia);
+            if (gia == null && ct.getSanPham() != null) gia = ct.getSanPham().getGia();
+            ctRes.setGiaLucMua(gia != null ? gia : BigDecimal.ZERO);
 
             try {
                 ctRes.setTenSanPham(ct.getSanPham().getTenSanPham());
+                var danhSachAnh = ct.getSanPham().getDanhSachHinhAnh();
+                if (danhSachAnh != null && !danhSachAnh.isEmpty()) {
+                    ctRes.setHinhAnh(danhSachAnh.get(0).getDuongDanAnh());
+                }
             } catch (Exception e) {
                 ctRes.setTenSanPham("Sản phẩm không xác định");
             }
             chiTietResponses.add(ctRes);
         }
+
         response.setChiTietDonHangs(chiTietResponses);
+        response.setDiaChiCuaHang(diaChiShopFinal);
 
         return response;
     }
+
 
 
     @Override
@@ -276,6 +358,38 @@ public class DonHangServiceImpl implements DonHangService {
             giaoDich.setNgayTao(LocalDateTime.now());
 
             lichSuGiaoDichRepository.save(giaoDich);
+
+
+            // 1. Báo cho Người Mua yên tâm
+            ThongBaoDto tbThanhToan = new ThongBaoDto(
+                    null,
+                    "Thanh toán thành công! 💳",
+                    "Tuyệt vời! Đơn hàng #" + donHangId + " đã được thanh toán thành công qua VNPAY.",
+                    "ORDER_BUYER",
+                    "/quan-ly-don-hang",
+                    false,
+                    LocalDateTime.now().toString()
+            );
+            thongBaoRedisService.guiThongBao(nguoiMua.getNguoiDungId(), tbThanhToan);
+
+            // 2. Báo cho Người Bán biết khách đã trả tiền trước
+            List<ChiTietDonHang> chiTiets = chiTietDonHangRepository.findByDonHang_DonHangId(donHangId);
+            if (!chiTiets.isEmpty()) {
+                Integer nguoiBanId = chiTiets.get(0).getSanPham().getNguoiDung().getNguoiDungId();
+                ThongBaoDto tbBaoShop = new ThongBaoDto(
+                        null,
+                        "Khách đã thanh toán trước! 💸",
+                        "Khách hàng đã thanh toán đơn #" + donHangId + " qua VNPAY. Bạn hãy sớm đóng gói và giao hàng nhé!",
+                        "ORDER_SELLER",
+                        "/quan-ly-don-ban",
+                        false,
+                        LocalDateTime.now().toString()
+                );
+                thongBaoRedisService.guiThongBao(nguoiBanId, tbBaoShop);
+            }
+
+
+
         }
     }
 
@@ -331,11 +445,23 @@ public class DonHangServiceImpl implements DonHangService {
         // 6. Chốt đơn hàng
         donHang.setTrangThaiDonHang("HOAN_THANH");
         donHangRepository.save(donHang);
+
+        // 🔥 BÁO CHỦ SHOP: TIỀN ĐÃ CỘNG VÀO VÍ
+        ThongBaoDto tbGiaiNgan = new ThongBaoDto(
+                null,
+                "Tiền bán hàng đã về ví! 💵",
+                "Khách đã xác nhận nhận hàng. Số tiền " + tienGiaiNgan + " đ từ đơn #" + donHangId + " đã được cộng vào Ví của bạn.",
+                "WALLET",
+                "/vi-dien-tu", // Link trỏ tới trang Ví tiền của bạn
+                false,
+                LocalDateTime.now().toString()
+        );
+        thongBaoRedisService.guiThongBao(nguoiBan.getNguoiDungId(), tbGiaiNgan);
+
+
     }
 
 
-    @Autowired
-    private poly.edu.o2n.order.repository.YeuCauTraHangRepository yeuCauTraHangRepository;
 
     @Override
     @Transactional
@@ -370,6 +496,27 @@ public class DonHangServiceImpl implements DonHangService {
         // 4. Cập nhật trạng thái Đơn hàng để Người bán biết mà vào check
         donHang.setTrangThaiDonHang("YEU_CAU_TRA_HANG");
         donHangRepository.save(donHang);
+
+
+        // 🔥 CHÈN THÔNG BÁO: BÁO CHO NGƯỜI BÁN CÓ YÊU CẦU TRẢ HÀNG
+        // Tìm ID người bán thông qua chi tiết đơn hàng
+        List<ChiTietDonHang> chiTiets = chiTietDonHangRepository.findByDonHang_DonHangId(donHang.getDonHangId());
+        if (!chiTiets.isEmpty()) {
+            Integer nguoiBanId = chiTiets.get(0).getSanPham().getNguoiDung().getNguoiDungId();
+            ThongBaoDto tbYeuCauTra = new ThongBaoDto(
+                    null,
+                    "Khách yêu cầu trả hàng! ⚠️",
+                    "Đơn hàng #" + donHang.getDonHangId() + " vừa bị khách yêu cầu trả lại. Vui lòng vào kiểm tra và xử lý ngay!",
+                    "ORDER_SELLER",
+                    "/quan-ly-don-ban",
+                    false,
+                    LocalDateTime.now().toString()
+            );
+            thongBaoRedisService.guiThongBao(nguoiBanId, tbYeuCauTra);
+        }
+
+
+
     }
 
 
@@ -419,6 +566,22 @@ public class DonHangServiceImpl implements DonHangService {
         yeuCau.setNgayXuLy(LocalDateTime.now());
         yeuCauTraHangRepository.save(yeuCau);
         donHangRepository.save(donHang);
+
+        // 🔥 CHÈN THÔNG BÁO: BÁO KẾT QUẢ CHO NGƯỜI MUA
+        Integer nguoiMuaId = donHang.getNguoiDung().getNguoiDungId();
+        boolean laDongY = "DONG_Y".equals(request.getHanhDong());
+
+        String tieuDe = laDongY ? "Yêu cầu trả hàng ĐƯỢC DUYỆT! ✅" : "Yêu cầu trả hàng BỊ TỪ CHỐI ❌";
+        String noiDung = laDongY
+                ? "Shop đã đồng ý nhận lại hàng cho đơn #" + donHang.getDonHangId() + ". Vui lòng đóng gói và gửi trả hàng."
+                : "Shop đã từ chối yêu cầu trả hàng cho đơn #" + donHang.getDonHangId() + ". Đơn hàng được tính là hoàn thành.";
+
+        ThongBaoDto tbXuLyTra = new ThongBaoDto(
+                null, tieuDe, noiDung, "ORDER_BUYER", "/quan-ly-don-hang", false, LocalDateTime.now().toString()
+        );
+        thongBaoRedisService.guiThongBao(nguoiMuaId, tbXuLyTra);
+
+
     }
 
     @Override
@@ -472,6 +635,19 @@ public class DonHangServiceImpl implements DonHangService {
         giaoDich.setTrangThai("THANH_CONG");
         giaoDich.setNgayTao(LocalDateTime.now());
         lichSuGiaoDichRepository.save(giaoDich);
+
+        // 🔥 CHÈN THÔNG BÁO: BÁO TIỀN ĐÃ HOÀN VÀO VÍ NGƯỜI MUA
+        ThongBaoDto tbHoanTien = new ThongBaoDto(
+                null,
+                "Hoàn tiền thành công! 💸",
+                "Số tiền " + tienHoan + " đ từ việc trả hàng đơn #" + donHangId + " đã được cộng vào ví của bạn.",
+                "WALLET",
+                "/vi-dien-tu", // Thay bằng link trang ví điện tử của bạn trên Vue.js
+                false,
+                LocalDateTime.now().toString()
+        );
+        thongBaoRedisService.guiThongBao(nguoiMua.getNguoiDungId(), tbHoanTien);
+
     }
 
 

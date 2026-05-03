@@ -1,26 +1,32 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-// Import các trang chính
+// --- IMPORT CÁC TRANG CHÍNH ---
+import HomeView from "../views/home/HomeView.vue";
 import Login from "../views/auth/Login.vue";
 import Register from "../views/auth/Register.vue";
 import ForgotPassword from "../views/auth/ForgotPassword.vue";
-import HomeView from "../views/home/HomeView.vue";
-import Sell from "../views/product/Sell.vue";
-import QuanLyDonHang from "@/views/order/QuanLyDonHang.vue";
-import QuanLyDonBan from "@/views/order/QuanLyDonBan.vue";
-import ProductDetail from "../views/product/ProductDetail.vue";
-import Cart from "../views/cart/Cart.vue";
 import Profile from "../views/user/Profile.vue";
+
+// --- IMPORT CÁC TRANG SẢN PHẨM & SHOP ---
 import ShopView from "../views/product/ShopView.vue";
+import ProductDetail from "../views/product/ProductDetail.vue";
+import Sell from "../views/product/Sell.vue";
 import MyProductView from "../views/product/MyProductView.vue";
 import ShopProfile from "@/views/shop/ShopProfile.vue";
 
-// Import các trang Giao dịch / Thanh toán
+// --- IMPORT CÁC TRANG ĐƠN HÀNG & GIỎ HÀNG ---
+import Cart from "../views/cart/Cart.vue";
+import QuanLyDonHang from "@/views/order/QuanLyDonHang.vue";
+import QuanLyDonBan from "@/views/order/QuanLyDonBan.vue";
+
+// --- IMPORT CÁC TRANG GIAO DỊCH / THANH TOÁN ---
 import Payment from "../views/paymentQR/payment.vue";
-// 🔥 BƯỚC 1: IMPORT TRANG RÚT TIỀN Ở ĐÂY
 import WithdrawMoney from "../views/paymentQR/withdrawmoney.vue";
 
-// Import các thành phần Admin
+// --- IMPORT CÁC TRANG CHAT ---
+import ChatView from "@/views/chat/ChatView.vue";
+
+// --- IMPORT CÁC THÀNH PHẦN ADMIN ---
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import Users from "../views/admin/Users.vue";
 import Categories from "../views/admin/Categories.vue";
@@ -35,13 +41,12 @@ const router = createRouter({
       name: "home",
       component: HomeView,
     },
-    // ==========================================
-    // CỤM ROUTE ADMIN (LỒNG NHAU)
-    // ==========================================
+
+    // --- CỤM ROUTE ADMIN (LỒNG NHAU) ---
     {
       path: "/admin",
-      component: AdminLayout, // Đây là cái "khung" chứa Sidebar
-      redirect: "/admin/thong-ke", // Khi vào /admin sẽ tự nhảy tới thống kê
+      component: AdminLayout,
+      redirect: "/admin/thong-ke",
       children: [
         {
           path: "users",
@@ -73,88 +78,49 @@ const router = createRouter({
           component: Payments,
           meta: { title: "Đối Soát Thanh Toán" },
         },
+        {
+          path: "chat-support",
+          name: "admin-chat",
+          component: () => import("@/views/chat/ChatView.vue"), // Dùng lại trang ChatView cũ
+          meta: { title: "Tin nhắn hỗ trợ" },
+        },
       ],
     },
-    // ==========================================
-    // CÁC ROUTE NGƯỜI DÙNG KHÁC
-    // ==========================================
+
+    // --- CỤM ROUTE XÁC THỰC (AUTH) ---
+    { path: "/login", name: "login", component: Login },
+    { path: "/register", name: "register", component: Register },
+    { path: "/forgot-password", name: "forgot-password", component: ForgotPassword },
+
+    // --- CỤM ROUTE SẢN PHẨM & GIAN HÀNG ---
+    { path: "/dang-ban", name: "Sell", component: Sell },
+    { path: "/product/:id", name: "ProductDetail", component: ProductDetail },
+    { path: "/shop/:id", name: "Shop", component: ShopView },
+    { path: "/my-products", name: "MyProducts", component: MyProductView },
+    { path: "/shop-profile", name: "ShopProfile", component: ShopProfile },
+    { path: "/profile", name: "Profile", component: Profile },
+
+    // --- CỤM ROUTE ĐƠN HÀNG & GIỎ HÀNG ---
+    { path: "/cart", name: "Cart", component: Cart },
+    { path: "/quan-ly-don-hang", name: "QuanLyDonHang", component: QuanLyDonHang },
+    { path: "/quan-ly-don-ban", name: "QuanLyDonBan", component: QuanLyDonBan },
+
+    // --- CỤM ROUTE THANH TOÁN ---
+    { path: "/thanh-toan/:id", name: "Payment", component: Payment },
+    { path: "/rut-tien", name: "WithdrawMoney", component: WithdrawMoney },
+
+    // --- CỤM ROUTE CHAT (CHỈ GIỮ LẠI 1 CÁI DUY NHẤT) ---
     {
-      path: "/login",
-      name: "login",
-      component: Login,
-    },
-    {
-      path: "/register",
-      name: "register",
-      component: Register,
-    },
-    {
-      path: "/forgot-password",
-      name: "forgot-password",
-      component: ForgotPassword,
-    },
-    {
-      path: "/dang-ban",
-      name: "Sell",
-      component: Sell,
-    },
-    {
-      path: "/product/:id",
-      name: "ProductDetail",
-      component: ProductDetail,
-    },
-    {
-      path: "/cart",
-      name: "Cart",
-      component: Cart,
-    },
-    {
-      path: "/quan-ly-don-hang",
-      name: "QuanLyDonHang",
-      component: QuanLyDonHang,
-    },
-    {
-      path: "/quan-ly-don-ban",
-      name: "QuanLyDonBan",
-      component: QuanLyDonBan,
-    },
-    {
-      path: "/profile",
-      name: "Profile",
-      component: Profile,
-    },
-    {
-      path: "/shop/:id",
-      name: "Shop",
-      component: ShopView,
-    },
-    {
-      path: "/my-products",
-      name: "MyProducts",
-      component: MyProductView,
-    },
-    {
-      path: "/shop-profile",
-      name: "ShopProfile",
-      component: ShopProfile,
-    },
-    {
-      path: "/thanh-toan/:id", 
-      name: "Payment",
-      component: Payment,
-    },
-    // 🔥 BƯỚC 2: KHAI BÁO ĐƯỜNG DẪN CHO TRANG RÚT TIỀN
-    {
-      path: "/rut-tien", 
-      name: "WithdrawMoney",
-      component: WithdrawMoney,
+      path: "/chat",
+      name: "Chat",
+      component: ChatView,
+      meta: { requiresAuth: true },
     },
   ],
 });
 
-// Thêm "Bảo vệ cổng" (Navigation Guard) cho Router
+// --- BẢO VỆ CỔNG (NAVIGATION GUARD) ---
 router.beforeEach((to, from, next) => {
-  // Lấy thông tin user từ LocalStorage
   const storedUser = localStorage.getItem("user");
   let userRole = null;
 
@@ -163,16 +129,15 @@ router.beforeEach((to, from, next) => {
     userRole = user.vaiTro || user.role || user.quyen;
   }
 
-  // Nếu người dùng cố tình truy cập vào đường dẫn bắt đầu bằng "/admin"
   if (to.path.startsWith("/admin")) {
     if (!storedUser || userRole !== "ADMIN") {
       alert("⛔ CẢNH BÁO: Bạn không có quyền truy cập khu vực Quản trị!");
-      next("/"); 
+      next("/");
     } else {
-      next(); 
+      next();
     }
   } else {
-    next(); 
+    next();
   }
 });
 

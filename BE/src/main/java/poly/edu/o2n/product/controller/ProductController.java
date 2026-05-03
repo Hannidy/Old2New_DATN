@@ -125,4 +125,18 @@ public class ProductController {
 
         return ResponseEntity.ok(result);
     }
+
+    // API TÌM KIẾM SẢN PHẨM (MỚI THÊM)
+    @GetMapping("/search")
+    public ResponseEntity<?> searchProducts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        // Tìm kiếm các sản phẩm có tên chứa keyword và đang ở trạng thái DANG_BAN
+        Page<SanPham> result = sanPhamRepo.findByTenSanPhamContainingIgnoreCaseAndTrangThai(keyword, "DANG_BAN", pageable);
+
+        return ResponseEntity.ok(result);
+    }
 }

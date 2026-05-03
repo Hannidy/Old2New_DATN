@@ -19,4 +19,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Integer> {
     // Tìm sản phẩm theo danh_muc_id VÀ trạng thái phải là 'DA_DUYET'
     Page<SanPham> findByDanhMuc_DanhMucIdAndTrangThai(Integer danhMucId, String trangThai, Pageable pageable);
 
+    // Hàm tìm kiếm theo tên sản phẩm có chứa từ khóa (Ignoring Case) và đang đăng bán
+    Page<SanPham> findByTenSanPhamContainingIgnoreCaseAndTrangThai(String keyword, String trangThai, Pageable pageable);
+
 }

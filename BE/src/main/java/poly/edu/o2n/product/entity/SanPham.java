@@ -75,4 +75,6 @@ public class SanPham {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 }
