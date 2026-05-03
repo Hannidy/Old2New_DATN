@@ -19,5 +19,5 @@ public class SanPhamRequestDto {
     private String soDienThoai;
     private Integer idDiaChiCuaHang;
     // Tạm thời chưa xử lý FirebaseToken ở Backend, ta cứ hứng vào đã
-    private String firebaseToken;
+    private String OtpCode;
 }

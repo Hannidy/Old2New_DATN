@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/don-hang/vnpay-return").permitAll() // Nhận kết quả từ VNPay
                         .requestMatchers("/uploads/**").permitAll() // Xem ảnh đại diện, ảnh sản phẩm
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/webhook/sepay").permitAll()
                         .requestMatchers("/api/auth/**", "/api/public/**", "/api/media/**", "/error").permitAll()
 
                         // 2. NHÓM ADMIN
@@ -63,6 +64,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/dia-chi/**").authenticated() // Quản lý sổ địa chỉ
                         .requestMatchers("/api/cart/**").authenticated() // Quản lý giỏ hàng trên Redis
                         .requestMatchers("/api/shops/**").authenticated()
+                        .requestMatchers("/api/addresses/shop/**").authenticated()
+                        .requestMatchers("/api/admin/doi-soat/**").authenticated()
+                        .requestMatchers("/api/vi-tien/**").authenticated()
+                        .requestMatchers("/api/payment/**").authenticated()
+
 
                         // Cấu hình riêng cho Đơn hàng (Khóa toàn bộ ngoại trừ VNPay return ở trên)
                         .requestMatchers("/api/don-hang/**").authenticated()

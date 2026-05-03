@@ -41,4 +41,5 @@ public class DoiSoatController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 }

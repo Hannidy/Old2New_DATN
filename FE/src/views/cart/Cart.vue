@@ -5,9 +5,7 @@
     <main class="container main-content py-4">
       <div class="d-flex align-items-center mb-4">
         <h2 class="fw-bold mb-0">🛒 Giỏ hàng của bạn</h2>
-        <span class="ms-3 badge bg-dark px-3 py-2 rounded-pill"
-          >Sản phẩm độc bản</span
-        >
+        <span class="ms-3 badge bg-dark px-3 py-2 rounded-pill">Sản phẩm độc bản</span>
       </div>
 
       <div v-if="cartItems.length > 0" class="row g-4">
@@ -18,205 +16,108 @@
                 <table class="table table-hover align-middle mb-0">
                   <thead class="bg-white border-bottom">
                     <tr>
-                      <th
-                        class="ps-4 py-3 border-0 text-secondary small text-uppercase"
-                      >
-                        Sản phẩm
+                      <th class="ps-4 py-3 text-center" style="width: 50px;">
+                        <input class="form-check-input fs-5" type="checkbox" v-model="selectAll">
                       </th>
-                      <th
-                        class="py-3 border-0 text-secondary small text-uppercase text-center"
-                      >
-                        Số lượng
-                      </th>
-                      <th
-                        class="py-3 border-0 text-secondary small text-uppercase text-center"
-                      >
-                        Đơn giá
-                      </th>
-                      <th
-                        class="py-3 border-0 text-secondary small text-uppercase text-end pe-4"
-                      >
-                        Thành tiền
-                      </th>
+                      <th class="py-3 text-secondary small text-uppercase">Sản phẩm</th>
+                      <th class="py-3 text-secondary small text-uppercase text-center">Số lượng</th>
+                      <th class="py-3 text-secondary small text-uppercase text-center">Đơn giá</th>
+                      <th class="py-3 text-secondary small text-uppercase text-end pe-4">Thành tiền</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(item, index) in cartItems" :key="item.id">
-                      <td class="ps-4 py-4">
+                      <td class="ps-4 py-4 text-center">
+                        <input class="form-check-input fs-5" type="checkbox" :value="item.id" v-model="selectedItems">
+                      </td>
+                      <td class="py-4">
                         <div class="d-flex align-items-center">
-                          <img
-                            :src="
-                              item.hinhAnh || 'https://via.placeholder.com/80'
-                            "
-                            class="rounded-3 border shadow-sm"
-                            style="width: 75px; height: 75px; object-fit: cover"
-                          />
+                          <img :src="item.hinhAnh || 'https://via.placeholder.com/80'" class="rounded-3 border shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
                           <div class="ms-3">
-                            <h6
-                              class="mb-1 fw-bold text-dark text-truncate"
-                              style="max-width: 250px"
-                            >
-                              {{ item.tenSanPham }}
-                            </h6>
-                            <button
-                              @click="removeItem(index)"
-                              class="btn btn-link btn-sm text-danger p-0 text-decoration-none"
-                            >
-                              <small
-                                ><i class="bi bi-trash"></i> Xóa khỏi giỏ</small
-                              >
+                            <h6 class="mb-1 fw-bold text-dark text-truncate" style="max-width: 250px;">{{ item.tenSanPham }}</h6>
+                            <button @click="removeItem(index)" class="btn btn-link btn-sm text-danger p-0 text-decoration-none">
+                              <small><i class="bi bi-trash"></i> Xóa khỏi giỏ</small>
                             </button>
                           </div>
                         </div>
                       </td>
-                      <td class="text-center">
-                        <span
-                          class="badge border text-dark bg-white px-3 py-2 fw-normal"
-                          >1</span
-                        >
-                      </td>
-                      <td class="text-center fw-semibold text-muted">
-                        <div>{{ formatCurrency(item.gia) }}</div>
-                        <div
-                          v-if="item.phiShipRieng > 0"
-                          class="text-primary small mt-1"
-                        >
-                          <i class="bi bi-truck"></i> +
-                          {{ formatCurrency(item.phiShipRieng) }}
-                        </div>
-                      </td>
-                      <td class="text-end pe-4 fw-bold text-danger fs-5">
-                        {{
-                          formatCurrency(item.gia + (item.phiShipRieng || 0))
-                        }}
-                      </td>
+                      <td class="text-center">1</td>
+                      <td class="text-center fw-semibold">{{ formatCurrency(item.gia) }}</td>
+                      <td class="text-end pe-4 fw-bold text-danger fs-5">{{ formatCurrency(item.gia) }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          <router-link
-            to="/"
-            class="btn btn-outline-dark btn-sm mt-4 px-4 rounded-pill"
-          >
-            ← Tiếp tục mua sắm
-          </router-link>
+          
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <router-link to="/" class="btn btn-outline-dark btn-sm px-4 rounded-pill">← Tiếp tục mua sắm</router-link>
+            <button @click="clearCart" class="btn btn-outline-danger btn-sm px-4 rounded-pill">
+              <i class="bi bi-trash-fill"></i> Xóa tất cả giỏ hàng
+            </button>
+          </div>
         </div>
 
         <div class="col-lg-4">
           <div class="card border-0 shadow-sm rounded-4 sticky-summary">
             <div class="card-body p-4">
               <h5 class="fw-bold mb-4 border-bottom pb-2">Tóm tắt đơn hàng</h5>
-
+              
               <div class="mb-4">
                 <h6 class="fw-bold mb-2">📍 Giao hàng đến:</h6>
-                <select
-                  v-model="selectedAddressId"
-                  @change="calculateShippingFee"
-                  class="form-select border-primary shadow-sm"
-                >
-                  <option value="null" disabled>
-                    -- Chọn địa chỉ nhận hàng --
-                  </option>
-                  <option
-                    v-for="addr in userAddresses"
-                    :key="addr.diaChiId"
-                    :value="addr.diaChiId"
-                  >
-                    {{ addr.diaChiChiTiet }}
-                  </option>
+                <select v-model="selectedAddressId" @change="calculateShippingFee" class="form-select border-primary">
+                  <option value="null" disabled>-- Chọn địa chỉ nhận hàng --</option>
+                  <option v-for="addr in userAddresses" :key="addr.diaChiId" :value="addr.diaChiId">{{ addr.diaChiChiTiet }}</option>
                 </select>
-                <small
-                  v-if="userAddresses.length === 0"
-                  class="text-danger d-block mt-1"
-                >
-                  Bạn chưa có địa chỉ. Vui lòng vào Hồ sơ để thêm!
-                </small>
               </div>
 
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Đã chọn:</span>
+                <span class="fw-bold">{{ selectedItems.length }} sản phẩm</span>
+              </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Tổng tiền hàng:</span>
                 <span class="fw-bold">{{ formatCurrency(totalPrice) }}</span>
               </div>
-
-              <div
-                class="d-flex justify-content-between mb-3 border-bottom pb-3"
-              >
-                <span class="text-muted">Phí vận chuyển (GHN):</span>
-                <span
-                  v-if="isCalculatingFee"
-                  class="text-primary spinner-border spinner-border-sm"
-                  role="status"
-                ></span>
-                <span v-else-if="shippingFee > 0" class="fw-bold text-success">
-                  + {{ formatCurrency(shippingFee) }}
-                </span>
-                <span v-else class="fw-bold text-warning">Chưa tính</span>
+              <div class="d-flex justify-content-between mb-3 border-bottom pb-3">
+                <span class="text-muted">Phí vận chuyển:</span>
+                <span v-if="isCalculatingFee" class="spinner-border spinner-border-sm"></span>
+                <span v-else class="fw-bold text-success">+ {{ formatCurrency(shippingFee) }}</span>
               </div>
 
               <div class="mb-4">
-                <div
-                  class="d-flex justify-content-between align-items-center mb-1"
-                >
+                <div class="d-flex justify-content-between align-items-center">
                   <span class="fw-bold fs-5">Tổng thanh toán:</span>
-                  <span class="fw-bold fs-3 text-danger">
-                    {{ formatCurrency(totalPrice + shippingFee) }}
-                  </span>
+                  <span class="fw-bold fs-3 text-danger">{{ formatCurrency(totalPrice + shippingFee) }}</span>
                 </div>
               </div>
 
               <div class="mb-4 border-top pt-3">
                 <h6 class="fw-bold mb-3">Phương thức thanh toán</h6>
                 <div class="form-check mb-2">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    v-model="paymentMethod"
-                    value="COD"
-                    id="cod"
-                  />
-                  <label class="form-check-label" for="cod"
-                    >Thanh toán khi nhận hàng (COD)</label
-                  >
+                  <input class="form-check-input" type="radio" v-model="paymentMethod" value="COD" id="cod">
+                  <label class="form-check-label" for="cod">Thanh toán khi nhận hàng (COD)</label>
                 </div>
                 <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    v-model="paymentMethod"
-                    value="VNPAY"
-                    id="vnpay"
-                  />
-                  <label
-                    class="form-check-label text-primary fw-bold"
-                    for="vnpay"
-                    >Ví VNPAY / Thẻ Ngân hàng</label
-                  >
+                  <input class="form-check-input" type="radio" v-model="paymentMethod" value="VIETQR" id="vietqr">
+                  <label class="form-check-label text-primary fw-bold" for="vietqr">Chuyển khoản</label>
                 </div>
               </div>
 
-              <button
-                @click="checkout"
-                :disabled="!selectedAddressId || isCalculatingFee"
-                class="btn btn-danger w-100 py-3 fw-bold fs-5 shadow rounded-3"
-              >
-                XÁC NHẬN THANH TOÁN
+              <button @click="checkout" :disabled="!selectedAddressId || isCalculatingFee || selectedItems.length === 0" class="btn btn-danger w-100 py-3 fw-bold fs-5 shadow rounded-3">
+                <span v-if="isProcessing" class="spinner-border spinner-border-sm me-2"></span>
+                XÁC NHẬN ĐẶT HÀNG
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else class="text-center py-5 bg-white rounded-4 shadow-sm border">
+      <div v-else class="text-center py-5 bg-white rounded-4 shadow-sm">
         <div class="display-1 mb-4">🛒</div>
         <h3 class="fw-bold">Giỏ hàng đang trống!</h3>
-        <router-link
-          to="/"
-          class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm"
-        >
-          QUAY LẠI MUA SẮM
-        </router-link>
+        <router-link to="/" class="btn btn-danger px-5 py-2 rounded-pill">QUAY LẠI MUA SẮM</router-link>
       </div>
     </main>
     <AppFooter />
@@ -224,301 +125,142 @@
 </template>
 
 <script setup>
-import axios from "axios";
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import AppHeader from "@/layouts/Header.vue";
-import AppFooter from "@/layouts/Footer.vue";
+import axios from 'axios';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import AppHeader from '@/layouts/Header.vue';
+import AppFooter from '@/layouts/Footer.vue';
 
 const route = useRoute();
 const router = useRouter();
 
 const cartItems = ref([]);
-const paymentMethod = ref("VNPAY");
-
+const paymentMethod = ref('VIETQR');
+const isProcessing = ref(false);
 const userAddresses = ref([]);
 const selectedAddressId = ref("null");
 const shippingFee = ref(0);
 const isCalculatingFee = ref(false);
+const selectedItems = ref([]);
 
-// Token GHN thật của Dương
-const GHN_TOKEN = import.meta.env.VITE_GHN_TOKEN;
-const GHN_SHOP_ID = import.meta.env.VITE_GHN_SHOP_ID;
-const GHN_BASE_URL = import.meta.env.VITE_GHN_URL;
+const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 
 const loadCart = async () => {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const storedUser = JSON.parse(localStorage.getItem('user'));
   if (!storedUser) return;
-
   const userId = storedUser.id || storedUser.nguoiDungId;
   const token = storedUser.token || storedUser.accessToken;
 
   try {
-    const response = await axios.get(
-      `http://localhost:8080/api/cart/${userId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const response = await axios.get(`http://localhost:8080/api/cart/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     cartItems.value = response.data || [];
-  } catch (error) {
-    console.error("Lỗi tải giỏ hàng từ Redis:", error);
-  }
+    
+    // TỰ ĐỘNG CHỌN NẾU ĐI TỪ MUA NGAY
+    const autoSelectId = route.query.autoSelect;
+    if (autoSelectId) {
+      selectedItems.value = [Number(autoSelectId)];
+    } else {
+      selectedItems.value = [];
+    }
+  } catch (error) { console.error(error); }
 };
 
-const formatCurrency = (val) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(val || 0);
-};
-
-const removeItem = async (index) => {
-  if (confirm("Bạn muốn bỏ sản phẩm này khỏi giỏ?")) {
-    cartItems.value.splice(index, 1);
-    const storedUser = JSON.parse(localStorage.getItem("user"));
+const clearCart = async () => {
+  if (confirm("Xóa toàn bộ giỏ hàng?")) {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
     const userId = storedUser.id || storedUser.nguoiDungId;
     const token = storedUser.token || storedUser.accessToken;
-
     try {
-      await axios.post(
-        `http://localhost:8080/api/cart/${userId}`,
-        cartItems.value,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      calculateShippingFee();
-    } catch (error) {
-      console.error("Lỗi cập nhật Redis khi xóa:", error);
-      alert("Có lỗi khi xóa sản phẩm!");
-    }
+      await axios.delete(`http://localhost:8080/api/cart/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+      cartItems.value = [];
+      selectedItems.value = [];
+    } catch (error) { alert("Lỗi khi xóa giỏ hàng!"); }
   }
 };
 
-const totalPrice = computed(() => {
-  return cartItems.value.reduce((acc, item) => acc + item.gia, 0);
+const selectAll = computed({
+  get: () => cartItems.value.length > 0 && selectedItems.value.length === cartItems.value.length,
+  set: (val) => { selectedItems.value = val ? cartItems.value.map(i => i.id) : []; }
 });
 
+const removeItem = async (index) => {
+  if (confirm("Xóa sản phẩm này?")) {
+    const idToRemove = cartItems.value[index].id;
+    cartItems.value.splice(index, 1);
+    selectedItems.value = selectedItems.value.filter(id => id !== idToRemove);
+    
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    await axios.post(`http://localhost:8080/api/cart/${storedUser.id}`, cartItems.value, {
+      headers: { Authorization: `Bearer ${storedUser.token}` }
+    });
+    calculateShippingFee();
+  }
+};
+
+const totalPrice = computed(() => cartItems.value.filter(i => selectedItems.value.includes(i.id)).reduce((a, b) => a + b.gia, 0));
+
 const fetchUserAddresses = async () => {
-  const storedUser = localStorage.getItem("user");
+  const storedUser = JSON.parse(localStorage.getItem('user'));
   if (!storedUser) return;
-  const token =
-    JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
-  const userId =
-    JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
-
   try {
-    const response = await axios.get(
-      `http://localhost:8080/api/dia-chi/nguoi-dung/${userId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    userAddresses.value = response.data;
-
-    const defaultAddr = userAddresses.value.find((a) => a.diaChiMacDinh === 1);
-    if (defaultAddr) {
-      selectedAddressId.value = defaultAddr.diaChiId;
-      calculateShippingFee();
-    }
-  } catch (error) {
-    console.error("Lỗi lấy địa chỉ:", error);
-  }
+    const res = await axios.get(`http://localhost:8080/api/dia-chi/nguoi-dung/${storedUser.id}`, {
+      headers: { Authorization: `Bearer ${storedUser.token}` }
+    });
+    userAddresses.value = res.data;
+    const def = res.data.find(a => a.diaChiMacDinh === 1);
+    if (def) { selectedAddressId.value = def.diaChiId; calculateShippingFee(); }
+  } catch (error) { console.error(error); }
 };
 
-// ==========================================
-// 💥 GỌI TRỰC TIẾP LÊN GHN, BỎ QUA SPRING BOOT
-// ==========================================
 const calculateShippingFee = async () => {
-  if (selectedAddressId.value === "null" || cartItems.value.length === 0)
-    return;
-
+  if (selectedAddressId.value === "null" || selectedItems.value.length === 0) { shippingFee.value = 0; return; }
   isCalculatingFee.value = true;
-  shippingFee.value = 0;
-  let totalCalculatedFee = 0;
-
-  // Lấy địa chỉ NGƯỜI MUA
-  const selectedAddr = userAddresses.value.find(
-    (a) => a.diaChiId === selectedAddressId.value,
-  );
-  if (!selectedAddr || !selectedAddr.huyenCode || !selectedAddr.phuongXaId) {
-    alert("Địa chỉ nhận hàng chưa hợp lệ!");
-    isCalculatingFee.value = false;
-    return;
-  }
-
+  const addr = userAddresses.value.find(a => a.diaChiId === selectedAddressId.value);
   try {
-    for (const item of cartItems.value) {
-      // 1. Trích xuất thông tin KHO HÀNG từ Redis (Bốc ra mã thật)
-      const fromDistrict = item.huyenCodeKho ? item.huyenCodeKho : 1454;
-      const fromWard = item.phuongXaIdKho ? item.phuongXaIdKho : "21211";
-      const itemWeight = item.trongLuongGram ? item.trongLuongGram : 500;
-
-      console.log(
-        `Đang tính phí ship: Từ Kho Huyện ${fromDistrict} -> Đến Huyện ${selectedAddr.huyenCode}`,
-      );
-
-      // 2. Gọi THẲNG lên Giao Hàng Nhanh
-      const res = await axios.post(
-        `${GHN_BASE_URL}/v2/shipping-order/fee`,
-        {
-          service_type_id: 2, // Chuyển phát chuẩn
-          from_district_id: parseInt(fromDistrict),
-          from_ward_code: String(fromWard),
-          to_district_id: parseInt(selectedAddr.huyenCode),
-          to_ward_code: String(selectedAddr.phuongXaId),
-          weight: parseInt(itemWeight),
-          // 🔥 BỔ SUNG: Kích thước hộp mặc định (10x10x10 cm) để không bị phạt thể tích
-          length: 10,
-          width: 10,
-          height: 10,
-
-          // 🔥 BỔ SUNG: Khai báo giá trị hàng hóa để GHN tính bảo hiểm
-          insurance_value: parseInt(item.gia),
-        },
-        {
-          headers: {
-            Token: GHN_TOKEN,
-            ShopId: GHN_SHOP_ID, // Bắt buộc có ShopId ở môi trường thật
-          },
-        },
-      );
-
-      // 3. Lấy phí ship của món này và cộng dồn
-      const phiShipMonNay = res.data.data?.total || 0;
-      item.phiShipRieng = phiShipMonNay;
-      totalCalculatedFee += phiShipMonNay;
-    }
-
-    shippingFee.value = totalCalculatedFee;
-  } catch (error) {
-    console.error("GHN Báo Lỗi:", error.response?.data || error.message);
-    shippingFee.value = 0;
-    alert(
-      "GHN từ chối tính phí! Có thể mã Huyện/Xã của Kho hàng hoặc Người mua là mã ảo, không tồn tại.",
-    );
-  } finally {
-    isCalculatingFee.value = false;
-  }
+    const res = await axios.post('http://localhost:8080/api/ghn/fee', {
+      fromDistrictId: 1454, fromWardCode: "21211",
+      toDistrictId: addr.huyenCode, toWardCode: addr.phuongXaId,
+      weight: 500 * selectedItems.value.length
+    }, { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}` } });
+    shippingFee.value = res.data.fee;
+  } catch (error) { shippingFee.value = 0; } finally { isCalculatingFee.value = false; }
 };
+
+watch(selectedItems, () => calculateShippingFee());
 
 const checkout = async () => {
-  if (selectedAddressId.value === "null") {
-    alert("Vui lòng chọn địa chỉ giao hàng!");
-    return;
-  }
-
-  const storedUser = localStorage.getItem("user");
-  if (!storedUser) {
-    alert("Vui lòng đăng nhập để thanh toán đơn hàng!");
-    router.push("/login");
-    return;
-  }
-
-  const currentUserId =
-    JSON.parse(storedUser).id || JSON.parse(storedUser).nguoiDungId;
-
-  const chiTietDonHangs = cartItems.value.map((item) => ({
-    sanPhamId: item.id,
-    soLuongMua: 1,
-    giaLucMua: item.gia,
-  }));
-
-  const orderPayload = {
-    nguoiDungId: currentUserId,
+  isProcessing.value = true;
+  const storedUser = JSON.parse(localStorage.getItem('user'));
+  const selectedOnes = cartItems.value.filter(i => selectedItems.value.includes(i.id));
+  
+  const payload = {
+    nguoiDungId: storedUser.id,
     diaChiId: selectedAddressId.value,
     tongTienHang: totalPrice.value,
     tongTienShip: shippingFee.value,
     tongThanhTien: totalPrice.value + shippingFee.value,
     phuongThucThanhToan: paymentMethod.value,
-    chiTietDonHangs: chiTietDonHangs,
+    chiTietDonHangs: selectedOnes.map(i => ({ sanPhamId: i.id, soLuongMua: 1, giaLucMua: i.gia }))
   };
 
   try {
-    const response = await axios.post(
-      "http://localhost:8080/api/don-hang/tao-don",
-      orderPayload,
-    );
+    const res = await axios.post('http://localhost:8080/api/don-hang/tao-don', payload);
+    const remain = cartItems.value.filter(i => !selectedItems.value.includes(i.id));
+    if (remain.length > 0) await axios.post(`http://localhost:8080/api/cart/${storedUser.id}`, remain, { headers: { Authorization: `Bearer ${storedUser.token}` } });
+    else await axios.delete(`http://localhost:8080/api/cart/${storedUser.id}`, { headers: { Authorization: `Bearer ${storedUser.token}` } });
 
-    if (response.status === 201 || response.status === 200) {
-      if (response.data.paymentUrl) {
-        window.location.href = response.data.paymentUrl;
-      } else {
-        cartItems.value = [];
-        const token =
-          JSON.parse(storedUser).token || JSON.parse(storedUser).accessToken;
-        await axios.delete(`http://localhost:8080/api/cart/${currentUserId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        alert("🎉 Đặt hàng COD thành công! Mã đơn: " + response.data.donHangId);
-        router.push("/");
-      }
-    }
-  } catch (error) {
-    alert("❌ Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!");
-  }
+    if (res.data.qrUrl) router.push(`/thanh-toan/${res.data.donHangId}`);
+    else { alert("Đặt hàng thành công!"); router.push('/quan-ly-don-hang'); }
+  } catch (error) { alert("Lỗi khi tạo đơn hàng!"); } finally { isProcessing.value = false; }
 };
 
-onMounted(() => {
-  loadCart();
-  fetchUserAddresses();
-  window.scrollTo(0, 0);
-});
-
-onMounted(async () => {
-  if (route.query.vnp_ResponseCode) {
-    try {
-      const response = await axios.get(
-        "http://localhost:8080/api/don-hang/vnpay-return",
-        {
-          params: route.query,
-        },
-      );
-      if (response.data.status === "success") {
-        alert("🎉 CHÚC MỪNG! Thanh toán VNPAY thành công!");
-        cartItems.value = [];
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        const userId = storedUser
-          ? storedUser.id || storedUser.nguoiDungId
-          : null;
-        const token = storedUser
-          ? storedUser.token || storedUser.accessToken
-          : null;
-
-        if (userId && token) {
-          await axios.delete(`http://localhost:8080/api/cart/${userId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        }
-      }
-    } catch (error) {
-      alert("❌ Giao dịch bị hủy hoặc thanh toán thất bại!");
-    } finally {
-      router.replace("/");
-    }
-  }
-});
+onMounted(() => { loadCart(); fetchUserAddresses(); window.scrollTo(0, 0); });
 </script>
 
 <style scoped>
-.main-content {
-  margin-top: 160px;
-}
-.sticky-summary {
-  position: sticky;
-  top: 180px;
-}
-.border-dashed {
-  border: 1px dashed #dee2e6 !important;
-}
-.table > tbody > tr {
-  border-bottom: 1px solid #f8f9fa;
-}
-@media (max-width: 991px) {
-  .sticky-summary {
-    position: static;
-  }
-}
+.main-content { margin-top: 160px; }
+.sticky-summary { position: sticky; top: 180px; }
+@media (max-width: 991px) { .sticky-summary { position: static; } }
 </style>

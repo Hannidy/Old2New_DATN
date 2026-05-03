@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.*;
 import poly.edu.o2n.order.dto.request.OrderRequestDto;
 import poly.edu.o2n.order.dto.request.YeuCauTraHangRequest;
 import poly.edu.o2n.order.dto.response.DonHangResponse;
+import poly.edu.o2n.order.entity.DonHang;
+import poly.edu.o2n.order.repository.DonHangRepository;
 import poly.edu.o2n.order.service.DonHangService;
-import poly.edu.o2n.payment.service.VNPayService; // Import Service mới
+import poly.edu.o2n.payment.service.VietQRService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,21 +25,27 @@ public class DonHangController {
     private DonHangService donHangService;
 
     @Autowired
-    private VNPayService vnPayService; // Nhúng VNPay vào
+    private DonHangRepository donHangRepository;
+
+    @Autowired
+    private VietQRService vietQRService;
+
+    @Autowired
+    private poly.edu.o2n.wallet.repository.ViTienRepository viTienRepository;
 
     @PostMapping("/tao-don")
     public ResponseEntity<?> taoDonHang(@RequestBody OrderRequestDto requestDto) {
         try {
-            // 1. Lưu đơn hàng vào Database trước
             Map<String, Object> response = donHangService.taoDonHang(requestDto);
+            String phuongThuc = requestDto.getPhuongThucThanhToan();
 
-            // 2. Nếu khách chọn VNPAY, tạo Link thanh toán và gửi kèm về Vue
-            if ("VNPAY".equalsIgnoreCase(requestDto.getPhuongThucThanhToan())) {
+            if ("CHUYEN_KHOAN".equalsIgnoreCase(phuongThuc) || "VIETQR".equalsIgnoreCase(phuongThuc)) {
                 Integer donHangId = (Integer) response.get("donHangId");
                 BigDecimal tongTien = requestDto.getTongThanhTien();
+                String qrUrl = vietQRService.createPaymentQrUrl(donHangId, tongTien);
 
-                String paymentUrl = vnPayService.createPaymentUrl(donHangId, tongTien.longValue());
-                response.put("paymentUrl", paymentUrl); // Gắn link vào cục phản hồi
+                response.put("qrUrl", qrUrl);
+                response.put("tongTienThanhToan", tongTien);
             }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -47,39 +55,9 @@ public class DonHangController {
         }
     }
 
-
-//    Trả về kết quả giao dịch VNPAY
-@GetMapping("/vnpay-return")
-public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
-    try {
-        String vnp_ResponseCode = params.get("vnp_ResponseCode");
-        String vnp_TxnRef = params.get("vnp_TxnRef");
-        String vnp_TransactionNo = params.get("vnp_TransactionNo"); // Mã GD của VNPAY
-
-        if (vnp_TxnRef != null && vnp_ResponseCode != null) {
-            Integer donHangId = Integer.parseInt(vnp_TxnRef.split("_")[0]);
-
-            if ("00".equals(vnp_ResponseCode)) {
-                // Gọi 1 hàm duy nhất xử lý từ A-Z
-                donHangService.capNhatTrangThaiThanhToan(donHangId, "DA_THANH_TOAN", vnp_TransactionNo);
-                return ResponseEntity.ok(Map.of("status", "success", "message", "Thanh toán thành công"));
-            } else {
-                // Khách hủy giao dịch
-                donHangService.capNhatTrangThaiThanhToan(donHangId, "THANH_TOAN_THAT_BAI", null);
-                return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Thanh toán thất bại"));
-            }
-        }
-        return ResponseEntity.badRequest().body("Thiếu tham số VNPAY");
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body("Lỗi xử lý: " + e.getMessage());
-    }
-}
-
-    // 1. API Lấy danh sách đơn hàng của 1 user (Để hiển thị ra bảng Quản lý)
     @GetMapping("/danh-sach/{nguoiDungId}")
     public ResponseEntity<?> layDanhSachDonHang(@PathVariable Integer nguoiDungId) {
         try {
-            // Hàm này bạn sẽ định nghĩa trong Service: Trả về List<DonHangResponse>
             List<DonHangResponse> listDonHang = donHangService.layDanhSachDonHangCuaUser(nguoiDungId);
             return ResponseEntity.ok(listDonHang);
         } catch (Exception e) {
@@ -87,11 +65,9 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
-    // 2. API Xem chi tiết 1 đơn hàng (Khi bấm nút Xem chi tiết)
     @GetMapping("/chi-tiet/{donHangId}")
     public ResponseEntity<?> xemChiTietDonHang(@PathVariable Integer donHangId) {
         try {
-            // Hàm này trả về 1 object DonHangResponse (bao gồm list Chi tiết và Địa chỉ full)
             DonHangResponse chiTiet = donHangService.xemChiTietDonHang(donHangId);
             return ResponseEntity.ok(chiTiet);
         } catch (Exception e) {
@@ -99,22 +75,29 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
-
-    // 3. API Cập nhật trạng thái đơn hàng (Dành cho Người bán xác nhận, giao hàng...)
+    // ====================================================================
+    // ✅ ĐÃ TÍCH HỢP BƯỚC 2 VÀO ĐÂY: NẾU LÀ ĐÃ GIAO -> GIẢI NGÂN LUÔN
+    // ====================================================================
     @PutMapping("/cap-nhat-trang-thai/{donHangId}")
     public ResponseEntity<?> capNhatTrangThaiDonHang(
             @PathVariable Integer donHangId,
             @RequestParam String trangThaiMoi) {
         try {
-            // ✅ SỬA LẠI: Gọi đúng hàm cập nhật ĐƠN HÀNG
+            // 1. Cập nhật trạng thái sang Đang giao, Đã giao...
             donHangService.capNhatTrangThaiDonHang(donHangId, trangThaiMoi);
+
+            // 2. Tự động kiểm tra: Nếu Shipper báo ĐÃ GIAO hoặc Khách báo ĐÃ NHẬN
+            if ("DA_GIAO".equalsIgnoreCase(trangThaiMoi) || "DA_NHAN_HANG".equalsIgnoreCase(trangThaiMoi)) {
+                // Kích hoạt giải ngân tiền thẳng vào ví ảo người bán lập tức!
+                donHangService.xacNhanNhanHangVaGiaiNgan(donHangId);
+            }
+
             return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái thành công!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi cập nhật trạng thái: " + e.getMessage());
         }
     }
 
-    // Lấy danh sách ĐƠN BÁN (Dành cho người bán)
     @GetMapping("/danh-sach-ban/{sellerId}")
     public ResponseEntity<?> layDanhSachDonBan(@PathVariable Integer sellerId) {
         try {
@@ -125,8 +108,6 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
-
-    // API Khách hàng xác nhận đã nhận hàng -> Hệ thống giải ngân cho người bán
     @PutMapping("/xac-nhan-nhan-hang/{donHangId}")
     public ResponseEntity<?> xacNhanNhanHang(@PathVariable Integer donHangId) {
         try {
@@ -136,7 +117,6 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
             return ResponseEntity.badRequest().body("Lỗi giải ngân: " + e.getMessage());
         }
     }
-
 
     @PostMapping("/yeu-cau-tra-hang")
     public ResponseEntity<?> guiYeuCauTraHang(@RequestBody YeuCauTraHangRequest request) {
@@ -148,8 +128,6 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
-
-    // 1. API cho Người bán lấy thông tin chi tiết của yêu cầu trả hàng
     @GetMapping("/yeu-cau-tra-hang/{donHangId}")
     public ResponseEntity<?> layChiTietYeuCauTraHang(@PathVariable Integer donHangId) {
         try {
@@ -159,7 +137,6 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
-    // 2. API cho Người bán chốt Đồng ý hay Từ chối
     @PostMapping("/xu-ly-tra-hang")
     public ResponseEntity<?> xuLyYeuCauTraHang(@RequestBody poly.edu.o2n.order.dto.request.XuLyYeuCauRequest request) {
         try {
@@ -170,8 +147,6 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
-
-    // 3. API cho Người Bán bấm xác nhận đã nhận lại cục hàng
     @PutMapping("/xac-nhan-hoan-hang/{donHangId}")
     public ResponseEntity<?> xacNhanNhanLaiHangVaHoanTien(@PathVariable Integer donHangId) {
         try {
@@ -182,6 +157,65 @@ public ResponseEntity<?> vnpayReturn(@RequestParam Map<String, String> params) {
         }
     }
 
+    @GetMapping("/thanh-toan-qr/{donHangId}")
+    public ResponseEntity<?> layQRThanhToanDonHang(@PathVariable Integer donHangId) {
+        try {
+            DonHang donHang = donHangRepository.findById(donHangId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
+            String qrUrl = vietQRService.createPaymentQrUrl(donHangId, donHang.getTongThanhTien());
 
+            return ResponseEntity.ok(Map.of(
+                    "donHangId", donHang.getDonHangId(),
+                    "qrUrl", qrUrl,
+                    "tongTien", donHang.getTongThanhTien()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/xac-nhan-thanh-toan-qr/{donHangId}")
+    public ResponseEntity<?> xacNhanThanhToanQR(@PathVariable Integer donHangId) {
+        try {
+            DonHang donHang = donHangRepository.findById(donHangId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng số " + donHangId));
+
+            if ("DA_THANH_TOAN".equals(donHang.getTrangThaiThanhToan())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Đơn hàng này đã được thanh toán rồi!"));
+            }
+
+            donHang.setTrangThaiThanhToan("DA_THANH_TOAN");
+            donHangRepository.save(donHang);
+
+            Integer viAdminId = 13;
+            poly.edu.o2n.wallet.entity.ViTien viAdmin = viTienRepository.findById(viAdminId).orElse(null);
+
+            if (viAdmin != null) {
+                BigDecimal soDuHienTai = viAdmin.getSoDu() != null ? viAdmin.getSoDu() : BigDecimal.ZERO;
+                BigDecimal tienCongThem = donHang.getTongThanhTien();
+                viAdmin.setSoDu(soDuHienTai.add(tienCongThem));
+                viTienRepository.save(viAdmin);
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Đã duyệt đơn và cộng tiền vào ví Admin thành công!"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/admin/cho-duyet")
+    public ResponseEntity<?> layDanhSachDonHangChoDuyet() {
+        try {
+            List<DonHang> danhSachChoDuyet = donHangRepository.findAll().stream()
+                    .filter(dh -> "VIETQR".equalsIgnoreCase(dh.getPhuongThucThanhToan())
+                            && !"DA_THANH_TOAN".equalsIgnoreCase(dh.getTrangThaiThanhToan()))
+                    .toList();
+
+            return ResponseEntity.ok(danhSachChoDuyet);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

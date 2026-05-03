@@ -15,6 +15,11 @@ import ShopView from "../views/product/ShopView.vue";
 import MyProductView from "../views/product/MyProductView.vue";
 import ShopProfile from "@/views/shop/ShopProfile.vue";
 
+// Import các trang Giao dịch / Thanh toán
+import Payment from "../views/paymentQR/payment.vue";
+// 🔥 BƯỚC 1: IMPORT TRANG RÚT TIỀN Ở ĐÂY
+import WithdrawMoney from "../views/paymentQR/withdrawmoney.vue";
+
 // Import các thành phần Admin
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import Users from "../views/admin/Users.vue";
@@ -53,7 +58,6 @@ const router = createRouter({
         {
           path: "thong-ke",
           name: "admin-dashboard",
-          // Duy có thể tạo file Dashboard.vue sau, giờ cứ dùng trang tạm
           component: () => import("@/views/admin/Dashboard.vue"),
           meta: { title: "Thống kê tổng quan" },
         },
@@ -134,6 +138,17 @@ const router = createRouter({
       name: "ShopProfile",
       component: ShopProfile,
     },
+    {
+      path: "/thanh-toan/:id", 
+      name: "Payment",
+      component: Payment,
+    },
+    // 🔥 BƯỚC 2: KHAI BÁO ĐƯỜNG DẪN CHO TRANG RÚT TIỀN
+    {
+      path: "/rut-tien", 
+      name: "WithdrawMoney",
+      component: WithdrawMoney,
+    },
   ],
 });
 
@@ -145,21 +160,19 @@ router.beforeEach((to, from, next) => {
 
   if (storedUser) {
     const user = JSON.parse(storedUser);
-    // Lưu ý: Tên biến 'vaiTro' hoặc 'role' phụ thuộc vào cách bạn lưu lúc Login
     userRole = user.vaiTro || user.role || user.quyen;
   }
 
   // Nếu người dùng cố tình truy cập vào đường dẫn bắt đầu bằng "/admin"
   if (to.path.startsWith("/admin")) {
-    // Nếu chưa đăng nhập, hoặc đăng nhập rồi mà vai trò là USER
     if (!storedUser || userRole !== "ADMIN") {
       alert("⛔ CẢNH BÁO: Bạn không có quyền truy cập khu vực Quản trị!");
-      next("/"); // Đá thẳng về trang chủ
+      next("/"); 
     } else {
-      next(); // Là ADMIN thì mở cửa cho vào
+      next(); 
     }
   } else {
-    next(); // Với các trang khác (Trang chủ, Giỏ hàng, Hồ sơ) thì cho đi bình thường
+    next(); 
   }
 });
 
