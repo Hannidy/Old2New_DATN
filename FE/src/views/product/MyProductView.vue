@@ -1,15 +1,15 @@
 <template>
   <div class="bg-light min-vh-100">
-    <AppHeader />
+    <!-- <AppHeader /> -->
 
     <main class="container py-5" style="margin-top: 80px">
       <div class="d-flex align-items-center justify-content-between mb-4">
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0 bg-transparent p-0">
             <li class="breadcrumb-item">
-              <router-link to="/" class="text-decoration-none text-muted"
-                ><i class="bi bi-house-door"></i> Trang chủ</router-link
-              >
+              <router-link to="/" class="text-decoration-none text-muted">
+                <i class="bi bi-house-door"></i> Trang chủ
+              </router-link>
             </li>
             <li class="breadcrumb-item active text-danger" aria-current="page">
               Sản phẩm của tôi
@@ -35,7 +35,7 @@
             <div class="border-bottom pb-3 mb-4">
               <h2 class="h4 fw-bold mb-1 text-dark">Quản lý sản phẩm</h2>
               <p class="text-muted small mb-0">
-                Bạn đang có {{ products.length }} sản phẩm đang rao bán
+                Bạn đang có {{ products.length }} sản phẩm trong danh sách
               </p>
             </div>
 
@@ -43,10 +43,7 @@
               <div class="spinner-border text-primary" role="status"></div>
             </div>
 
-            <div
-              v-else-if="products.length > 0"
-              class="border rounded overflow-hidden"
-            >
+            <div v-else-if="products.length > 0" class="border rounded overflow-hidden">
               <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                   <thead class="bg-light text-secondary">
@@ -54,9 +51,7 @@
                       <th class="ps-4 py-3 small text-uppercase">Sản phẩm</th>
                       <th class="small text-uppercase">Danh mục</th>
                       <th class="small text-uppercase">Giá bán</th>
-                      <th class="text-end pe-4 small text-uppercase">
-                        Thao tác
-                      </th>
+                      <th class="text-end pe-4 small text-uppercase">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -65,6 +60,7 @@
                       :key="p.id"
                       :class="{
                         'opacity-50 bg-light': p.trangThai === 'AN_TIN',
+                        'bg-warning-subtle': p.trangThai === 'CHO_DUYET',
                         'transition-all': true,
                       }"
                     >
@@ -77,26 +73,13 @@
                             style="width: 60px; height: 60px"
                           />
                           <div>
-                            <div
-                              class="fw-bold text-dark text-truncate"
-                              style="max-width: 250px"
-                            >
+                            <div class="fw-bold text-dark text-truncate" style="max-width: 250px">
                               {{ p.tenSanPham }}
                             </div>
                             <small class="text-muted">
-                              ID: #{{ p.id }} | Tình trạng: {{ p.tinhTrang }} |
-                              <span
-                                :class="
-                                  p.trangThai === 'AN_TIN'
-                                    ? 'text-danger'
-                                    : 'text-success'
-                                "
-                              >
-                                {{
-                                  p.trangThai === "AN_TIN"
-                                    ? "[Đang ẩn]"
-                                    : "[Đang hiện]"
-                                }}
+                              ID: #{{ p.id }} |
+                              <span :class="getStatusClass(p.trangThai)">
+                                {{ getStatusText(p.trangThai) }}
                               </span>
                             </small>
                           </div>
@@ -104,38 +87,31 @@
                       </td>
 
                       <td>
-                        <span class="badge bg-light text-dark border">{{
-                          p.danhMuc
-                        }}</span>
+                        <span class="badge bg-light text-dark border">{{ p.danhMuc }}</span>
                       </td>
                       <td>
-                        <span class="text-danger fw-bold">{{
-                          formatCurrency(p.gia)
-                        }}</span>
+                        <span class="text-danger fw-bold">{{ formatCurrency(p.gia) }}</span>
                       </td>
 
                       <td class="text-end pe-4">
                         <div class="btn-group shadow-sm">
+                          <!-- Nút Ẩn/Hiện: Chỉ hiện khi ĐÃ DUYỆT (DANG_BAN hoặc AN_TIN) -->
                           <button
+                            v-if="p.trangThai !== 'CHO_DUYET' && p.trangThai !== 'BI_TU_CHOI'"
                             class="btn btn-sm"
-                            :class="
-                              p.trangThai === 'AN_TIN'
-                                ? 'btn-outline-success'
-                                : 'btn-outline-warning'
-                            "
+                            :class="p.trangThai === 'AN_TIN' ? 'btn-outline-success' : 'btn-outline-warning'"
                             @click="handleToggleHide(p)"
                           >
-                            <i
-                              class="bi"
-                              :class="
-                                p.trangThai === 'AN_TIN'
-                                  ? 'bi-eye'
-                                  : 'bi-eye-slash'
-                              "
-                            ></i>
-                            {{
-                              p.trangThai === "AN_TIN" ? "Hiện tin" : "Ẩn tin"
-                            }}
+                            <i class="bi" :class="p.trangThai === 'AN_TIN' ? 'bi-eye' : 'bi-eye-slash'"></i>
+                            {{ p.trangThai === "AN_TIN" ? "Hiện tin" : "Ẩn tin" }}
+                          </button>
+
+                          <!-- Trạng thái Chờ Duyệt (Disable nút bấm) -->
+                          <button
+                            v-else-if="p.trangThai === 'CHO_DUYET'"
+                            class="btn btn-sm btn-outline-secondary disabled"
+                          >
+                            <i class="bi bi-clock-history"></i> Đang chờ duyệt
                           </button>
 
                           <button
@@ -152,21 +128,10 @@
               </div>
             </div>
 
-            <div
-              v-else
-              class="text-center py-5 bg-light rounded border border-dashed"
-            >
+            <div v-else class="text-center py-5 bg-light rounded border border-dashed">
               <div class="display-1 text-muted opacity-25">📦</div>
-              <h5 class="mt-3 fw-bold text-secondary">
-                Bạn chưa đăng bán món hàng nào
-              </h5>
-              <p class="text-muted small">
-                Hãy bắt đầu dọn nhà và kiếm thêm thu nhập ngay hôm nay!
-              </p>
-              <button
-                class="btn btn-primary px-4 py-2 mt-2 fw-bold"
-                @click="router.push('/dang-ban')"
-              >
+              <h5 class="mt-3 fw-bold text-secondary">Bạn chưa đăng bán món hàng nào</h5>
+              <button class="btn btn-primary px-4 py-2 mt-2 fw-bold" @click="router.push('/dang-ban')">
                 Bắt đầu bán hàng
               </button>
             </div>
@@ -174,8 +139,6 @@
         </div>
       </div>
     </main>
-
-    <AppFooter />
   </div>
 </template>
 
@@ -183,8 +146,6 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
-import AppHeader from "@/layouts/Header.vue";
-import AppFooter from "@/layouts/Footer.vue";
 import UserSidebar from "@/layouts/UserSidebar.vue";
 
 const router = useRouter();
@@ -197,6 +158,22 @@ const formatCurrency = (val) => {
     style: "currency",
     currency: "VND",
   }).format(val || 0);
+};
+
+// Hàm bổ trợ hiển thị text trạng thái
+const getStatusText = (status) => {
+  if (status === "CHO_DUYET") return "[Đang chờ duyệt]";
+  if (status === "AN_TIN") return "[Đang ẩn]";
+  if (status === "BI_TU_CHOI") return "[Bị từ chối]";
+  return "[Đang hiện]";
+};
+
+// Hàm bổ trợ màu sắc trạng thái
+const getStatusClass = (status) => {
+  if (status === "CHO_DUYET") return "text-warning fw-bold";
+  if (status === "AN_TIN") return "text-danger";
+  if (status === "BI_TU_CHOI") return "text-secondary text-decoration-line-through";
+  return "text-success";
 };
 
 const getAuthHeaders = () => {
@@ -213,7 +190,7 @@ const fetchMyProducts = async () => {
   try {
     const res = await axios.get(
       `http://localhost:8080/api/products/seller/${currentUserId}`,
-      getAuthHeaders(),
+      getAuthHeaders()
     );
     products.value = res.data;
   } catch (error) {
@@ -224,46 +201,36 @@ const fetchMyProducts = async () => {
 };
 
 const handleDelete = async (id) => {
-  const confirmDelete = confirm(
-    "Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm này không?",
-  );
-  if (!confirmDelete) return;
-
+  if (!confirm("Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm này không?")) return;
   try {
-    const response = await axios.delete(
-      `http://localhost:8080/api/products/${id}`,
-      getAuthHeaders(),
-    );
-    alert(response.data.message || "Đã xóa sản phẩm thành công!");
+    await axios.delete(`http://localhost:8080/api/products/${id}`, getAuthHeaders());
+    alert("Đã xóa sản phẩm thành công!");
     await fetchMyProducts();
   } catch (error) {
-    const msg =
-      error.response?.data?.message ||
-      "Không thể xóa sản phẩm. Vui lòng thử lại!";
-    alert(msg);
+    alert("Không thể xóa sản phẩm. Vui lòng thử lại!");
   }
 };
 
 const handleToggleHide = async (product) => {
+  // Chặn thao tác nếu đang chờ duyệt
+  if (product.trangThai === "CHO_DUYET") {
+    alert("Sản phẩm đang chờ Admin phê duyệt.");
+    return;
+  }
+
   const isCurrentlyHidden = product.trangThai === "AN_TIN";
   const newStatus = isCurrentlyHidden ? "DANG_BAN" : "AN_TIN";
 
-  const confirmMsg = isCurrentlyHidden
-    ? "Bạn muốn hiển thị lại sản phẩm này trên trang chủ?"
-    : "Bạn có chắc muốn ẩn sản phẩm này? (Sản phẩm sẽ không hiện ở trang chủ nữa)";
-
-  if (!confirm(confirmMsg)) return;
+  if (!confirm(isCurrentlyHidden ? "Hiển thị lại sản phẩm này?" : "Tạm ẩn sản phẩm này?")) return;
 
   try {
     await axios.put(
       `http://localhost:8080/api/products/${product.id}/status`,
       { trangThai: newStatus },
-      getAuthHeaders(),
+      getAuthHeaders()
     );
     product.trangThai = newStatus;
-    alert(
-      `Đã ${newStatus === "AN_TIN" ? "ẩn" : "hiển thị"} tin đăng thành công!`,
-    );
+    alert(`Đã cập nhật trạng thái thành công!`);
   } catch (error) {
     alert("Không thể cập nhật trạng thái tin đăng!");
   }
@@ -284,14 +251,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.table thead th {
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-.object-fit-cover {
-  object-fit: cover;
-}
-.border-dashed {
-  border-style: dashed !important;
-}
+.table thead th { font-weight: 600; }
+.object-fit-cover { object-fit: cover; }
+.border-dashed { border-style: dashed !important; }
+.bg-warning-subtle { background-color: #fff3cd !important; }
+.grayscale { filter: grayscale(1); }
 </style>

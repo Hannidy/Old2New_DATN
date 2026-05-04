@@ -1,5 +1,7 @@
 <template>
-    <div class="header">     <AppHeader />   </div>
+    <div class="header">     
+      <AppHeader />   
+    </div>
   <div class="order-container">
     <h2 class="title text-primary">🛍️ Quản lý Đơn Bán (Dành cho Người bán)</h2>
     <p class="text-muted mb-4">Danh sách các đơn hàng khách đã đặt mua sản phẩm của bạn.</p>

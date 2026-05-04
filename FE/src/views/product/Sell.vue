@@ -1,6 +1,8 @@
 <template>
   <div class="bg-light min-vh-100 pb-5 font-sans text-dark position-relative">
-    <AppHeader />
+    <div class="header" style="padding: 55px;">
+      <AppHeader />
+    </div>
     <div style="padding-top: 20px;"></div>
 
     <main class="container bg-white shadow-sm p-4 p-md-5 rounded mt-4">
