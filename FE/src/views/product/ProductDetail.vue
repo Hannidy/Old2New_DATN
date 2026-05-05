@@ -103,7 +103,7 @@
 
            <button @click="buyNow(product)" class="btn btn-danger btn-lg flex-grow-1 fw-bold py-3 shadow-sm">
                 MUA NGAY
-              </button>on>
+              </button>
             </template>
           </div>
           </div>

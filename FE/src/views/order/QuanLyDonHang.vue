@@ -28,87 +28,94 @@
         </div>
 
         <div class="col-md-9">
-          <div class="bg-white rounded shadow-sm p-4 p-md-5">
-            <div class="border-bottom pb-3 mb-4">
-              <h2 class="h4 fw-bold mb-1 text-dark">Quản lý đơn hàng</h2>
-              <p class="text-muted small mb-0">
-                Theo dõi và quản lý các đơn hàng bạn đã mua
-              </p>
+          <div class="bg-white rounded shadow-sm p-4 p-md-4">
+            
+            <!-- 🔥 TIÊU ĐỀ THEO DESIGN MỚI -->
+            <div class="custom-title-border">
+              <h2 class="h6 fw-bold mb-0 text-dark text-uppercase d-flex align-items-center gap-2">
+                📦 Quản lý đơn hàng của bạn
+              </h2>
             </div>
 
-            <div class="table-wrapper mt-0 shadow-none border">
-              <table class="order-table">
-                <thead class="bg-light">
+            <!-- 🔥 BẢNG ĐƠN HÀNG THEO DESIGN MỚI -->
+            <div class="table-responsive mt-3">
+              <table class="custom-table">
+                <thead>
                   <tr>
-                    <th>Mã Đơn</th>
-                    <th>Ngày Đặt</th>
+                    <th class="text-center">Mã Đơn</th>
+                    <th class="text-center">Ngày Đặt</th>
                     <th>Tổng Tiền</th>
-                    <th>Thanh Toán</th>
-                    <th>Trạng Thái Giao</th>
-                    <th>Hành Động</th>
+                    <th class="text-center">Trạng Thái Thanh Toán</th>
+                    <th>Phương Thức</th>
+                    <th class="text-center">Trạng Thái Giao</th>
+                    <th class="text-center">Hành Động</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-if="orders.length === 0">
-                    <td colspan="6" class="empty-message text-muted py-5">
+                    <td colspan="7" class="empty-message text-muted py-5 text-center">
                       <div class="fs-1 mb-2">🛍️</div>
                       Bạn chưa có đơn hàng nào.
                     </td>
                   </tr>
+                  
                   <tr v-for="order in paginatedOrders" :key="order.donHangId">
-                    <td>
-                      <strong>#{{ order.donHangId }}</strong>
+                    <td class="text-center fw-bold text-dark">
+                      #{{ order.donHangId }}
                     </td>
-                    <td>{{ formatDate(order.ngayTao) }}</td>
-                    <td class="price">
+                    
+                    <td class="text-center">
+                      <div class="date-box">
+                        <span class="d-block text-dark">{{ formatTime(order.ngayTao) }}</span>
+                        <span class="d-block text-muted">{{ formatDateOnly(order.ngayTao) }}</span>
+                      </div>
+                    </td>
+                    
+                    <td class="fw-bold text-dark">
                       {{ formatCurrency(order.tongThanhTien) }}
                     </td>
-                    <td>
-                      <span
-                        :class="[
-                          'badge',
-                          order.trangThaiThanhToan === 'DA_THANH_TOAN'
-                            ? 'success'
-                            : 'warning',
-                        ]"
-                      >
-                        {{
-                          order.trangThaiThanhToan === "DA_THANH_TOAN"
-                            ? "Đã thanh toán"
-                            : "Chưa thanh toán"
-                        }}
+                    
+                    <td class="text-center">
+                      <span class="status-badge" :class="order.trangThaiThanhToan === 'DA_THANH_TOAN' ? 'badge-success-custom' : 'badge-warning-custom'">
+                        {{ order.trangThaiThanhToan === "DA_THANH_TOAN" ? "Đã thanh toán" : "Chưa thanh toán" }}
                       </span>
-                      <br /><small class="text-muted"
-                        >({{ order.phuongThucThanhToan }})</small
-                      >
                     </td>
+                    
                     <td>
-                      <span class="badge info">{{
-                        order.trangThaiDonHang || "Chờ xác nhận"
-                      }}</span>
+                      <!-- BOX PHƯƠNG THỨC THANH TOÁN -->
+                      <div class="payment-method-box shadow-sm" :class="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'vnpay-border' : 'cash-border'">
+                        <div class="pay-title">
+                          {{ order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'Ví VNPAY' : 'Tiền mặt' }}
+                        </div>
+                        <div class="pay-sub">
+                          {{ order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'Thanh toán trực tuyến' : 'Thanh toán khi nhận' }}
+                        </div>
+                      </div>
                     </td>
-                    <td>
-                      <div class="action-buttons">
-                        <button
-                          class="btn-view"
-                          @click="viewDetails(order.donHangId)"
-                        >
-                          👁️ Xem Chi Tiết
+                    
+                    <td class="text-center">
+                      <span class="status-badge badge-info-custom">
+                        {{ order.trangThaiDonHang || "CHO_XAC_NHAN" }}
+                      </span>
+                    </td>
+                    
+                    <td class="text-center">
+                      <div class="d-flex flex-column gap-2 align-items-center">
+                        <button class="btn-action-custom w-100" @click="viewDetails(order.donHangId)">
+                          👁 Xem Chi Tiết
                         </button>
 
                         <!-- Đánh giá shop -->
-                          <button 
-                              v-if="order.trangThaiDonHang === 'HOAN_THANH' && !order.daDanhGia" 
-                              class="btn-view bg-success text-white border-0" 
-                              @click="openReviewModal(order)">
-                              Đánh giá
-                          </button>
+                        <button v-if="order.trangThaiDonHang === 'HOAN_THANH' && !order.daDanhGia" 
+                                class="btn-action-custom w-100" style="background-color: #28a745;"
+                                @click="openReviewModal(order)">
+                          ⭐ Đánh giá
+                        </button>
 
-                        <button
-                          v-if="order.trangThaiDonHang === 'DA_GIAO'"
-                          class="btn-return"
-                          @click="openReturnModal(order)"
-                        >
+                        <!-- Trả hàng -->
+                        <button v-if="order.trangThaiDonHang === 'DA_GIAO'"
+                                class="btn-action-custom w-100" style="background-color: #6c757d;"
+                                @click="openReturnModal(order)">
                           🔄 Trả Hàng
                         </button>
                       </div>
@@ -117,18 +124,16 @@
                 </tbody>
               </table>
 
-              <div v-if="totalPages > 1" class="pagination-wrapper">
+              <!-- Phân trang -->
+              <div v-if="totalPages > 1" class="pagination-wrapper mt-4">
                 <button @click="prevPage" :disabled="currentPage === 1" class="btn-page">« Trước</button>
-                
                 <button v-for="page in totalPages" :key="page" 
                         @click="goToPage(page)" 
                         :class="['btn-page', { active: currentPage === page }]">
                   {{ page }}
                 </button>
-                
                 <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-page">Sau »</button>
               </div>
-
 
             </div>
           </div>
@@ -136,7 +141,7 @@
       </div>
     </div>
 
-<!-- BẮT ĐẦU MODAL CHI TIẾT ĐƠN HÀNG STYLE OREKA MỚI -->
+    <!-- BẮT ĐẦU MODAL CHI TIẾT ĐƠN HÀNG STYLE OREKA MỚI -->
     <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content shopee-modal">
         <div class="modal-header">
@@ -214,7 +219,6 @@
 
             <div class="oreka-col border-left-col">
 
-              <!-- 🔥 ĐỊA CHỈ CỦA SHOP (NGƯỜI BÁN) -->
               <h5 class="oreka-title">Địa chỉ gửi hàng (Shop):</h5>
               <div class="address-text-box mb-4">
                 <span class="d-block text-muted">
@@ -223,7 +227,6 @@
                 </span>
               </div>
 
-              <!-- ĐỊA CHỈ CỦA KHÁCH (NGƯỜI MUA) -->
               <h5 class="oreka-title">Địa chỉ giao hàng:</h5>
               <div class="address-text-box mb-4">
                 <strong class="d-block mb-1" style="font-size: 14px;">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[0] || 'Khách hàng' }}</strong>
@@ -256,13 +259,9 @@
         </div>
       </div>
     </div>
-    <!-- KẾT THÚC MODAL CHI TIẾT ĐƠN HÀNG -->
 
-    <div
-      v-if="isReturnModalOpen"
-      class="modal-overlay"
-      @click.self="closeReturnModal"
-    >
+    <!-- MODAL TRẢ HÀNG -->
+    <div v-if="isReturnModalOpen" class="modal-overlay" @click.self="closeReturnModal">
       <div class="modal-content return-modal">
         <h3 class="return-title">Yêu Cầu Trả Hàng / Hoàn Tiền</h3>
         <p class="return-subtitle">
@@ -274,137 +273,87 @@
             <label>Lý do trả hàng <span class="text-danger">*</span></label>
             <select v-model="returnForm.lyDo" required class="form-control">
               <option value="" disabled>-- Chọn lý do --</option>
-              <option value="Hàng bị lỗi / Không hoạt động">
-                Hàng bị lỗi / Không hoạt động
-              </option>
-              <option value="Giao sai sản phẩm / Phân loại">
-                Giao sai sản phẩm / Phân loại
-              </option>
-              <option value="Hàng bị bể vỡ do vận chuyển">
-                Hàng bị bể vỡ do vận chuyển
-              </option>
+              <option value="Hàng bị lỗi / Không hoạt động">Hàng bị lỗi / Không hoạt động</option>
+              <option value="Giao sai sản phẩm / Phân loại">Giao sai sản phẩm / Phân loại</option>
+              <option value="Hàng bị bể vỡ do vận chuyển">Hàng bị bể vỡ do vận chuyển</option>
               <option value="Hàng khác với mô tả">Hàng khác với mô tả</option>
             </select>
           </div>
 
           <div class="form-group">
             <label>Mô tả chi tiết tình trạng</label>
-            <textarea
-              v-model="returnForm.moTaChiTiet"
-              rows="3"
-              placeholder="Ví dụ: Áo bị rách ở phần tay, màn hình bật không lên..."
-              class="form-control"
-            ></textarea>
+            <textarea v-model="returnForm.moTaChiTiet" rows="3" placeholder="Ví dụ: Áo bị rách ở phần tay, màn hình bật không lên..." class="form-control"></textarea>
           </div>
 
           <div class="form-group">
             <label>Hình ảnh chứng cứ <span class="text-danger">*</span></label>
-            <input
-              type="file"
-              @change="handleFileUpload($event, 'image')"
-              accept="image/*"
-              class="form-control"
-              :disabled="isUploadingImage"
-              required
-            />
-            <div v-if="isUploadingImage" class="upload-status">
-              ⏳ Đang tải ảnh lên mây...
-            </div>
-            <img
-              v-if="returnForm.hinhAnhBangChung"
-              :src="returnForm.hinhAnhBangChung"
-              class="preview-img"
-              alt="Bằng chứng"
-            />
+            <input type="file" @change="handleFileUpload($event, 'image')" accept="image/*" class="form-control" :disabled="isUploadingImage" required />
+            <div v-if="isUploadingImage" class="upload-status">⏳ Đang tải ảnh lên mây...</div>
+            <img v-if="returnForm.hinhAnhBangChung" :src="returnForm.hinhAnhBangChung" class="preview-img" alt="Bằng chứng" />
           </div>
 
           <div class="form-group">
             <label>Video chứng cứ (Tùy chọn)</label>
-            <input
-              type="file"
-              @change="handleFileUpload($event, 'video')"
-              accept="video/*"
-              class="form-control"
-              :disabled="isUploadingVideo"
-            />
-            <div v-if="isUploadingVideo" class="upload-status">
-              ⏳ Đang tải video lên mây...
-            </div>
-            <video
-              v-if="returnForm.videoBangChung"
-              :src="returnForm.videoBangChung"
-              controls
-              class="preview-video"
-            ></video>
+            <input type="file" @change="handleFileUpload($event, 'video')" accept="video/*" class="form-control" :disabled="isUploadingVideo" />
+            <div v-if="isUploadingVideo" class="upload-status">⏳ Đang tải video lên mây...</div>
+            <video v-if="returnForm.videoBangChung" :src="returnForm.videoBangChung" controls class="preview-video"></video>
           </div>
 
           <div class="return-actions">
-            <button type="button" class="btn-cancel" @click="closeReturnModal">
-              Hủy
-            </button>
-            <button
-              type="submit"
-              class="btn-submit"
-              :disabled="isUploadingImage || isUploadingVideo"
-            >
-              Gửi Yêu Cầu
-            </button>
+            <button type="button" class="btn-cancel" @click="closeReturnModal">Hủy</button>
+            <button type="submit" class="btn-submit" :disabled="isUploadingImage || isUploadingVideo">Gửi Yêu Cầu</button>
           </div>
         </form>
       </div>
     </div>
-  </div>
-
-
 
   <!-- MODAL ĐÁNH GIÁ SHOP -->
-<div v-if="isReviewModalOpen" class="modal-overlay" @click.self="closeReviewModal">
-  <div class="modal-content shopee-modal" style="max-width: 450px; border-radius: 20px;">
-    <div class="modal-header border-0 pb-0 justify-content-between">
-      <h4 class="fw-bold text-success mb-0">Đánh giá trải nghiệm</h4>
-      <button class="btn-close" @click="closeReviewModal"></button>
-    </div>
-    
-    <div class="modal-body text-center pt-3">
-      <div class="mb-3">
-         <i class="bi bi-shop fs-1 text-success"></i>
-         <p class="text-muted small mt-2">Duy ơi, hãy chia sẻ cảm nhận của bạn về Shop nhé!</p>
+  <div v-if="isReviewModalOpen" class="modal-overlay" @click.self="closeReviewModal">
+    <div class="modal-content shopee-modal" style="max-width: 450px; border-radius: 20px;">
+      <div class="modal-header border-0 pb-0 justify-content-between">
+        <h4 class="fw-bold text-success mb-0">Đánh giá trải nghiệm</h4>
+        <button class="btn-close" @click="closeReviewModal"></button>
       </div>
       
-      <!-- Hệ thống chọn sao linh hoạt -->
-      <div class="star-rating fs-1 mb-4">
-        <span v-for="star in 5" :key="star" 
-              @click="reviewForm.soSao = star"
-              :class="star <= reviewForm.soSao ? 'text-warning' : 'text-secondary'"
-              style="cursor: pointer; transition: transform 0.2s; display: inline-block;"
-              onmouseover="this.style.transform='scale(1.2)'"
-              onmouseout="this.style.transform='scale(1)'">
-          ★
-        </span>
+      <div class="modal-body text-center pt-3">
+        <div class="mb-3">
+           <i class="bi bi-shop fs-1 text-success"></i>
+           <p class="text-muted small mt-2">Duy ơi, hãy chia sẻ cảm nhận của bạn về Shop nhé!</p>
+        </div>
+        
+        <div class="star-rating fs-1 mb-4">
+          <span v-for="star in 5" :key="star" 
+                @click="reviewForm.soSao = star"
+                :class="star <= reviewForm.soSao ? 'text-warning' : 'text-secondary'"
+                style="cursor: pointer; transition: transform 0.2s; display: inline-block;"
+                onmouseover="this.style.transform='scale(1.2)'"
+                onmouseout="this.style.transform='scale(1)'">
+            ★
+          </span>
+        </div>
+
+        <div class="form-group text-start px-2">
+          <label class="small fw-bold mb-2">Lời bình luận của Duy:</label>
+          <textarea v-model="reviewForm.binhLuan" 
+                    class="form-control border-success shadow-none" 
+                    rows="4" 
+                    style="border-radius: 12px;"
+                    placeholder="Ví dụ: Shop giao hàng nhanh, sản phẩm còn rất mới..."></textarea>
+        </div>
       </div>
 
-      <div class="form-group text-start px-2">
-        <label class="small fw-bold mb-2">Lời bình luận của Duy:</label>
-        <textarea v-model="reviewForm.binhLuan" 
-                  class="form-control border-success shadow-none" 
-                  rows="4" 
-                  style="border-radius: 12px;"
-                  placeholder="Ví dụ: Shop giao hàng nhanh, sản phẩm còn rất mới..."></textarea>
+      <div class="modal-footer border-0 justify-content-center pb-4">
+        <button class="btn btn-light px-4 rounded-pill fw-bold" @click="closeReviewModal">Để sau</button>
+        <button class="btn btn-success px-4 rounded-pill shadow-sm fw-bold" 
+                @click="submitReview" 
+                :disabled="!reviewForm.soSao">
+          Gửi Đánh Giá Ngay
+        </button>
       </div>
-    </div>
-
-    <div class="modal-footer border-0 justify-content-center pb-4">
-      <button class="btn btn-light px-4 rounded-pill fw-bold" @click="closeReviewModal">Để sau</button>
-      <button class="btn btn-success px-4 rounded-pill shadow-sm fw-bold" 
-              @click="submitReview" 
-              :disabled="!reviewForm.soSao">
-        Gửi Đánh Giá Ngay
-      </button>
     </div>
   </div>
-</div>
 
-
+  </div>
 </template>
 
 <script setup>
@@ -430,31 +379,22 @@ const returnForm = ref({
 const isUploadingImage = ref(false);
 const isUploadingVideo = ref(false);
 
-
-// Khai báo các biến điều khiển Modal
 const isReviewModalOpen = ref(false);
 const selectedOrderForReview = ref(null);
-const reviewForm = ref({
-  soSao: 0,
-  binhLuan: ""
-});
+const reviewForm = ref({ soSao: 0, binhLuan: "" });
 
-// 1. Hàm mở Modal khi Duy bấm vào nút Đánh giá
 const openReviewModal = (order) => {
   selectedOrderForReview.value = order;
   isReviewModalOpen.value = true;
 };
 
-// 2. Hàm đóng Modal và reset form
 const closeReviewModal = () => {
   isReviewModalOpen.value = false;
   reviewForm.value = { soSao: 0, binhLuan: "" };
 };
 
-// 3. 🔥 HÀM GỬI ĐÁNH GIÁ LÊN BACKEND
 const submitReview = async () => {
   try {
-    // Kiểm tra nếu chưa đăng nhập thì báo lỗi
     if (!currentUser.value) {
       alert("Vui lòng đăng nhập để đánh giá!");
       return;
@@ -464,7 +404,6 @@ const submitReview = async () => {
     
     const payload = {
       sanPham: { sanPhamId: firstProduct.sanPhamId },
-      // 🔥 Sửa lại chỗ này thành currentUser.value
       nguoiMua: { nguoiDungId: currentUser.value.nguoiDungId || currentUser.value.id },
       soSao: reviewForm.value.soSao,
       binhLuan: reviewForm.value.binhLuan,
@@ -475,7 +414,6 @@ const submitReview = async () => {
     
     alert("🎉 Đã gửi đánh giá thành công!");
 
-    // 🔥 Đánh dấu đơn hàng này đã đánh giá để ẩn nút
     if (selectedOrderForReview.value) {
       selectedOrderForReview.value.daDanhGia = true; 
     }
@@ -488,12 +426,8 @@ const submitReview = async () => {
   }
 };
 
-
-// ==========================================
-//  THÊM ĐOẠN LOGIC PHÂN TRANG NÀY VÀO TRƯỚC HÀM handleFileUpload
-// ==========================================
 const currentPage = ref(1);
-const itemsPerPage = ref(5); // Số đơn hiển thị trên 1 trang
+const itemsPerPage = ref(5); 
 
 const totalPages = computed(() => {
   return Math.ceil(orders.value.length / itemsPerPage.value);
@@ -508,8 +442,6 @@ const paginatedOrders = computed(() => {
 const goToPage = (page) => { currentPage.value = page; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
-// ==========================================
-
 
 const handleFileUpload = async (event, type) => {
   const file = event.target.files[0];
@@ -525,10 +457,7 @@ const handleFileUpload = async (event, type) => {
     const storedUserData = JSON.parse(localStorage.getItem("user"));
     const token = storedUserData.token || storedUserData.accessToken;
 
-    const apiUrl =
-      type === "image"
-        ? "http://localhost:8080/api/media/upload-image"
-        : "http://localhost:8080/api/media/upload-video";
+    const apiUrl = type === "image" ? "http://localhost:8080/api/media/upload-image" : "http://localhost:8080/api/media/upload-video";
 
     const response = await axios.post(apiUrl, formData, {
       headers: {
@@ -556,17 +485,14 @@ if (storedUser) {
   userId = userData.nguoiDungId || userData.id;
 }
 
-
 const fetchOrders = async () => {
   try {
     if (!currentUser.value) return;
     const currentId = currentUser.value.nguoiDungId || currentUser.value.id;
 
-    // 1. ĐÃ SỬA URL: Thay "nguoi-dung" thành "danh-sach" cho đúng với Controller của Duy
     const res = await axios.get(`http://localhost:8080/api/don-hang/danh-sach/${currentId}`); 
     const ordersData = res.data;
 
-    // 2. Lấy danh sách đánh giá để đối chiếu ẩn nút
     let myReviews = [];
     try {
         const reviewRes = await axios.get(`http://localhost:8080/api/products/reviews/buyer/${currentId}`);
@@ -575,9 +501,7 @@ const fetchOrders = async () => {
         console.warn("Chưa lấy được review:", revErr);
     }
 
-    // 3. Khớp dữ liệu
     orders.value = ordersData.map(order => {
-      // Trong DonHangResponse của Duy thường có chiTietDonHangs
       const hasReviewed = myReviews.some(rev => 
         order.chiTietDonHangs && order.chiTietDonHangs.some(detail => detail.sanPhamId === rev.sanPham?.sanPhamId)
       );
@@ -591,9 +515,7 @@ const fetchOrders = async () => {
 
 const viewDetails = async (donHangId) => {
   try {
-    const response = await axios.get(
-      `http://localhost:8080/api/don-hang/chi-tiet/${donHangId}`,
-    );
+    const response = await axios.get(`http://localhost:8080/api/don-hang/chi-tiet/${donHangId}`);
     selectedOrder.value = response.data;
     isModalOpen.value = true;
   } catch (error) {
@@ -637,22 +559,15 @@ const submitReturnRequest = async () => {
     const storedUserData = JSON.parse(localStorage.getItem("user"));
     const token = storedUserData.token || storedUserData.accessToken;
 
-    const response = await axios.post(
-      "http://localhost:8080/api/don-hang/yeu-cau-tra-hang",
-      requestData,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    const response = await axios.post("http://localhost:8080/api/don-hang/yeu-cau-tra-hang", requestData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     alert(response.data.message || "Đã gửi yêu cầu trả hàng thành công!");
     closeReturnModal();
     fetchOrders();
   } catch (error) {
-    alert(
-      "Có lỗi xảy ra: " +
-        (error.response?.data?.error || "Vui lòng thử lại sau!"),
-    );
+    alert("Có lỗi xảy ra: " + (error.response?.data?.error || "Vui lòng thử lại sau!"));
   }
 };
 
@@ -670,82 +585,172 @@ const formatDate = (dateString) => {
   return date.toLocaleString("vi-VN");
 };
 
+// Hàm định dạng Giờ riêng
+const formatTime = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleTimeString("vi-VN", { hour12: false });
+};
+
+// Hàm định dạng Ngày riêng
+const formatDateOnly = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN");
+};
+
 onMounted(() => {
-  // Lấy thông tin Duy đang đăng nhập từ localStorage giống như bên ShopView
   const storedUser = localStorage.getItem('user');
   if (storedUser) {
     currentUser.value = JSON.parse(storedUser);
   }
-  
-  fetchOrders(); // Hàm lấy danh sách đơn hàng của bạn
+  fetchOrders(); 
 });
 </script>
 
 <style scoped>
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: 8px;
-  background: white;
+/* ================= CSS MỚI CHO BẢNG & TIÊU ĐỀ ================= */
+.custom-title-border {
+  border-bottom: 2px solid #ee4d2d;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
 }
-.order-table {
+
+.custom-table {
   width: 100%;
-  border-collapse: collapse;
-  text-align: left;
+  border-collapse: separate;
+  border-spacing: 0;
 }
-.order-table th {
-  padding: 15px;
-  border-bottom: 2px solid #eaeaea;
+
+.custom-table th {
+  background-color: #f8f9fa;
   color: #555;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-}
-.order-table td {
-  padding: 15px;
-  border-bottom: 1px solid #eaeaea;
-  vertical-align: middle;
-  color: #333;
-}
-.price {
-  color: #ee4d2d;
   font-weight: bold;
+  font-size: 13px;
+  padding: 15px 10px;
+  border-bottom: none;
 }
-.badge {
-  padding: 6px 12px;
+
+.custom-table td {
+  padding: 15px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #fafafa;
+}
+
+.date-box {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.status-badge {
+  padding: 6px 14px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: bold;
   color: white;
   display: inline-block;
-  text-align: center;
+  white-space: nowrap;
 }
-.badge.success {
+
+.badge-warning-custom {
+  background-color: #ffb800; /* Màu vàng cam của Trạng thái Thanh Toán */
+}
+
+.badge-success-custom {
   background-color: #28a745;
 }
-.badge.warning {
-  background-color: #ffc107;
+
+.badge-info-custom {
+  background-color: #17a2b8; /* Màu xanh teal của Trạng thái Giao */
+}
+
+.payment-method-box {
+  border: 1px solid #eaeaea;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: white;
+  display: inline-block;
+  min-width: 150px;
+  text-align: left;
+}
+
+.vnpay-border {
+  border-left: 4px solid #005bac; /* Xanh VNPAY */
+}
+
+.cash-border {
+  border-left: 4px solid #ee4d2d; /* Đỏ cam Tiền mặt */
+}
+
+.pay-title {
+  font-weight: bold;
   color: #333;
+  font-size: 13px;
+  margin-bottom: 2px;
 }
-.badge.info {
-  background-color: #17a2b8;
+
+.pay-sub {
+  color: #888;
+  font-size: 11px;
 }
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.btn-view {
-  background-color: #ee4d2d;
+
+.btn-action-custom {
+  background-color: #f15832;
   color: white;
   border: none;
-  padding: 6px 12px;
+  padding: 8px 16px;
   border-radius: 4px;
+  font-weight: bold;
+  font-size: 13px;
   cursor: pointer;
   transition: 0.2s;
-  font-weight: bold;
-  font-size: 0.9rem;
+  white-space: nowrap;
+  min-width: 130px;
 }
-.btn-view:hover {
+
+.btn-action-custom:hover {
   background-color: #d73a27;
+}
+
+/* ================= 🔥 CSS CHO PHÂN TRANG (Tông Đỏ Cam) ================= */
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.btn-page {
+  padding: 8px 14px;
+  border: 1px solid #dee2e6;
+  background-color: white;
+  color: #ee4d2d; 
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.btn-page:hover:not(:disabled) {
+  background-color: #fff5f5; 
+}
+
+.btn-page.active {
+  background-color: #ee4d2d; 
+  color: white;
+  border-color: #ee4d2d;
+}
+
+.btn-page:disabled {
+  color: #6c757d;
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  border-color: #dee2e6;
 }
 
 /* Modal chung */
@@ -813,193 +818,6 @@ onMounted(() => {
 .modal-body {
   padding: 25px;
   overflow-y: auto;
-}
-.stepper-wrapper {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 25px;
-  background: white;
-  padding: 35px 20px;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  position: relative;
-}
-.stepper-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  position: relative;
-  z-index: 1;
-}
-.stepper-item::before {
-  position: absolute;
-  content: "";
-  border-bottom: 4px solid #e0e0e0;
-  width: 100%;
-  top: 20px;
-  left: -50%;
-  z-index: -1;
-}
-.stepper-item:first-child::before {
-  content: none;
-}
-.step-counter {
-  width: 45px;
-  height: 45px;
-  background: #e0e0e0;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-size: 20px;
-  margin-bottom: 12px;
-  border: 4px solid white;
-  box-shadow: 0 0 0 2px #e0e0e0;
-}
-.stepper-item.completed .step-counter {
-  background: #26aa99;
-  box-shadow: 0 0 0 2px #26aa99;
-}
-.stepper-item.completed::before {
-  border-color: #26aa99;
-}
-.step-name {
-  font-size: 13px;
-  color: #888;
-  text-align: center;
-  font-weight: 500;
-}
-.stepper-item.completed .step-name {
-  color: #26aa99;
-  font-weight: bold;
-}
-.address-section {
-  background: white;
-  padding: 25px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-.section-title {
-  margin-top: 0;
-  font-size: 18px;
-  color: #333;
-  border-bottom: 1px solid #eaeaea;
-  padding-bottom: 12px;
-  margin-bottom: 15px;
-  font-weight: 500;
-}
-.user-info strong {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 8px;
-  display: inline-block;
-}
-.phone-text {
-  color: #888;
-  font-size: 14px;
-  margin-bottom: 8px;
-  display: inline-block;
-}
-.address-text {
-  color: #555;
-  font-size: 15px;
-  line-height: 1.6;
-  display: block;
-  margin-top: 5px;
-}
-.product-section {
-  background: white;
-  padding: 25px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-.product-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.product-info {
-  padding: 20px 0;
-  border-bottom: 1px dashed #eaeaea;
-  text-align: left;
-}
-.product-name {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-.product-qty {
-  font-size: 14px;
-  color: #888;
-}
-.product-price {
-  text-align: right;
-  vertical-align: middle;
-  border-bottom: 1px dashed #eaeaea;
-  padding: 20px 0;
-}
-.sale-price {
-  color: #ee4d2d;
-  font-weight: bold;
-  font-size: 16px;
-}
-.summary-section {
-  background: #fffcf5;
-  padding: 25px;
-  border-radius: 4px;
-  border: 1px solid #faebd7;
-}
-.summary-row {
-  display: flex;
-  justify-content: flex-end;
-  padding: 10px 0;
-  font-size: 15px;
-  color: #555;
-}
-.summary-row span:last-child {
-  width: 200px;
-  text-align: right;
-}
-.total-row {
-  border-top: 1px dashed #eaeaea;
-  margin-top: 15px;
-  padding-top: 20px;
-  align-items: center;
-}
-.final-price {
-  color: #ee4d2d;
-  font-size: 28px;
-  font-weight: bold;
-}
-.payment-method-row {
-  border-top: 1px solid #eaeaea;
-  margin-top: 20px;
-  padding-top: 20px;
-  text-align: right;
-  font-size: 14px;
-  color: #555;
-}
-.payment-method-row strong {
-  color: #333;
-  font-size: 15px;
-  margin-left: 5px;
-}
-
-.btn-return {
-  background-color: #26aa99;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: 0.2s;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-.btn-return:hover {
-  background-color: #208d7f;
 }
 
 .return-modal {
@@ -1089,53 +907,7 @@ onMounted(() => {
   border: 1px solid #eaeaea;
 }
 
-
-/* ================= 🔥 CSS CHO PHÂN TRANG (Tông Đỏ Cam) ================= */
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: white;
-  border-top: 1px solid #eaeaea;
-}
-
-.btn-page {
-  padding: 8px 14px;
-  border: 1px solid #dee2e6;
-  background-color: white;
-  color: #ee4d2d; 
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.2s;
-}
-
-.btn-page:hover:not(:disabled) {
-  background-color: #fff5f5; /* Nền đỏ cam nhạt khi hover */
-}
-
-.btn-page.active {
-  background-color: #ee4d2d; /* Nền đỏ cam khi active */
-  color: white;
-  border-color: #ee4d2d;
-}
-
-.btn-page:disabled {
-  color: #6c757d;
-  background-color: #f8f9fa;
-  cursor: not-allowed;
-  border-color: #dee2e6;
-}
-
-
 /* ================= CSS MODAL CHI TIẾT STYLE OREKA ================= */
-.shopee-modal { width: 95%; max-width: 900px; padding: 0; background: #f8f9fa; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: white; border-bottom: 2px solid #ee4d2d; position: sticky; top: 0; z-index: 10;}
-.back-btn { background: none; border: none; font-weight: bold; color: #ee4d2d; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;}
-.back-btn:hover { opacity: 0.8; }
-.status-text { color: #ee4d2d; font-weight: bold; text-transform: uppercase; font-size: 15px;}
 .oreka-body { padding: 20px 30px; overflow-y: auto;}
 
 .oreka-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
@@ -1172,7 +944,6 @@ onMounted(() => {
 .summary-line:last-child { margin-bottom: 0; }
 .summary-line.total { align-items: center; }
 
-/* Thích ứng cho thiết bị di động (Responsive) */
 @media (max-width: 768px) {
     .oreka-grid-2col {
         grid-template-columns: 1fr;

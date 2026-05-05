@@ -206,13 +206,14 @@ public class SanPhamServiceImpl implements SanPhamService {
         }
         return dto;
     }
-
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDetailResponseDto> getProductsBySeller(Integer sellerId) {
-        return sanPhamRepository.findByNguoiDung_NguoiDungId(sellerId).stream()
-                .map(this::mapToDetailDto)
-                .collect(Collectors.toList());
+    public Page<ProductDetailResponseDto> getProductsBySeller(Integer sellerId, Pageable pageable) {
+        // Truy vấn Repository với Pageable
+        Page<SanPham> sanPhamPage = sanPhamRepository.findByNguoiDung_NguoiDungId(sellerId, pageable);
+
+        // Sử dụng hàm map() của Page để chuyển đổi Entity sang DTO
+        return sanPhamPage.map(this::mapToDetailDto);
     }
 
     @Override

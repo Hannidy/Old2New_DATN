@@ -47,10 +47,16 @@ public class ProductController {
 
     // 1. Lấy danh sách sản phẩm theo ID người bán
     @GetMapping("/seller/{sellerId}")
-    public ResponseEntity<List<ProductDetailResponseDto>> getProductsBySeller(@PathVariable Integer sellerId) {
+    public ResponseEntity<Page<ProductDetailResponseDto>> getProductsBySeller(
+            @PathVariable Integer sellerId,
+            @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0 (Spring Boot đếm từ 0)
+            @RequestParam(defaultValue = "10") int size  // Số sản phẩm trên 1 trang
+    ) {
         try {
-            List<ProductDetailResponseDto> products = sanPhamService.getProductsBySeller(sellerId);
-            return ResponseEntity.ok(products);
+            Pageable pageable = PageRequest.of(page, size);
+            // Trả về đối tượng Page thay vì List
+            Page<ProductDetailResponseDto> productPage = sanPhamService.getProductsBySeller(sellerId, pageable);
+            return ResponseEntity.ok(productPage);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

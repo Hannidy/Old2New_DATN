@@ -1,9 +1,11 @@
 package poly.edu.o2n.product.service;
 
+import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import poly.edu.o2n.product.dto.request.SanPhamRequestDto;
 import poly.edu.o2n.product.dto.response.ProductDetailResponseDto;
 
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +25,7 @@ public interface SanPhamService {
     /**
      * Lấy danh sách sản phẩm của một người bán cụ thể
      */
-    List<ProductDetailResponseDto> getProductsBySeller(Integer sellerId);
+    Page<ProductDetailResponseDto> getProductsBySeller(Integer sellerId, Pageable pageable);
 
     /**
      * Lấy thông tin cơ bản của chủ shop (Tên, Avatar, Ngày tham gia)
