@@ -77,7 +77,7 @@
                         {{ order.trangThaiThanhToan === "DA_THANH_TOAN" ? "Đã thanh toán" : "Chưa thanh toán" }}
                       </span>
                     </td>
-
+                    <td>
                     <div class="payment-method-box"
                       :class="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'bank-transfer' : 'cod'">
 
@@ -104,7 +104,7 @@
                         </strong>
                       </div>
                     </div>
-
+                    </td>
                     <td class="text-center">
                       <span class="status-badge badge-info-custom">
                         {{ order.trangThaiDonHang || "CHO_XAC_NHAN" }}
