@@ -454,7 +454,7 @@ const submitForm = async () => {
     localStorage.setItem("isPhoneVerified", "true");
     localStorage.setItem("verifiedPhone", form.phone);
 
-    alert("🎉 Đăng bán thành công! Trạng thái xác minh của bạn đã được lưu.");
+    alert("🎉 Đăng bán thành công! Chờ Admin duyệt");
     showConfirmModal.value = false;
     router.push("/");
   } catch (error) {
