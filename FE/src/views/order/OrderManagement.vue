@@ -1,19 +1,28 @@
 <template>
-  <div class="bg-light min-vh-100 pb-5">
-    <div class="container py-5" style="margin-top: 80px">
+  <!-- Đổi thành d-flex flex-column để đẩy Footer xuống đáy màn hình -->
+  <div class="bg-light min-vh-100 d-flex flex-column">
+    <!-- 🔥 ĐÃ THÊM HEADER VÀO ĐÂY -->
+    <AppHeader />
+
+    <!-- Thêm flex-grow-1 để phần nội dung chiếm hết khoảng trống, đẩy Footer xuống đáy -->
+    <div class="container py-5 flex-grow-1" style="margin-top: 130px">
       <div class="d-flex align-items-center justify-content-between mb-4">
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0 bg-transparent p-0">
             <li class="breadcrumb-item">
-              <router-link to="/" class="text-decoration-none text-muted"><i class="bi bi-house-door"></i> Trang
-                chủ</router-link>
+              <router-link to="/" class="text-decoration-none text-muted"
+                ><i class="bi bi-house-door"></i> Trang chủ</router-link
+              >
             </li>
             <li class="breadcrumb-item active text-danger" aria-current="page">
               Đơn hàng của tôi
             </li>
           </ol>
         </nav>
-        <button @click="router.push('/')" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm">
+        <button
+          @click="router.push('/')"
+          class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm"
+        >
           <i class="bi bi-arrow-left"></i> Quay lại trang chủ
         </button>
       </div>
@@ -25,10 +34,11 @@
 
         <div class="col-md-9">
           <div class="bg-white rounded shadow-sm p-4 p-md-4">
-
             <!-- 🔥 TIÊU ĐỀ THEO DESIGN MỚI -->
             <div class="custom-title-border">
-              <h2 class="h6 fw-bold mb-0 text-dark text-uppercase d-flex align-items-center gap-2">
+              <h2
+                class="h6 fw-bold mb-0 text-dark text-uppercase d-flex align-items-center gap-2"
+              >
                 📦 Quản lý đơn hàng của bạn
               </h2>
             </div>
@@ -49,7 +59,10 @@
                 </thead>
                 <tbody>
                   <tr v-if="orders.length === 0">
-                    <td colspan="7" class="empty-message text-muted py-5 text-center">
+                    <td
+                      colspan="7"
+                      class="empty-message text-muted py-5 text-center"
+                    >
                       <div class="fs-1 mb-2">🛍️</div>
                       Bạn chưa có đơn hàng nào.
                     </td>
@@ -62,8 +75,12 @@
 
                     <td class="text-center">
                       <div class="date-box">
-                        <span class="d-block text-dark">{{ formatTime(order.ngayTao) }}</span>
-                        <span class="d-block text-muted">{{ formatDateOnly(order.ngayTao) }}</span>
+                        <span class="d-block text-dark">{{
+                          formatTime(order.ngayTao)
+                        }}</span>
+                        <span class="d-block text-muted">{{
+                          formatDateOnly(order.ngayTao)
+                        }}</span>
                       </div>
                     </td>
 
@@ -72,38 +89,81 @@
                     </td>
 
                     <td class="text-center">
-                      <span class="status-badge"
-                        :class="order.trangThaiThanhToan === 'DA_THANH_TOAN' ? 'badge-success-custom' : 'badge-warning-custom'">
-                        {{ order.trangThaiThanhToan === "DA_THANH_TOAN" ? "Đã thanh toán" : "Chưa thanh toán" }}
+                      <span
+                        class="status-badge"
+                        :class="
+                          order.trangThaiThanhToan === 'DA_THANH_TOAN'
+                            ? 'badge-success-custom'
+                            : 'badge-warning-custom'
+                        "
+                      >
+                        {{
+                          order.trangThaiThanhToan === "DA_THANH_TOAN"
+                            ? "Đã thanh toán"
+                            : "Chưa thanh toán"
+                        }}
                       </span>
                     </td>
                     <td>
-                    <div class="payment-method-box"
-                      :class="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'bank-transfer' : 'cod'">
+                      <div
+                        class="payment-method-box"
+                        :class="
+                          order.phuongThucThanhToan !== 'COD' &&
+                          order.phuongThucThanhToan !== 'Tiền mặt'
+                            ? 'bank-transfer'
+                            : 'cod'
+                        "
+                      >
+                        <div class="icon-wrapper">
+                          <!-- Icon Ngân hàng cho Chuyển khoản -->
+                          <svg
+                            v-if="
+                              order.phuongThucThanhToan !== 'COD' &&
+                              order.phuongThucThanhToan !== 'Tiền mặt'
+                            "
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path
+                              d="M3 21h18M3 10h18M5 10v11M19 10v11M12 10v11M7 10v11M17 10v11M2 7l10-5 10 5v3H2V7z"
+                            />
+                          </svg>
 
-                      <div class="icon-wrapper">
-                        <!-- Icon Ngân hàng cho Chuyển khoản -->
-                        <svg v-if="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt'"
-                          width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                          stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 10v11M7 10v11M17 10v11M2 7l10-5 10 5v3H2V7z" />
-                        </svg>
+                          <!-- Icon Tờ tiền cho COD -->
+                          <svg
+                            v-else
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <rect x="2" y="6" width="20" height="12" rx="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <path d="M6 12h.01M18 12h.01" />
+                          </svg>
+                        </div>
 
-                        <!-- Icon Tờ tiền cho COD -->
-                        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="2" y="6" width="20" height="12" rx="2" />
-                          <circle cx="12" cy="12" r="2" />
-                          <path d="M6 12h.01M18 12h.01" />
-                        </svg>
+                        <div class="payment-info">
+                          <strong class="pay-title">
+                            {{
+                              order.phuongThucThanhToan !== "COD" &&
+                              order.phuongThucThanhToan !== "Tiền mặt"
+                                ? "Chuyển khoản"
+                                : "Tiền mặt"
+                            }}
+                          </strong>
+                        </div>
                       </div>
-
-                      <div class="payment-info">
-                        <strong class="pay-title">
-                          {{ order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'Chuyển khoản' : 'Tiền mặt' }}
-                        </strong>
-                      </div>
-                    </div>
                     </td>
                     <td class="text-center">
                       <span class="status-badge badge-info-custom">
@@ -113,20 +173,33 @@
 
                     <td class="text-center">
                       <div class="d-flex flex-column gap-2 align-items-center">
-                        <button class="btn-action-custom w-100" @click="viewDetails(order.donHangId)">
+                        <button
+                          class="btn-action-custom w-100"
+                          @click="viewDetails(order.donHangId)"
+                        >
                           👁 Xem Chi Tiết
                         </button>
 
                         <!-- Đánh giá shop -->
-                        <button v-if="order.trangThaiDonHang === 'HOAN_THANH' && !order.daDanhGia"
-                          class="btn-action-custom w-100" style="background-color: #28a745;"
-                          @click="openReviewModal(order)">
+                        <button
+                          v-if="
+                            order.trangThaiDonHang === 'HOAN_THANH' &&
+                            !order.daDanhGia
+                          "
+                          class="btn-action-custom w-100"
+                          style="background-color: #28a745"
+                          @click="openReviewModal(order)"
+                        >
                           ⭐ Đánh giá
                         </button>
 
                         <!-- Trả hàng -->
-                        <button v-if="order.trangThaiDonHang === 'DA_GIAO'" class="btn-action-custom w-100"
-                          style="background-color: #6c757d;" @click="openReturnModal(order)">
+                        <button
+                          v-if="order.trangThaiDonHang === 'DA_GIAO'"
+                          class="btn-action-custom w-100"
+                          style="background-color: #6c757d"
+                          @click="openReturnModal(order)"
+                        >
                           🔄 Trả Hàng
                         </button>
                       </div>
@@ -137,14 +210,29 @@
 
               <!-- Phân trang -->
               <div v-if="totalPages > 1" class="pagination-wrapper mt-4">
-                <button @click="prevPage" :disabled="currentPage === 1" class="btn-page">« Trước</button>
-                <button v-for="page in totalPages" :key="page" @click="goToPage(page)"
-                  :class="['btn-page', { active: currentPage === page }]">
+                <button
+                  @click="prevPage"
+                  :disabled="currentPage === 1"
+                  class="btn-page"
+                >
+                  « Trước
+                </button>
+                <button
+                  v-for="page in totalPages"
+                  :key="page"
+                  @click="goToPage(page)"
+                  :class="['btn-page', { active: currentPage === page }]"
+                >
                   {{ page }}
                 </button>
-                <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-page">Sau »</button>
+                <button
+                  @click="nextPage"
+                  :disabled="currentPage === totalPages"
+                  class="btn-page"
+                >
+                  Sau »
+                </button>
               </div>
-
             </div>
           </div>
         </div>
@@ -160,46 +248,70 @@
           </div>
           <div class="header-right">
             <span>MÃ ĐƠN HÀNG. O2N{{ selectedOrder?.donHangId }}</span> |
-            <span class="status-text">{{ selectedOrder?.trangThaiDonHang || 'CHỜ XÁC NHẬN' }}</span>
+            <span class="status-text">{{
+              selectedOrder?.trangThaiDonHang || "CHỜ XÁC NHẬN"
+            }}</span>
           </div>
         </div>
 
         <div class="modal-body oreka-body" v-if="selectedOrder">
-
           <div class="oreka-section">
             <div class="oreka-order-header">
-              <div class="shop-name"><i class="bi bi-shop me-2"></i> Thông tin đơn hàng</div>
-              <div class="order-date">{{ formatDate(selectedOrder.ngayTao) }}</div>
+              <div class="shop-name">
+                <i class="bi bi-shop me-2"></i> Thông tin đơn hàng
+              </div>
+              <div class="order-date">
+                {{ formatDate(selectedOrder.ngayTao) }}
+              </div>
             </div>
 
             <div class="oreka-product-list">
-              <div v-if="!selectedOrder.chiTietDonHangs || selectedOrder.chiTietDonHangs.length === 0"
-                class="text-center text-muted py-4">
+              <div
+                v-if="
+                  !selectedOrder.chiTietDonHangs ||
+                  selectedOrder.chiTietDonHangs.length === 0
+                "
+                class="text-center text-muted py-4"
+              >
                 <i class="bi bi-box-seam fs-3 d-block mb-2"></i>
                 <em>Dữ liệu sản phẩm không tồn tại (Đơn test cũ)</em>
               </div>
 
-              <div v-else v-for="item in selectedOrder.chiTietDonHangs" :key="item.chiTietId"
-                class="oreka-product-item">
+              <div
+                v-else
+                v-for="item in selectedOrder.chiTietDonHangs"
+                :key="item.chiTietId"
+                class="oreka-product-item"
+              >
                 <div class="product-img-box">
-                  <img :src="item.hinhAnh ? item.hinhAnh : 'https://via.placeholder.com/80?text=Chua+Co+Anh'"
-                    alt="Sản phẩm" class="product-img">
+                  <img
+                    :src="
+                      item.hinhAnh
+                        ? item.hinhAnh
+                        : 'https://via.placeholder.com/80?text=Chua+Co+Anh'
+                    "
+                    alt="Sản phẩm"
+                    class="product-img"
+                  />
                 </div>
                 <div class="product-details">
                   <h4 class="product-name">{{ item.tenSanPham }}</h4>
                   <p class="product-meta">Số lượng: {{ item.soLuongMua }}</p>
-                  <p class="product-price">Giá: <strong>{{ formatCurrency(item.giaLucMua) }}</strong></p>
+                  <p class="product-price">
+                    Giá: <strong>{{ formatCurrency(item.giaLucMua) }}</strong>
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="oreka-grid-2col">
-
             <div class="oreka-col">
               <h5 class="oreka-title">Thông tin vận chuyển:</h5>
               <div class="shipping-info">
-                <p class="mb-3 text-muted" style="font-size: 13px;">Chi tiết vận chuyển:</p>
+                <p class="mb-3 text-muted" style="font-size: 13px">
+                  Chi tiết vận chuyển:
+                </p>
 
                 <div class="vertical-timeline">
                   <div class="v-timeline-item completed">
@@ -207,26 +319,45 @@
                     <div class="v-content">Người mua đã đặt hàng</div>
                   </div>
 
-                  <div v-if="selectedOrder.trangThaiThanhToan === 'DA_THANH_TOAN'" class="v-timeline-item completed">
+                  <div
+                    v-if="selectedOrder.trangThaiThanhToan === 'DA_THANH_TOAN'"
+                    class="v-timeline-item completed"
+                  >
                     <span class="v-dot"></span>
                     <div class="v-content">Đã xác nhận thanh toán</div>
                   </div>
 
                   <div
-                    v-if="selectedOrder.trangThaiDonHang === 'DANG_GIAO' || selectedOrder.trangThaiDonHang === 'DA_GIAO' || selectedOrder.trangThaiDonHang === 'HOAN_THANH'"
-                    class="v-timeline-item completed">
+                    v-if="
+                      selectedOrder.trangThaiDonHang === 'DANG_GIAO' ||
+                      selectedOrder.trangThaiDonHang === 'DA_GIAO' ||
+                      selectedOrder.trangThaiDonHang === 'HOAN_THANH'
+                    "
+                    class="v-timeline-item completed"
+                  >
                     <span class="v-dot"></span>
-                    <div class="v-content text-primary fw-bold">Đang giao cho ĐVVC</div>
+                    <div class="v-content text-primary fw-bold">
+                      Đang giao cho ĐVVC
+                    </div>
                   </div>
 
                   <div
-                    v-if="selectedOrder.trangThaiDonHang === 'DA_GIAO' || selectedOrder.trangThaiDonHang === 'HOAN_THANH'"
-                    class="v-timeline-item completed">
+                    v-if="
+                      selectedOrder.trangThaiDonHang === 'DA_GIAO' ||
+                      selectedOrder.trangThaiDonHang === 'HOAN_THANH'
+                    "
+                    class="v-timeline-item completed"
+                  >
                     <span class="v-dot"></span>
-                    <div class="v-content text-success fw-bold">Giao hàng thành công</div>
+                    <div class="v-content text-success fw-bold">
+                      Giao hàng thành công
+                    </div>
                   </div>
 
-                  <div v-if="selectedOrder.trangThaiDonHang === 'DA_HUY'" class="v-timeline-item cancel">
+                  <div
+                    v-if="selectedOrder.trangThaiDonHang === 'DA_HUY'"
+                    class="v-timeline-item cancel"
+                  >
                     <span class="v-dot"></span>
                     <div class="v-content text-danger">Đơn hàng đã bị hủy</div>
                   </div>
@@ -235,22 +366,28 @@
             </div>
 
             <div class="oreka-col border-left-col">
-
               <h5 class="oreka-title">Địa chỉ gửi hàng (Shop):</h5>
               <div class="address-text-box mb-4">
                 <span class="d-block text-muted">
                   <i class="bi bi-geo-alt-fill me-1 text-secondary"></i>
-                  {{ selectedOrder.diaChiCuaHang || 'Shop chưa cập nhật địa chỉ' }}
+                  {{
+                    selectedOrder.diaChiCuaHang || "Shop chưa cập nhật địa chỉ"
+                  }}
                 </span>
               </div>
 
               <h5 class="oreka-title">Địa chỉ giao hàng:</h5>
               <div class="address-text-box mb-4">
-                <strong class="d-block mb-1" style="font-size: 14px;">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[0]
-                  || 'Khách hàng' }}</strong>
-                <span class="d-block text-muted mb-1">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[1] || '' }}</span>
-                <span class="d-block text-muted">{{ selectedOrder.diaChiGiaoHang?.split(' | ')[2] ||
-                  selectedOrder.diaChiGiaoHang }}</span>
+                <strong class="d-block mb-1" style="font-size: 14px">{{
+                  selectedOrder.diaChiGiaoHang?.split(" | ")[0] || "Khách hàng"
+                }}</strong>
+                <span class="d-block text-muted mb-1">{{
+                  selectedOrder.diaChiGiaoHang?.split(" | ")[1] || ""
+                }}</span>
+                <span class="d-block text-muted">{{
+                  selectedOrder.diaChiGiaoHang?.split(" | ")[2] ||
+                  selectedOrder.diaChiGiaoHang
+                }}</span>
               </div>
 
               <h5 class="oreka-title mt-4">Chi tiết thanh toán:</h5>
@@ -265,22 +402,33 @@
                 </div>
                 <div class="summary-line total mt-2 pt-2 border-top">
                   <span class="d-flex align-items-center gap-1">
-                    <i v-if="selectedOrder.phuongThucThanhToan === 'COD'" class="bi bi-cash-coin text-warning"></i>
-                    <i v-else class="bi bi-credit-card-2-front text-primary"></i>
+                    <i
+                      v-if="selectedOrder.phuongThucThanhToan === 'COD'"
+                      class="bi bi-cash-coin text-warning"
+                    ></i>
+                    <i
+                      v-else
+                      class="bi bi-credit-card-2-front text-primary"
+                    ></i>
                     {{ selectedOrder.phuongThucThanhToan }}
                   </span>
-                  <span class="text-danger fw-bold fs-5">{{ formatCurrency(selectedOrder.tongThanhTien) }}</span>
+                  <span class="text-danger fw-bold fs-5">{{
+                    formatCurrency(selectedOrder.tongThanhTien)
+                  }}</span>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </div>
 
     <!-- MODAL TRẢ HÀNG -->
-    <div v-if="isReturnModalOpen" class="modal-overlay" @click.self="closeReturnModal">
+    <div
+      v-if="isReturnModalOpen"
+      class="modal-overlay"
+      @click.self="closeReturnModal"
+    >
       <div class="modal-content return-modal">
         <h3 class="return-title">Yêu Cầu Trả Hàng / Hoàn Tiền</h3>
         <p class="return-subtitle">
@@ -292,49 +440,96 @@
             <label>Lý do trả hàng <span class="text-danger">*</span></label>
             <select v-model="returnForm.lyDo" required class="form-control">
               <option value="" disabled>-- Chọn lý do --</option>
-              <option value="Hàng bị lỗi / Không hoạt động">Hàng bị lỗi / Không hoạt động</option>
-              <option value="Giao sai sản phẩm / Phân loại">Giao sai sản phẩm / Phân loại</option>
-              <option value="Hàng bị bể vỡ do vận chuyển">Hàng bị bể vỡ do vận chuyển</option>
+              <option value="Hàng bị lỗi / Không hoạt động">
+                Hàng bị lỗi / Không hoạt động
+              </option>
+              <option value="Giao sai sản phẩm / Phân loại">
+                Giao sai sản phẩm / Phân loại
+              </option>
+              <option value="Hàng bị bể vỡ do vận chuyển">
+                Hàng bị bể vỡ do vận chuyển
+              </option>
               <option value="Hàng khác với mô tả">Hàng khác với mô tả</option>
             </select>
           </div>
 
           <div class="form-group">
             <label>Mô tả chi tiết tình trạng</label>
-            <textarea v-model="returnForm.moTaChiTiet" rows="3"
-              placeholder="Ví dụ: Áo bị rách ở phần tay, màn hình bật không lên..." class="form-control"></textarea>
+            <textarea
+              v-model="returnForm.moTaChiTiet"
+              rows="3"
+              placeholder="Ví dụ: Áo bị rách ở phần tay, màn hình bật không lên..."
+              class="form-control"
+            ></textarea>
           </div>
 
           <div class="form-group">
             <label>Hình ảnh chứng cứ <span class="text-danger">*</span></label>
-            <input type="file" @change="handleFileUpload($event, 'image')" accept="image/*" class="form-control"
-              :disabled="isUploadingImage" required />
-            <div v-if="isUploadingImage" class="upload-status">⏳ Đang tải ảnh lên mây...</div>
-            <img v-if="returnForm.hinhAnhBangChung" :src="returnForm.hinhAnhBangChung" class="preview-img"
-              alt="Bằng chứng" />
+            <input
+              type="file"
+              @change="handleFileUpload($event, 'image')"
+              accept="image/*"
+              class="form-control"
+              :disabled="isUploadingImage"
+              required
+            />
+            <div v-if="isUploadingImage" class="upload-status">
+              ⏳ Đang tải ảnh lên mây...
+            </div>
+            <img
+              v-if="returnForm.hinhAnhBangChung"
+              :src="returnForm.hinhAnhBangChung"
+              class="preview-img"
+              alt="Bằng chứng"
+            />
           </div>
 
           <div class="form-group">
             <label>Video chứng cứ (Tùy chọn)</label>
-            <input type="file" @change="handleFileUpload($event, 'video')" accept="video/*" class="form-control"
-              :disabled="isUploadingVideo" />
-            <div v-if="isUploadingVideo" class="upload-status">⏳ Đang tải video lên mây...</div>
-            <video v-if="returnForm.videoBangChung" :src="returnForm.videoBangChung" controls
-              class="preview-video"></video>
+            <input
+              type="file"
+              @change="handleFileUpload($event, 'video')"
+              accept="video/*"
+              class="form-control"
+              :disabled="isUploadingVideo"
+            />
+            <div v-if="isUploadingVideo" class="upload-status">
+              ⏳ Đang tải video lên mây...
+            </div>
+            <video
+              v-if="returnForm.videoBangChung"
+              :src="returnForm.videoBangChung"
+              controls
+              class="preview-video"
+            ></video>
           </div>
 
           <div class="return-actions">
-            <button type="button" class="btn-cancel" @click="closeReturnModal">Hủy</button>
-            <button type="submit" class="btn-submit" :disabled="isUploadingImage || isUploadingVideo">Gửi Yêu
-              Cầu</button>
+            <button type="button" class="btn-cancel" @click="closeReturnModal">
+              Hủy
+            </button>
+            <button
+              type="submit"
+              class="btn-submit"
+              :disabled="isUploadingImage || isUploadingVideo"
+            >
+              Gửi Yêu Cầu
+            </button>
           </div>
         </form>
       </div>
     </div>
 
     <!-- MODAL ĐÁNH GIÁ SHOP -->
-    <div v-if="isReviewModalOpen" class="modal-overlay" @click.self="closeReviewModal">
-      <div class="modal-content shopee-modal" style="max-width: 450px; border-radius: 20px;">
+    <div
+      v-if="isReviewModalOpen"
+      class="modal-overlay"
+      @click.self="closeReviewModal"
+    >
+      <div
+        class="modal-content shopee-modal"
+        style="max-width: 450px; border-radius: 20px"
+      >
         <div class="modal-header border-0 pb-0 justify-content-between">
           <h4 class="fw-bold text-success mb-0">Đánh giá trải nghiệm</h4>
           <button class="btn-close" @click="closeReviewModal"></button>
@@ -343,36 +538,63 @@
         <div class="modal-body text-center pt-3">
           <div class="mb-3">
             <i class="bi bi-shop fs-1 text-success"></i>
-            <p class="text-muted small mt-2">Duy ơi, hãy chia sẻ cảm nhận của bạn về Shop nhé!</p>
+            <p class="text-muted small mt-2">
+              Hãy chia sẻ cảm nhận của bạn về Shop nhé!
+            </p>
           </div>
 
           <div class="star-rating fs-1 mb-4">
-            <span v-for="star in 5" :key="star" @click="reviewForm.soSao = star"
-              :class="star <= reviewForm.soSao ? 'text-warning' : 'text-secondary'"
-              style="cursor: pointer; transition: transform 0.2s; display: inline-block;"
-              onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+            <span
+              v-for="star in 5"
+              :key="star"
+              @click="reviewForm.soSao = star"
+              :class="
+                star <= reviewForm.soSao ? 'text-warning' : 'text-secondary'
+              "
+              style="
+                cursor: pointer;
+                transition: transform 0.2s;
+                display: inline-block;
+              "
+              onmouseover="this.style.transform = 'scale(1.2)'"
+              onmouseout="this.style.transform = 'scale(1)'"
+            >
               ★
             </span>
           </div>
 
           <div class="form-group text-start px-2">
-            <label class="small fw-bold mb-2">Lời bình luận của Duy:</label>
-            <textarea v-model="reviewForm.binhLuan" class="form-control border-success shadow-none" rows="4"
-              style="border-radius: 12px;"
-              placeholder="Ví dụ: Shop giao hàng nhanh, sản phẩm còn rất mới..."></textarea>
+            <label class="small fw-bold mb-2">Lời bình luận của bạn:</label>
+            <textarea
+              v-model="reviewForm.binhLuan"
+              class="form-control border-success shadow-none"
+              rows="4"
+              style="border-radius: 12px"
+              placeholder="Ví dụ: Shop giao hàng nhanh, sản phẩm còn rất mới..."
+            ></textarea>
           </div>
         </div>
 
         <div class="modal-footer border-0 justify-content-center pb-4">
-          <button class="btn btn-light px-4 rounded-pill fw-bold" @click="closeReviewModal">Để sau</button>
-          <button class="btn btn-success px-4 rounded-pill shadow-sm fw-bold" @click="submitReview"
-            :disabled="!reviewForm.soSao">
+          <button
+            class="btn btn-light px-4 rounded-pill fw-bold"
+            @click="closeReviewModal"
+          >
+            Để sau
+          </button>
+          <button
+            class="btn btn-success px-4 rounded-pill shadow-sm fw-bold"
+            @click="submitReview"
+            :disabled="!reviewForm.soSao"
+          >
             Gửi Đánh Giá Ngay
           </button>
         </div>
       </div>
     </div>
 
+    <!-- 🔥 ĐÃ THÊM FOOTER VÀO ĐÂY -->
+    <AppFooter />
   </div>
 </template>
 
@@ -380,7 +602,11 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+
+// 🔥 IMPORT HEADER, SIDEBAR VÀ FOOTER VÀO COMPONENT
+import AppHeader from "@/layouts/Header.vue";
 import UserSidebar from "@/layouts/UserSidebar.vue";
+import AppFooter from "@/layouts/Footer.vue";
 
 const router = useRouter();
 const orders = ref([]);
@@ -424,10 +650,12 @@ const submitReview = async () => {
 
     const payload = {
       sanPham: { sanPhamId: firstProduct.sanPhamId },
-      nguoiMua: { nguoiDungId: currentUser.value.nguoiDungId || currentUser.value.id },
+      nguoiMua: {
+        nguoiDungId: currentUser.value.nguoiDungId || currentUser.value.id,
+      },
       soSao: reviewForm.value.soSao,
       binhLuan: reviewForm.value.binhLuan,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     await axios.post("http://localhost:8080/api/products/reviews", payload);
@@ -459,9 +687,15 @@ const paginatedOrders = computed(() => {
   return orders.value.slice(start, end);
 });
 
-const goToPage = (page) => { currentPage.value = page; };
-const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
-const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const goToPage = (page) => {
+  currentPage.value = page;
+};
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value--;
+};
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++;
+};
 
 const handleFileUpload = async (event, type) => {
   const file = event.target.files[0];
@@ -477,7 +711,10 @@ const handleFileUpload = async (event, type) => {
     const storedUserData = JSON.parse(localStorage.getItem("user"));
     const token = storedUserData.token || storedUserData.accessToken;
 
-    const apiUrl = type === "image" ? "http://localhost:8080/api/media/upload-image" : "http://localhost:8080/api/media/upload-video";
+    const apiUrl =
+      type === "image"
+        ? "http://localhost:8080/api/media/upload-image"
+        : "http://localhost:8080/api/media/upload-video";
 
     const response = await axios.post(apiUrl, formData, {
       headers: {
@@ -510,24 +747,31 @@ const fetchOrders = async () => {
     if (!currentUser.value) return;
     const currentId = currentUser.value.nguoiDungId || currentUser.value.id;
 
-    const res = await axios.get(`http://localhost:8080/api/don-hang/danh-sach/${currentId}`);
+    const res = await axios.get(
+      `http://localhost:8080/api/don-hang/danh-sach/${currentId}`,
+    );
     const ordersData = res.data;
 
     let myReviews = [];
     try {
-      const reviewRes = await axios.get(`http://localhost:8080/api/products/reviews/buyer/${currentId}`);
+      const reviewRes = await axios.get(
+        `http://localhost:8080/api/products/reviews/buyer/${currentId}`,
+      );
       myReviews = reviewRes.data;
     } catch (revErr) {
       console.warn("Chưa lấy được review:", revErr);
     }
 
-    orders.value = ordersData.map(order => {
-      const hasReviewed = myReviews.some(rev =>
-        order.chiTietDonHangs && order.chiTietDonHangs.some(detail => detail.sanPhamId === rev.sanPham?.sanPhamId)
+    orders.value = ordersData.map((order) => {
+      const hasReviewed = myReviews.some(
+        (rev) =>
+          order.chiTietDonHangs &&
+          order.chiTietDonHangs.some(
+            (detail) => detail.sanPhamId === rev.sanPham?.sanPhamId,
+          ),
       );
       return { ...order, daDanhGia: hasReviewed };
     });
-
   } catch (error) {
     console.error("Lỗi tải đơn hàng:", error);
   }
@@ -535,7 +779,9 @@ const fetchOrders = async () => {
 
 const viewDetails = async (donHangId) => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/don-hang/chi-tiet/${donHangId}`);
+    const response = await axios.get(
+      `http://localhost:8080/api/don-hang/chi-tiet/${donHangId}`,
+    );
     selectedOrder.value = response.data;
     isModalOpen.value = true;
   } catch (error) {
@@ -579,15 +825,22 @@ const submitReturnRequest = async () => {
     const storedUserData = JSON.parse(localStorage.getItem("user"));
     const token = storedUserData.token || storedUserData.accessToken;
 
-    const response = await axios.post("http://localhost:8080/api/don-hang/yeu-cau-tra-hang", requestData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.post(
+      "http://localhost:8080/api/don-hang/yeu-cau-tra-hang",
+      requestData,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
 
     alert(response.data.message || "Đã gửi yêu cầu trả hàng thành công!");
     closeReturnModal();
     fetchOrders();
   } catch (error) {
-    alert("Có lỗi xảy ra: " + (error.response?.data?.error || "Vui lòng thử lại sau!"));
+    alert(
+      "Có lỗi xảy ra: " +
+        (error.response?.data?.error || "Vui lòng thử lại sau!"),
+    );
   }
 };
 
@@ -620,13 +873,14 @@ const formatDateOnly = (dateString) => {
 };
 
 onMounted(() => {
-  const storedUser = localStorage.getItem('user');
+  const storedUser = localStorage.getItem("user");
   if (storedUser) {
     currentUser.value = JSON.parse(storedUser);
   }
   fetchOrders();
 });
 </script>
+
 <style scoped>
 /* ================= CSS MỚI CHO BẢNG & TIÊU ĐỀ ================= */
 .custom-title-border {
@@ -649,14 +903,11 @@ onMounted(() => {
   padding: 15px 10px;
   border-bottom: none;
   text-align: center;
-  /* Đảm bảo tiêu đề căn giữa */
 }
 
 .custom-table td {
   padding: 10px 10px;
-  /* Giảm nhẹ padding dọc để khít hơn */
   border-bottom: 1px solid #f0f0f0;
-  /* CHỐT CHẶN KHOẢNG TRẮNG: Ép nội dung luôn nằm giữa dòng */
   vertical-align: middle !important;
   font-size: 14px;
 }
@@ -692,25 +943,19 @@ onMounted(() => {
   background-color: #17a2b8;
 }
 
-/* Container chung cho box phương thức */
 .payment-method-box {
   display: inline-flex;
   align-items: center;
-  /* Căn giữa icon và chữ theo chiều dọc */
   gap: 12px;
-  /* Khoảng cách giữa icon và cụm chữ */
   padding: 8px 16px;
   border-radius: 12px;
-  /* Bo góc tròn hơn giống ảnh mẫu */
   min-width: 180px;
   height: auto;
-  /* Để chiều cao tự co giãn theo nội dung */
   font-family: sans-serif;
   border: 1px solid transparent;
   transition: all 0.3s ease;
 }
 
-/* Cụm text bên phải icon */
 .payment-info {
   display: flex;
   flex-direction: column;
@@ -728,49 +973,34 @@ onMounted(() => {
   margin-top: 2px;
 }
 
-/* 1. Style cho Tiền mặt (COD) - Màu xanh lá */
 .payment-method-box.cod {
   background-color: #f0fdf4;
-  /* Nền xanh lá cực nhạt */
   border-color: #bbf7d0;
-  /* Viền xanh lá nhạt */
 }
-
 .payment-method-box.cod strong {
   color: #166534;
-  /* Chữ xanh lá đậm */
 }
-
 .payment-method-box.cod span {
   color: #15803d;
 }
-
 .payment-method-box.cod .icon-wrapper {
   background-color: #dcfce7;
   color: #16a34a;
   padding: 8px;
   border-radius: 50%;
-  /* Icon nằm trong vòng tròn */
   display: flex;
 }
 
-/* 2. Style cho Chuyển khoản (Bank) - Màu xanh dương */
 .payment-method-box.bank-transfer {
   background-color: #eff6ff;
-  /* Nền xanh dương cực nhạt */
   border-color: #dbeafe;
-  /* Viền xanh dương nhạt */
 }
-
 .payment-method-box.bank-transfer strong {
   color: #1e40af;
-  /* Chữ xanh dương đậm */
 }
-
 .payment-method-box.bank-transfer span {
   color: #1d4ed8;
 }
-
 .payment-method-box.bank-transfer .icon-wrapper {
   background-color: #dbeafe;
   color: #2563eb;
@@ -783,30 +1013,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;  /* Cố định kích thước vòng tròn */
+  width: 32px;
   height: 32px;
   border-radius: 50%;
-  flex-shrink: 0; /* Không cho vòng tròn bị bóp méo */
+  flex-shrink: 0;
 }
 
-/* Màu icon cho Chuyển khoản */
-.bank-transfer .icon-wrapper {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-/* Màu icon cho COD */
-.cod .icon-wrapper {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-/* CSS MỚI ĐỂ GỘP NÚT HÀNH ĐỘNG (Xóa khoảng trắng dọc) */
 .action-buttons-wrapper {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  /* Khoảng cách cực nhỏ giữa các nút */
   align-items: center;
 }
 
@@ -815,7 +1031,6 @@ onMounted(() => {
   color: white;
   border: none;
   padding: 6px 12px;
-  /* Thu gọn nút */
   border-radius: 4px;
   font-weight: bold;
   font-size: 12px;
@@ -824,14 +1039,12 @@ onMounted(() => {
   white-space: nowrap;
   min-width: 120px;
   margin: 0 !important;
-  /* Xóa margin thừa gây hở dòng */
 }
 
 .btn-action-custom:hover {
   background-color: #d73a27;
 }
 
-/* Giữ nguyên các phần Modal và Timeline bên dưới không đổi */
 .pagination-wrapper {
   display: flex;
   justify-content: flex-end;

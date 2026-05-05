@@ -11,13 +11,13 @@ import Profile from "../views/user/Profile.vue";
 import ShopView from "../views/product/ShopView.vue";
 import ProductDetail from "../views/product/ProductDetail.vue";
 import Sell from "../views/product/Sell.vue";
-import MyProductView from "../views/product/MyProductView.vue";
+import ProductManagement from "@/views/product/ProductManagement.vue";
 import ShopProfile from "@/views/shop/ShopProfile.vue";
 
 // --- IMPORT CÁC TRANG ĐƠN HÀNG & GIỎ HÀNG ---
 import Cart from "../views/cart/Cart.vue";
-import QuanLyDonHang from "@/views/order/QuanLyDonHang.vue";
-import QuanLyDonBan from "@/views/order/QuanLyDonBan.vue";
+import OrderManagement from "@/views/order/OrderManagement.vue";
+import SalesOrderManagement from "@/views/order/SalesOrderManagement.vue";
 
 // --- IMPORT CÁC TRANG GIAO DỊCH / THANH TOÁN ---
 import Payment from "../views/paymentQR/payment.vue";
@@ -90,20 +90,36 @@ const router = createRouter({
     // --- CỤM ROUTE XÁC THỰC (AUTH) ---
     { path: "/login", name: "login", component: Login },
     { path: "/register", name: "register", component: Register },
-    { path: "/forgot-password", name: "forgot-password", component: ForgotPassword },
+    {
+      path: "/forgot-password",
+      name: "forgot-password",
+      component: ForgotPassword,
+    },
 
     // --- CỤM ROUTE SẢN PHẨM & GIAN HÀNG ---
     { path: "/dang-ban", name: "Sell", component: Sell },
     { path: "/product/:id", name: "ProductDetail", component: ProductDetail },
     { path: "/shop/:id", name: "Shop", component: ShopView },
-    { path: "/my-products", name: "MyProducts", component: MyProductView },
+    {
+      path: "/product-management",
+      name: "ProductManagement",
+      component: ProductManagement,
+    },
     { path: "/shop-profile", name: "ShopProfile", component: ShopProfile },
     { path: "/profile", name: "Profile", component: Profile },
 
     // --- CỤM ROUTE ĐƠN HÀNG & GIỎ HÀNG ---
     { path: "/cart", name: "Cart", component: Cart },
-    { path: "/quan-ly-don-hang", name: "QuanLyDonHang", component: QuanLyDonHang },
-    { path: "/quan-ly-don-ban", name: "QuanLyDonBan", component: QuanLyDonBan },
+    {
+      path: "/order-management",
+      name: "OrderManagement",
+      component: OrderManagement,
+    },
+    {
+      path: "/sales-order-management",
+      name: "SalesOrderManagement",
+      component: SalesOrderManagement,
+    },
 
     // --- CỤM ROUTE THANH TOÁN ---
     { path: "/thanh-toan/:id", name: "Payment", component: Payment },

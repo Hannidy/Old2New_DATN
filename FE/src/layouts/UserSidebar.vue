@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-white rounded shadow-sm p-3">
-    <!-- KHU VỰC AVATAR (Chỉ hiển thị, không click đổi ảnh được nữa) -->
+  <div class="bg-white rounded shadow-sm p-3 border-0">
+    <!-- KHU VỰC AVATAR -->
     <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
       <div class="position-relative">
         <img
@@ -31,31 +31,60 @@
       </div>
     </div>
 
-    <!-- DANH SÁCH MENU -->
+    <!-- DANH SÁCH MENU ĐÃ ĐƯỢC PHÂN NHÓM & THAY ICON -->
     <div class="menu-list">
+      <!-- NHÓM TÀI KHOẢN -->
+      <div class="menu-group-title">Tài khoản</div>
       <div
-        :class="['menu-item', activeTab === 'profile' ? 'active' : '']"
+        :class="[
+          'menu-item d-flex align-items-center',
+          activeTab === 'profile' ? 'active' : '',
+        ]"
         @click="navigate('profile', '/profile')"
       >
-        <span class="icon">👤</span> Hồ sơ của tôi
+        <i class="bi bi-person me-2 fs-5 icon"></i> Hồ sơ của tôi
       </div>
+
+      <!-- NHÓM MUA HÀNG -->
+      <div class="menu-group-title mt-3">Mua hàng</div>
       <div
-        :class="['menu-item', activeTab === 'shop' ? 'active' : '']"
+        :class="[
+          'menu-item d-flex align-items-center',
+          activeTab === 'orders' ? 'active' : '',
+        ]"
+        @click="navigate('orders', '/order-management')"
+      >
+        <i class="bi bi-cart2 me-2 fs-5 icon"></i> Quản lý đơn mua
+      </div>
+
+      <!-- NHÓM BÁN HÀNG -->
+      <div class="menu-group-title mt-3">Bán hàng</div>
+      <div
+        :class="[
+          'menu-item d-flex align-items-center',
+          activeTab === 'shop' ? 'active' : '',
+        ]"
         @click="navigate('shop', '/shop-profile')"
       >
-        <span class="icon">🏪</span> Hồ sơ Shop
+        <i class="bi bi-shop me-2 fs-5 icon"></i> Hồ sơ cửa hàng
       </div>
       <div
-        :class="['menu-item', activeTab === 'products' ? 'active' : '']"
-        @click="navigate('products', '/my-products')"
+        :class="[
+          'menu-item d-flex align-items-center',
+          activeTab === 'products' ? 'active' : '',
+        ]"
+        @click="navigate('products', '/product-management')"
       >
-        <span class="icon">📋</span> Tất cả sản phẩm
+        <i class="bi bi-card-list me-2 fs-5 icon"></i> Quản lý sản phẩm
       </div>
       <div
-        :class="['menu-item', activeTab === 'orders' ? 'active' : '']"
-        @click="navigate('orders', '/quan-ly-don-hang')"
+        :class="[
+          'menu-item d-flex align-items-center',
+          activeTab === 'sales-orders' ? 'active' : '',
+        ]"
+        @click="navigate('sales-orders', '/sales-order-management')"
       >
-        <span class="icon">📦</span> Đơn mua
+        <i class="bi bi-graph-up me-2 fs-5 icon"></i> Quản lý đơn bán
       </div>
     </div>
   </div>
@@ -94,21 +123,35 @@ const navigate = (tabName, path) => {
 .menu-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+}
+.menu-group-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  padding: 0 15px;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
 }
 .menu-item {
   padding: 10px 15px;
   border-radius: 6px;
   cursor: pointer;
-  color: #555;
+  color: #444;
   transition: all 0.2s ease;
   font-weight: 500;
+  font-size: 0.95rem;
 }
 .menu-item .icon {
-  margin-right: 8px;
+  color: #757575; /* Màu icon mặc định */
+  transition: color 0.2s ease;
 }
 .menu-item:hover {
   background-color: #f8f9fa;
+  color: #007bff;
+}
+.menu-item:hover .icon {
   color: #007bff;
 }
 .menu-item.active {
@@ -116,5 +159,8 @@ const navigate = (tabName, path) => {
   font-weight: bold;
   background-color: #fff5f5;
   border-left: 4px solid #ee4d2d;
+}
+.menu-item.active .icon {
+  color: #ee4d2d;
 }
 </style>

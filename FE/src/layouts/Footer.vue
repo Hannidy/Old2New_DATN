@@ -1,91 +1,78 @@
 <template>
-  <footer class="footer border-top pt-5 pb-3 bg-white">
-    <div class="container">
-      <div class="row g-4">
-        <!-- Cột 1: Logo và Mô tả -->
-        <div class="col-lg-4 col-md-6">
-          <div class="footer-logo d-flex align-items-center mb-3">
-            <div class="logo-icon me-2">
-              <i class="bi bi-recycle fs-2 text-danger"></i>
-            </div>
-            <span class="fs-4 fw-bold text-uppercase">OLD<span class="text-danger">2</span>NEW</span>
+  <!-- Ép nhỏ padding top/bottom của toàn bộ thẻ footer -->
+  <footer class="footer border-top pt-3 pb-1 bg-white">
+    <div class="container" style="max-width: 1000px">
+      <!-- ========================================== -->
+      <!-- DÒNG 1: LOGO VÀ GIỚI THIỆU -->
+      <!-- ========================================== -->
+      <div class="row mb-2 text-center">
+        <div class="col-12">
+          <!-- Đã xóa logo tái chế ở đây -->
+          <div class="d-flex align-items-center justify-content-center mb-1">
+            <span class="fs-4 fw-bold te xt-uppercase">OLD2NEW</span>
           </div>
-          <p class="text-muted small mb-4" style="max-width: 300px;">
-            OLD2NEW - Nền tảng mua và bán đồ cũ uy tín và có đảm bảo tại Việt Nam. Chạm cũ, mở mới vòng đời sản phẩm.
+          <p class="text-muted small mx-auto mb-0" style="line-height: 1.5">
+            OLD2NEW - Nền tảng mua và bán đồ cũ uy tín và có đảm bảo tại Việt
+            Nam. Chạm cũ, mở mới vòng đời sản phẩm.
           </p>
-          
-          <h6 class="fw-bold mb-3 text-danger text-uppercase">Liên hệ với chúng tôi</h6>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- DÒNG 2: 2 CỘT THÔNG TIN Ở DƯỚI -->
+      <!-- ========================================== -->
+      <!-- Giảm khoảng cách row (g-3) -->
+      <div class="row g-3 justify-content-between mt-2">
+        <!-- CỘT 1 (Bên trái): Thông tin Liên hệ -->
+        <div class="col-md-7 mb-1 mb-md-0">
+          <!-- Đổi sang text-dark và giảm margin bottom (mb-2) -->
+          <h6 class="fw-bold mb-2 text-dark text-uppercase">
+            Liên hệ với chúng tôi
+          </h6>
           <div class="contact-info small text-muted">
-            <p class="mb-2">
-              <i class="bi bi-telephone me-2 text-danger"></i> 
-              <strong>0379185939</strong>
+            <!-- Ép sát các dòng bằng mb-1 thay vì mb-2 -->
+            <p class="mb-1 d-flex align-items-center">
+              <i class="bi bi-telephone text-danger fs-5 me-2"></i>
+              <span class="text-dark">0396699538</span>
             </p>
-            <p class="mb-2">
-              <i class="bi bi-envelope me-2 text-danger"></i> 
-              doanngocduong03112006@gmail.com
+            <p class="mb-1 d-flex align-items-center">
+              <i class="bi bi-envelope text-danger fs-5 me-2"></i>
+              <span class="text-dark">trantrongn14@gmail.com</span>
             </p>
-            <p class="mb-0">
-              <i class="bi bi-geo-alt me-2 text-danger"></i> 
-              Số nhà B2.25 Vinhomes Gardenia, Hàm Nghi, P. Cầu Diễn, Q. Nam Từ Liêm, TP. Hà Nội
+            <p class="mb-0 d-flex align-items-start">
+              <i class="bi bi-geo-alt text-danger fs-5 me-2 mt-n1"></i>
+              <span class="text-dark" style="line-height: 1.5">
+                Số nhà B2.25 Vinhomes Gardenia, Hàm Nghi, P. Cầu Diễn, Q. Nam Từ
+                Liêm, TP. Hà Nội
+              </span>
             </p>
           </div>
         </div>
 
-        <!-- Cột 2: Về OLD2NEW -->
-        <div class="col-lg-2 col-md-6">
-          <h6 class="fw-bold mb-4 text-danger text-uppercase">Về OLD2NEW</h6>
-          <ul class="list-unstyled footer-links">
-            <li><a href="#">Giới thiệu OLD2NEW</a></li>
-            <li><a href="#">Các câu hỏi thường gặp</a></li>
-            <li><a href="#">Điều khoản dịch vụ</a></li>
-            <li><a href="#">Quy chế hoạt động</a></li>
-            <li><a href="#">Hướng dẫn bán hàng</a></li>
-            <li><a href="#">Blog & Sự kiện</a></li>
-          </ul>
-        </div>
-
-        <!-- Cột 3: Chính sách -->
-        <div class="col-lg-2 col-md-6">
-          <h6 class="fw-bold mb-4 text-danger text-uppercase">Chính sách</h6>
-          <ul class="list-unstyled footer-links">
-            <li><a href="#">Chính sách bảo mật</a></li>
-            <li><a href="#">Bảo vệ người mua</a></li>
-            <li><a href="#">Giải quyết tranh chấp</a></li>
-            <li><a href="#">Chính sách giao tiếp</a></li>
-            <li><a href="#">Những món đồ bị cấm</a></li>
-          </ul>
-        </div>
-
-        <!-- Cột 4: Thanh toán & Ứng dụng -->
-        <div class="col-lg-4 col-md-6">
-          <h6 class="fw-bold mb-4 text-danger text-uppercase">Thanh toán & Vận chuyển</h6>
-          <div class="d-flex gap-2 flex-wrap mb-4">
-            <span class="payment-icon">VISA</span>
-            <span class="payment-icon">VNPAY</span>
-            <span class="payment-icon border-danger text-danger">MOMO</span>
-            <span class="payment-icon">GHN</span>
-            <span class="payment-icon">NINJAVAN</span>
-          </div>
-
-          <h6 class="fw-bold mb-3 text-danger text-uppercase">Tải ứng dụng</h6>
-          <div class="d-flex gap-2 mb-4">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" width="110">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" width="110">
-          </div>
-
-          <h6 class="fw-bold mb-3 text-danger text-uppercase">Theo dõi chúng tôi</h6>
-          <div class="d-flex gap-3 fs-4">
-            <a href="#" class="text-primary"><i class="bi bi-facebook"></i></a>
-            <a href="#" class="text-danger"><i class="bi bi-instagram"></i></a>
-            <a href="#" class="text-danger"><i class="bi bi-youtube"></i></a>
-            <a href="#" class="text-dark"><i class="bi bi-tiktok"></i></a>
+        <!-- CỘT 2 (Bên phải): Thanh toán & Vận chuyển -->
+        <div class="col-md-5 text-md-end">
+          <!-- Đổi sang text-dark và giảm margin bottom (mb-2) -->
+          <h6 class="fw-bold mb-2 text-dark text-uppercase">
+            Thanh toán & Vận chuyển
+          </h6>
+          <div class="d-flex gap-2 flex-wrap justify-content-md-end">
+            <span class="payment-icon outline-blue">
+              Thanh toán trực tuyến
+            </span>
+            <span class="payment-icon outline-yellow"> COD </span>
+            <span class="payment-icon outline-green"> GHN </span>
           </div>
         </div>
       </div>
 
-      <div class="text-center mt-5 pt-3 border-top">
+      <!-- ========================================== -->
+      <!-- DÒNG 3: BẢN QUYỀN (Copyright) -->
+      <!-- ========================================== -->
+      <!-- Rút gọn khoảng cách với phần trên (mt-3 pt-2) -->
+      <div class="text-center mt-3 pt-2 border-top">
         <p class="text-muted small mb-0">
-          &copy; 2026 <span class="text-danger fw-bold">OLD2NEW</span>. Nền tảng mua bán đồ cũ C2C.
+          &copy; 2026 <span class="text-danger fw-bold">OLD2NEW</span>. Nền tảng
+          mua bán đồ cũ C2C.
         </p>
       </div>
     </div>
@@ -94,7 +81,7 @@
 
 <style scoped>
 .footer {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 h6 {
@@ -102,38 +89,43 @@ h6 {
   letter-spacing: 0.5px;
 }
 
-.footer-links li {
-  margin-bottom: 10px;
-}
-
-.footer-links a {
-  color: #6c757d;
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-}
-
-.footer-links a:hover {
-  color: #dc3545;
-  padding-left: 4px;
-}
-
 .payment-icon {
-  border: 1px solid #dee2e6;
-  padding: 4px 10px;
+  padding: 6px 12px; /* Thu nhỏ padding trong nút một xíu */
   border-radius: 4px;
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #495057;
-  background-color: #f8f9fa;
+  font-size: 0.7rem; /* Chữ trong nút gọn lại một xíu */
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.outline-blue {
+  color: #0d6efd;
+  border: 1px solid #0d6efd;
+}
+
+.outline-yellow {
+  color: #d39e00;
+  border: 1px solid #ffc107;
+}
+
+.outline-green {
+  color: #006400;
+  border: 1px solid #006400;
 }
 
 @media (max-width: 991px) {
   .footer {
     text-align: center;
   }
-  .footer-logo, .contact-info p, .d-flex {
+  .contact-info p {
     justify-content: center;
+  }
+  .text-md-end {
+    text-align: center !important;
+  }
+  .justify-content-md-end {
+    justify-content: center !important;
   }
 }
 </style>

@@ -1,8 +1,11 @@
 <template>
-  <div class="bg-light min-vh-100">
-    <!-- <AppHeader /> -->
+  <!-- Đổi thành d-flex flex-column để đẩy Footer xuống đáy màn hình -->
+  <div class="bg-light min-vh-100 d-flex flex-column pb-5">
+    <!-- 🔥 ĐÃ THÊM HEADER VÀO ĐÂY -->
+    <AppHeader />
 
-    <main class="container py-5" style="margin-top: 80px">
+    <!-- Thêm flex-grow-1 để phần nội dung chiếm hết khoảng trống, đẩy Footer xuống đáy -->
+    <main class="container py-5 flex-grow-1" style="margin-top: 130px">
       <div class="d-flex align-items-center justify-content-between mb-4">
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0 bg-transparent p-0">
@@ -52,7 +55,9 @@
                         <th class="ps-4 py-3 small text-uppercase">Sản phẩm</th>
                         <th class="small text-uppercase">Danh mục</th>
                         <th class="small text-uppercase">Giá bán</th>
-                        <th class="text-end pe-4 small text-uppercase">Thao tác</th>
+                        <th class="text-end pe-4 small text-uppercase">
+                          Thao tác
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -72,11 +77,21 @@
                               @error="handleImageError"
                               class="rounded border object-fit-cover shadow-sm bg-secondary bg-opacity-10"
                               :class="{ grayscale: p.trangThai === 'AN_TIN' }"
-                              style="width: 60px; height: 60px; font-size: 10px; color: #6c757d; text-align: center; line-height: 60px;"
+                              style="
+                                width: 60px;
+                                height: 60px;
+                                font-size: 10px;
+                                color: #6c757d;
+                                text-align: center;
+                                line-height: 60px;
+                              "
                               alt="Ảnh SP"
                             />
                             <div>
-                              <div class="fw-bold text-dark text-truncate" style="max-width: 250px">
+                              <div
+                                class="fw-bold text-dark text-truncate"
+                                style="max-width: 250px"
+                              >
                                 {{ p.tenSanPham }}
                               </div>
                               <small class="text-muted">
@@ -90,22 +105,42 @@
                         </td>
 
                         <td>
-                          <span class="badge bg-light text-dark border">{{ p.danhMuc }}</span>
+                          <span class="badge bg-light text-dark border">{{
+                            p.danhMuc
+                          }}</span>
                         </td>
                         <td>
-                          <span class="text-danger fw-bold">{{ formatCurrency(p.gia) }}</span>
+                          <span class="text-danger fw-bold">{{
+                            formatCurrency(p.gia)
+                          }}</span>
                         </td>
 
                         <td class="text-end pe-4">
                           <div class="btn-group shadow-sm">
                             <button
-                              v-if="p.trangThai !== 'CHO_DUYET' && p.trangThai !== 'BI_TU_CHOI'"
+                              v-if="
+                                p.trangThai !== 'CHO_DUYET' &&
+                                p.trangThai !== 'BI_TU_CHOI'
+                              "
                               class="btn btn-sm"
-                              :class="p.trangThai === 'AN_TIN' ? 'btn-outline-success' : 'btn-outline-warning'"
+                              :class="
+                                p.trangThai === 'AN_TIN'
+                                  ? 'btn-outline-success'
+                                  : 'btn-outline-warning'
+                              "
                               @click="handleToggleHide(p)"
                             >
-                              <i class="bi" :class="p.trangThai === 'AN_TIN' ? 'bi-eye' : 'bi-eye-slash'"></i>
-                              {{ p.trangThai === "AN_TIN" ? "Hiện tin" : "Ẩn tin" }}
+                              <i
+                                class="bi"
+                                :class="
+                                  p.trangThai === 'AN_TIN'
+                                    ? 'bi-eye'
+                                    : 'bi-eye-slash'
+                                "
+                              ></i>
+                              {{
+                                p.trangThai === "AN_TIN" ? "Hiện tin" : "Ẩn tin"
+                              }}
                             </button>
 
                             <button
@@ -130,39 +165,63 @@
               </div>
 
               <!-- GIAO DIỆN PHÂN TRANG -->
-              <div v-if="totalPages > 1" class="d-flex justify-content-end mt-4">
+              <div
+                v-if="totalPages > 1"
+                class="d-flex justify-content-end mt-4"
+              >
                 <nav aria-label="Page navigation">
                   <ul class="pagination mb-0">
-                    <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                      <button class="page-link" @click="goToPage(currentPage - 1)">
+                    <li
+                      class="page-item"
+                      :class="{ disabled: currentPage === 1 }"
+                    >
+                      <button
+                        class="page-link"
+                        @click="goToPage(currentPage - 1)"
+                      >
                         <i class="bi bi-chevron-left"></i> Trước
                       </button>
                     </li>
-                    
-                    <li 
-                      class="page-item" 
-                      v-for="page in totalPages" 
-                      :key="page" 
+
+                    <li
+                      class="page-item"
+                      v-for="page in totalPages"
+                      :key="page"
                       :class="{ active: currentPage === page }"
                     >
-                      <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                      <button class="page-link" @click="goToPage(page)">
+                        {{ page }}
+                      </button>
                     </li>
 
-                    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                      <button class="page-link" @click="goToPage(currentPage + 1)">
+                    <li
+                      class="page-item"
+                      :class="{ disabled: currentPage === totalPages }"
+                    >
+                      <button
+                        class="page-link"
+                        @click="goToPage(currentPage + 1)"
+                      >
                         Sau <i class="bi bi-chevron-right"></i>
                       </button>
                     </li>
                   </ul>
                 </nav>
               </div>
-
             </div>
 
-            <div v-else class="text-center py-5 bg-light rounded border border-dashed">
+            <div
+              v-else
+              class="text-center py-5 bg-light rounded border border-dashed"
+            >
               <div class="display-1 text-muted opacity-25">📦</div>
-              <h5 class="mt-3 fw-bold text-secondary">Bạn chưa đăng bán món hàng nào</h5>
-              <button class="btn btn-primary px-4 py-2 mt-2 fw-bold" @click="router.push('/dang-ban')">
+              <h5 class="mt-3 fw-bold text-secondary">
+                Bạn chưa đăng bán món hàng nào
+              </h5>
+              <button
+                class="btn btn-primary px-4 py-2 mt-2 fw-bold"
+                @click="router.push('/dang-ban')"
+              >
                 Bắt đầu bán hàng
               </button>
             </div>
@@ -170,6 +229,9 @@
         </div>
       </div>
     </main>
+
+    <!-- 🔥 ĐÃ THÊM FOOTER VÀO ĐÂY -->
+    <AppFooter />
   </div>
 </template>
 
@@ -177,7 +239,11 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+
+// 🔥 IMPORT HEADER, SIDEBAR VÀ FOOTER VÀO COMPONENT
+import AppHeader from "@/layouts/Header.vue";
 import UserSidebar from "@/layouts/UserSidebar.vue";
+import AppFooter from "@/layouts/Footer.vue";
 
 const router = useRouter();
 const products = ref([]);
@@ -185,15 +251,14 @@ const isLoading = ref(true);
 let currentUserId = null;
 
 // --- STATE PHÂN TRANG BACKEND ---
-const currentPage = ref(1); // Giao diện luôn bắt đầu từ 1
-const itemsPerPage = ref(5); // Số sản phẩm trên 1 trang
+const currentPage = ref(1);
+const itemsPerPage = ref(5);
 const totalPages = ref(0);
 
 // Chuyển trang
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
     currentPage.value = page;
-    // Gọi API trang mới (trừ 1 vì Spring Boot đếm từ 0)
     fetchMyProducts(page - 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -209,26 +274,18 @@ const formatCurrency = (val) => {
 
 // --- XỬ LÝ ẢNH ---
 const getImageUrl = (url) => {
-  // 1. Nếu không có ảnh -> Trả về ảnh mặc định
   if (!url || url.trim() === "") {
     return "https://placehold.co/60x60/e9ecef/495057?text=O2N";
   }
-
-  // 2. Nếu url là link web hoàn chỉnh (Cloudinary, Imgur...)
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
-
-  // 3. Nếu url là đường dẫn tương đối từ backend Spring Boot
   if (url.startsWith("/")) {
     return `http://localhost:8080${url}`;
   }
-
-  // Fallback
   return `http://localhost:8080/${url}`;
 };
 
-// Hàm thay thế bằng ảnh mặc định nếu ảnh bị lỗi (VD link Cloudinary chết)
 const handleImageError = (event) => {
   const fallbackImage = "https://placehold.co/60x60/e9ecef/495057?text=Loi";
   if (event.target.src !== fallbackImage) {
@@ -247,7 +304,8 @@ const getStatusText = (status) => {
 const getStatusClass = (status) => {
   if (status === "CHO_DUYET") return "text-warning fw-bold";
   if (status === "AN_TIN") return "text-danger";
-  if (status === "BI_TU_CHOI") return "text-secondary text-decoration-line-through";
+  if (status === "BI_TU_CHOI")
+    return "text-secondary text-decoration-line-through";
   return "text-success";
 };
 
@@ -260,19 +318,16 @@ const getAuthHeaders = () => {
   };
 };
 
-// Gọi API lấy dữ liệu theo Page
 const fetchMyProducts = async (pageIndex = 0) => {
   isLoading.value = true;
   try {
     const res = await axios.get(
       `http://localhost:8080/api/products/seller/${currentUserId}?page=${pageIndex}&size=${itemsPerPage.value}`,
-      getAuthHeaders()
+      getAuthHeaders(),
     );
-    
-    // Gán dữ liệu từ Spring Boot Page object
-    products.value = res.data.content; 
+
+    products.value = res.data.content;
     totalPages.value = res.data.totalPages;
-    
   } catch (error) {
     console.error("Lỗi lấy danh sách sản phẩm:", error);
   } finally {
@@ -281,20 +336,21 @@ const fetchMyProducts = async (pageIndex = 0) => {
 };
 
 const handleDelete = async (id) => {
-  if (!confirm("Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm này không?")) return;
+  if (!confirm("Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm này không?"))
+    return;
   try {
-    await axios.delete(`http://localhost:8080/api/products/${id}`, getAuthHeaders());
+    await axios.delete(
+      `http://localhost:8080/api/products/${id}`,
+      getAuthHeaders(),
+    );
     alert("Đã xóa sản phẩm thành công!");
-    
-    // Gọi lại dữ liệu của trang hiện tại sau khi xóa
-    // Nếu trang hiện tại bị rỗng (xóa hết item của trang đó), có thể xử lý lùi về trang trước
+
     let targetPage = currentPage.value - 1;
     if (products.value.length === 1 && currentPage.value > 1) {
-        targetPage -= 1;
-        currentPage.value -= 1;
+      targetPage -= 1;
+      currentPage.value -= 1;
     }
     await fetchMyProducts(targetPage);
-    
   } catch (error) {
     alert("Không thể xóa sản phẩm. Vui lòng thử lại!");
   }
@@ -309,13 +365,18 @@ const handleToggleHide = async (product) => {
   const isCurrentlyHidden = product.trangThai === "AN_TIN";
   const newStatus = isCurrentlyHidden ? "DANG_BAN" : "AN_TIN";
 
-  if (!confirm(isCurrentlyHidden ? "Hiển thị lại sản phẩm này?" : "Tạm ẩn sản phẩm này?")) return;
+  if (
+    !confirm(
+      isCurrentlyHidden ? "Hiển thị lại sản phẩm này?" : "Tạm ẩn sản phẩm này?",
+    )
+  )
+    return;
 
   try {
     await axios.put(
       `http://localhost:8080/api/products/${product.id}/status`,
       { trangThai: newStatus },
-      getAuthHeaders()
+      getAuthHeaders(),
     );
     product.trangThai = newStatus;
     alert(`Đã cập nhật trạng thái thành công!`);
@@ -333,16 +394,25 @@ onMounted(() => {
   const user = JSON.parse(storedUser);
   currentUserId = user.id || user.nguoiDungId;
 
-  // Lần đầu tiên load trang sẽ gọi API với trang 0 của Spring Boot
   fetchMyProducts(0);
   window.scrollTo(0, 0);
 });
 </script>
 
 <style scoped>
-.table thead th { font-weight: 600; }
-.object-fit-cover { object-fit: cover; }
-.border-dashed { border-style: dashed !important; }
-.bg-warning-subtle { background-color: #fff3cd !important; }
-.grayscale { filter: grayscale(1); }
+.table thead th {
+  font-weight: 600;
+}
+.object-fit-cover {
+  object-fit: cover;
+}
+.border-dashed {
+  border-style: dashed !important;
+}
+.bg-warning-subtle {
+  background-color: #fff3cd !important;
+}
+.grayscale {
+  filter: grayscale(1);
+}
 </style>
