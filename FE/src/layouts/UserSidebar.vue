@@ -43,7 +43,7 @@
         :class="['menu-item', activeTab === 'shop' ? 'active' : '']"
         @click="navigate('shop', '/shop-profile')"
       >
-        <span class="icon">🏪</span> Hồ sơ Shop
+        <span class="icon">🏪</span> Hồ sơ cửa hàng
       </div>
       <div
         :class="['menu-item', activeTab === 'products' ? 'active' : '']"

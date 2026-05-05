@@ -16,8 +16,8 @@ import ShopProfile from "@/views/shop/ShopProfile.vue";
 
 // --- IMPORT CÁC TRANG ĐƠN HÀNG & GIỎ HÀNG ---
 import Cart from "../views/cart/Cart.vue";
-import QuanLyDonHang from "@/views/order/QuanLyDonHang.vue";
-import QuanLyDonBan from "@/views/order/QuanLyDonBan.vue";
+import QuanLyDonHang from "@/views/order/OrderManagement.vue";
+import QuanLyDonBan from "@/views/order/OrderManagement.vue";
 
 // --- IMPORT CÁC TRANG GIAO DỊCH / THANH TOÁN ---
 import Payment from "../views/paymentQR/payment.vue";
