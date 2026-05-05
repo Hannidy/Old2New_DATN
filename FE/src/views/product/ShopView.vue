@@ -65,7 +65,7 @@
         </div>
       </section>
 
-      <section>
+   <section>
         <div class="d-flex justify-content-between align-items-end mb-4 border-start border-4 border-danger ps-3">
           <div>
             <h4 class="fw-bold text-dark mb-0">Tất cả sản phẩm</h4>
@@ -85,61 +85,65 @@
           <p class="mt-2 text-muted">Đang tải gian hàng...</p>
         </div>
 
-        <div v-else-if="paginatedProducts.length > 0" class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
-          <div v-for="item in paginatedProducts" :key="item.id" class="col">
-            <div class="card h-100 shadow-sm product-card border-0 position-relative">
-              <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2 shadow-sm"
-                style="z-index: 10;">
-                {{ item.tinhTrang || 'Đồ cũ' }}
-              </span>
+        <!-- 🔥 ĐÃ SỬA: Đổi paginatedProducts thành displayProducts -->
+        <div v-else-if="displayProducts && displayProducts.length > 0">
+          <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+            <div v-for="item in paginatedProducts" :key="item.id" class="col">
+              <div class="card h-100 shadow-sm product-card border-0 position-relative">
+                <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2 shadow-sm"
+                  style="z-index: 10;">
+                  {{ item.tinhTrang || 'Đồ cũ' }}
+                </span>
 
-              <div @click="goToDetail(item.id)" class="bg-light border-bottom overflow-hidden cursor-pointer"
-                style="height: 200px;">
-                <img :src="item.hinhAnh || 'https://via.placeholder.com/300'"
-                  class="w-100 h-100 object-fit-cover transition-img" alt="Sản phẩm">
-              </div>
+                <div @click="goToDetail(item.id)" class="bg-light border-bottom overflow-hidden cursor-pointer"
+                  style="height: 200px;">
+                  <img :src="item.hinhAnh || 'https://via.placeholder.com/300'"
+                    class="w-100 h-100 object-fit-cover transition-img" alt="Sản phẩm">
+                </div>
 
-              <div class="card-body p-3 d-flex flex-column">
-                <h6 @click="goToDetail(item.id)" class="card-title text-dark text-truncate mb-2 cursor-pointer"
-                  :title="item.tenSanPham">
-                  {{ item.tenSanPham }}
-                </h6>
-                <div class="mt-auto">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-danger fw-bold fs-6">{{ formatCurrency(item.gia) }}</span>
+                <div class="card-body p-3 d-flex flex-column">
+                  <h6 @click="goToDetail(item.id)" class="card-title text-dark text-truncate mb-2 cursor-pointer"
+                    :title="item.tenSanPham">
+                    {{ item.tenSanPham }}
+                  </h6>
+                  <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span class="text-danger fw-bold fs-6">{{ formatCurrency(item.gia) }}</span>
+                    </div>
+
+                    <button v-if="String(currentUserId) === String(seller?.nguoiDungId || item.nguoiDungId)"
+                      class="btn btn-secondary btn-sm w-100 fw-bold py-2 opacity-75" style="cursor: not-allowed;"
+                      disabled>
+                      <i class="bi bi-person-check"></i> SẢN PHẨM CỦA BẠN
+                    </button>
+
+                    <button v-else @click="addToCart(item)"
+                      class="btn btn-outline-danger btn-sm w-100 fw-bold py-2 hover-up">
+                      <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+                    </button>
                   </div>
-
-                  <button v-if="String(currentUserId) === String(seller?.nguoiDungId || item.nguoiDungId)"
-                    class="btn btn-secondary btn-sm w-100 fw-bold py-2 opacity-75" style="cursor: not-allowed;"
-                    disabled>
-                    <i class="bi bi-person-check"></i> SẢN PHẨM CỦA BẠN
-                  </button>
-
-                  <button v-else @click="addToCart(item)"
-                    class="btn btn-outline-danger btn-sm w-100 fw-bold py-2 hover-up">
-                    <i class="bi bi-cart-plus"></i> Thêm vào giỏ
-                  </button>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- THANH PHÂN TRANG -->
+          <nav v-if="totalPages > 1" class="mt-5 d-flex justify-content-center">
+            <ul class="pagination shadow-sm">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <button class="page-link" @click="changePage(currentPage - 1)">Trước</button>
+              </li>
+              <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                <button class="page-link" @click="changePage(page)">{{ page }}</button>
+              </li>
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <button class="page-link" @click="changePage(currentPage + 1)">Sau</button>
+              </li>
+            </ul>
+          </nav>
         </div>
 
-        <!-- THÊM THANH PHÂN TRANG DƯỚI ĐÂY -->
-        <nav v-if="totalPages > 1" class="mt-5 d-flex justify-content-center">
-          <ul class="pagination shadow-sm">
-            <li class="page-item" :class="{ disabled: currentPage === 1 }">
-              <button class="page-link" @click="changePage(currentPage - 1)">Trước</button>
-            </li>
-            <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
-              <button class="page-link" @click="changePage(page)">{{ page }}</button>
-            </li>
-            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-              <button class="page-link" @click="changePage(currentPage + 1)">Sau</button>
-            </li>
-          </ul>
-        </nav>
-
+        <!-- THÔNG BÁO RỖNG NẰM TRONG v-else CUỐI CÙNG -->
         <div v-else class="text-center py-5 bg-white rounded-4 shadow-sm border mt-4">
           <div class="display-1 text-muted opacity-25 mb-3">📦</div>
           <h5 class="fw-bold text-secondary">Chưa có sản phẩm nào</h5>
@@ -379,7 +383,7 @@ const fetchShopData = async () => {
 
     // Lấy danh sách sản phẩm
     const productsRes = await axios.get(`http://localhost:8080/api/products/seller/${sellerId}`);
-    products.value = productsRes.data;
+    products.value = productsRes.data.content;
 
     // 🔥 MỚI: Lấy danh sách bình luận của khách cũ
     const reviewRes = await axios.get(`http://localhost:8080/api/products/seller/${sellerId}/reviews`);

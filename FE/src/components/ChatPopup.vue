@@ -1,10 +1,17 @@
 <template>
   <div class="chat-system-container">
     <!-- 1. BONG BÓNG CHAT -->
-    <div class="chat-bubble shadow-lg" @click="toggleMainList">
-      <i class="bi bi-chat-dots-fill text-white fs-2"></i>
-  <!-- Badge thông báo nếu có tin nhắn mới -->
-  <span v-if="hasNewMessage" class="badge-notification"></span>
+    <!-- Thêm class position-relative để cố định vị trí của badge thông báo -->
+    <div class="chat-bubble shadow-lg position-relative" @click="toggleMainList">
+      
+      <!-- Icon tin nhắn bằng SVG thay vì class 'bi' để đảm bảo luôn hiển thị -->
+      <svg width="28" height="28" fill="white" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+        <path d="M2.165 15.803l.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
+      </svg>
+
+      <!-- Badge thông báo có tin nhắn mới -->
+      <span v-if="hasNewMessage" class="badge-notification"></span>
     </div>
 
     <!-- 2. DANH SÁCH HỘI THOẠI -->
@@ -83,7 +90,6 @@ onMounted(() => {
   initUserChat();
 });
 
-
 // Hàm khởi tạo thông tin chat
 const initUserChat = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -103,7 +109,6 @@ const initUserChat = () => {
 watch(() => localStorage.getItem("user"), () => {
   initUserChat();
 }, { deep: true });
-
 
 const loadMyConversations = () => {
   if (!currentUserId.value) return;
@@ -199,7 +204,6 @@ const scrollToBottom = () => {
 </script>
 
 <style scoped>
-/* Giữ nguyên phần Style của Duy, rất đẹp rồi! */
 .chat-system-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: sans-serif; }
 .chat-bubble { width: 60px; height: 60px; background: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
 .chat-bubble:hover { transform: scale(1.1); }
@@ -211,4 +215,24 @@ const scrollToBottom = () => {
 .cursor-pointer { cursor: pointer; transition: 0.2s; }
 .chat-item:hover { background: #f1f1f1; }
 .badge-dot { position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; background: #28a745; border-radius: 50%; border: 2px solid white; }
+
+/* Thêm CSS cho dấu chấm thông báo tin nhắn mới */
+.badge-notification {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  background-color: #ffc107; /* Màu vàng để nổi bật trên nền bong bóng đỏ */
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: pulse 1.5s infinite; /* Hiệu ứng chớp nhẹ gây chú ý */
+}
+
+/* Thêm animation nhỏ cho chấm thông báo (Tùy chọn) */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
 </style>

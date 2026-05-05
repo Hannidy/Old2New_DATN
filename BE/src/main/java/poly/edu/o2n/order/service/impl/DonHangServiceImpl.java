@@ -177,28 +177,21 @@ public class DonHangServiceImpl implements DonHangService {
     }
 
     @Override
+    @Transactional
     public void capNhatTrangThaiDonHang(Integer donHangId, String trangThaiMoi) {
-        // 1. Tìm đơn hàng trong Database
         DonHang donHang = donHangRepository.findById(donHangId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + donHangId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng: " + donHangId));
 
-        // 2. Xử lý theo từng loại trạng thái
-        if ("DA_GIAO".equals(trangThaiMoi)) {
-            // Shipper giao xong -> Bắt đầu đếm ngược thời gian
-            donHang.setTrangThaiDonHang("DA_GIAO");
+        // Cập nhật trạng thái đơn hàng (Ví dụ: DANG_GIAO -> DA_GIAO)
+        donHang.setTrangThaiDonHang(trangThaiMoi);
+
+        // Nếu là trạng thái ĐÃ GIAO, có thể cập nhật thêm ngày nhận hàng để tracking
+        if ("DA_GIAO".equalsIgnoreCase(trangThaiMoi)) {
             donHang.setNgayNhanHang(LocalDateTime.now());
-            donHangRepository.save(donHang);
-        } else if ("HOAN_THANH".equals(trangThaiMoi)) {
-            // Khách chủ động bấm "Đã nhận hàng" -> Chốt đơn & Giải ngân ngay lập tức
-            // TÁI SỬ DỤNG LẠI HÀM BẠN ĐÃ VIẾT SẴN BÊN DƯỚI!
-            this.xacNhanNhanHangVaGiaiNgan(donHangId);
-        } else {
-            // Cập nhật các trạng thái bình thường khác (DANG_GIAO, DA_HUY...)
-            donHang.setTrangThaiDonHang(trangThaiMoi);
-            donHangRepository.save(donHang);
         }
-    }
 
+        donHangRepository.save(donHang);
+    }
 
     @Override
     public List<DonHangResponse> layDanhSachDonHangCuaUser(Integer nguoiDungId) {
@@ -397,27 +390,34 @@ public class DonHangServiceImpl implements DonHangService {
     @Override
     @Transactional
     public void xacNhanNhanHangVaGiaiNgan(Integer donHangId) {
-        // 1. Tìm đơn hàng
+        // 1. Lấy thông tin đơn hàng
         DonHang donHang = donHangRepository.findById(donHangId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng: " + donHangId));
 
-        // (Tùy chọn) Kiểm tra xem đơn này đã thanh toán chưa
-        if (!"DA_THANH_TOAN".equals(donHang.getTrangThaiThanhToan())) {
-            throw new RuntimeException("Đơn hàng chưa được thanh toán, không thể giải ngân!");
+        // 2. XỬ LÝ THANH TOÁN CHO COD:
+        // Nếu là COD và chưa thanh toán, thì khi bấm xác nhận này ta set Đã thanh toán luôn
+        if ("COD".equalsIgnoreCase(donHang.getPhuongThucThanhToan()) &&
+                "CHUA_THANH_TOAN".equals(donHang.getTrangThaiThanhToan())) {
+            donHang.setTrangThaiThanhToan("DA_THAN_TOAN");
         }
 
-        // 2. Tìm Người Bán (Thông qua chi tiết đơn hàng)
+        // 3. KIỂM TRA ĐIỀU KIỆN: Đơn hàng phải ở trạng thái Đã thanh toán mới được giải ngân
+        if (!"DA_THANH_TOAN".equals(donHang.getTrangThaiThanhToan())) {
+            throw new RuntimeException("Đơn hàng chưa được thanh toán, không thể hoàn thành và giải ngân!");
+        }
+
+        // 4. CHUYỂN TRẠNG THÁI ĐƠN HÀNG VỀ HOÀN THÀNH
+        donHang.setTrangThaiDonHang("HOAN_THANH");
+        donHangRepository.save(donHang);
+
+        // 5. THỰC HIỆN GIẢI NGÂN (Cộng tiền vào ví người bán)
         List<ChiTietDonHang> chiTiets = chiTietDonHangRepository.findByDonHang_DonHangId(donHangId);
-        if (chiTiets.isEmpty()) throw new RuntimeException("Đơn hàng bị lỗi rỗng sản phẩm");
+        if (chiTiets.isEmpty()) throw new RuntimeException("Đơn hàng rỗng!");
 
-        // Lấy người bán từ sản phẩm đầu tiên (Mô hình C2C 1 đơn = 1 người bán)
         NguoiDung nguoiBan = chiTiets.get(0).getSanPham().getNguoiDung();
-
-        // 3. Tính tiền giải ngân (CHỈ GIẢI NGÂN TIỀN HÀNG)
-        // Nếu sau này sàn thu phí 5%, Duy có thể nhân thêm 0.95 ở đây
         BigDecimal tienGiaiNgan = donHang.getTongTienHang();
 
-        // 4. Cộng tiền vào ví Người Bán
+        // Xử lý ví tiền
         ViTien viNguoiBan = viTienRepository.findByNguoiDung_NguoiDungId(nguoiBan.getNguoiDungId());
         if (viNguoiBan == null) {
             viNguoiBan = new ViTien();
@@ -431,36 +431,26 @@ public class DonHangServiceImpl implements DonHangService {
         viNguoiBan.setNgayCapNhat(LocalDateTime.now());
         viTienRepository.save(viNguoiBan);
 
-        // 5. Ghi sổ Lịch sử giao dịch cho Người Bán
+        // 6. GHI LỊCH SỬ GIAO DỊCH
         LichSuGiaoDich giaoDich = new LichSuGiaoDich();
         giaoDich.setViTien(viNguoiBan);
         giaoDich.setDonHang(donHang);
         giaoDich.setSoTien(tienGiaiNgan);
         giaoDich.setLoaiGiaoDich("GIAI_NGAN_BAN_HANG");
-        giaoDich.setNoiDung("Giải ngân tiền bán đơn hàng #" + donHangId);
+        giaoDich.setNoiDung("Giải ngân đơn hàng #" + donHangId);
         giaoDich.setTrangThai("THANH_CONG");
         giaoDich.setNgayTao(LocalDateTime.now());
         lichSuGiaoDichRepository.save(giaoDich);
 
-        // 6. Chốt đơn hàng
-        donHang.setTrangThaiDonHang("HOAN_THANH");
-        donHangRepository.save(donHang);
-
-        // 🔥 BÁO CHỦ SHOP: TIỀN ĐÃ CỘNG VÀO VÍ
-        ThongBaoDto tbGiaiNgan = new ThongBaoDto(
-                null,
-                "Tiền bán hàng đã về ví! 💵",
-                "Khách đã xác nhận nhận hàng. Số tiền " + tienGiaiNgan + " đ từ đơn #" + donHangId + " đã được cộng vào Ví của bạn.",
-                "WALLET",
-                "/vi-dien-tu", // Link trỏ tới trang Ví tiền của bạn
-                false,
-                LocalDateTime.now().toString()
-        );
-        thongBaoRedisService.guiThongBao(nguoiBan.getNguoiDungId(), tbGiaiNgan);
-
-
+        // 7. THÔNG BÁO (Tùy chọn)
+        try {
+            ThongBaoDto tb = new ThongBaoDto(null, "Đơn hàng hoàn tất! 💰",
+                    "Tiền bán đơn #" + donHangId + " đã về ví.", "WALLET", "/vi-dien-tu", false, null);
+            thongBaoRedisService.guiThongBao(nguoiBan.getNguoiDungId(), tb);
+        } catch (Exception e) {
+            System.err.println("Lỗi thông báo: " + e.getMessage());
+        }
     }
-
 
 
     @Override

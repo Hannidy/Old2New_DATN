@@ -83,18 +83,11 @@ public class DonHangController {
             @PathVariable Integer donHangId,
             @RequestParam String trangThaiMoi) {
         try {
-            // 1. Cập nhật trạng thái sang Đang giao, Đã giao...
+            // Chỉ cập nhật trạng thái, không làm gì thêm!
             donHangService.capNhatTrangThaiDonHang(donHangId, trangThaiMoi);
-
-            // 2. Tự động kiểm tra: Nếu Shipper báo ĐÃ GIAO hoặc Khách báo ĐÃ NHẬN
-            if ("DA_GIAO".equalsIgnoreCase(trangThaiMoi) || "DA_NHAN_HANG".equalsIgnoreCase(trangThaiMoi)) {
-                // Kích hoạt giải ngân tiền thẳng vào ví ảo người bán lập tức!
-                donHangService.xacNhanNhanHangVaGiaiNgan(donHangId);
-            }
-
             return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái thành công!"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Lỗi cập nhật trạng thái: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }
     }
 
@@ -111,10 +104,11 @@ public class DonHangController {
     @PutMapping("/xac-nhan-nhan-hang/{donHangId}")
     public ResponseEntity<?> xacNhanNhanHang(@PathVariable Integer donHangId) {
         try {
+            // Hàm này sẽ chuyển đơn về HOAN_THANH và giải ngân
             donHangService.xacNhanNhanHangVaGiaiNgan(donHangId);
-            return ResponseEntity.ok(Map.of("message", "Đã xác nhận nhận hàng và giải ngân cho người bán thành công!"));
+            return ResponseEntity.ok(Map.of("message", "Xác nhận nhận hàng và giải ngân thành công!"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Lỗi giải ngân: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }
     }
 

@@ -24,7 +24,7 @@
         </router-link>
 
         <router-link to="/admin/payments" class="nav-link admin-nav-item">
-          <i class="bi bi-wallet2 me-2"></i> Đối soát thanh toán
+          <i class="bi bi-wallet2 me-2"></i> Quản lý rút tiền
         </router-link>
 
         <!-- Thêm vào danh sách menu Admin của Duy -->
