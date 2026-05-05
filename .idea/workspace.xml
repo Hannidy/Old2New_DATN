@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="6f7f801a-4887-4277-b983-bc98c4f4c3fc" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/poly/edu/o2n/order/service/impl/DonHangServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/poly/edu/o2n/order/service/impl/DonHangServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/src/views/order/QuanLyDonHang.vue" beforeDir="false" afterPath="$PROJECT_DIR$/FE/src/views/order/QuanLyDonHang.vue" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 0
+}]]></component>
+  <component name="ProjectId" id="3DItQ43EyJH5zggx15V0htJVnMc" />
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.129" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-IU-251.25410.129" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="6f7f801a-4887-4277-b983-bc98c4f4c3fc" name="Changes" comment="" />
+      <created>1777981393378</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777981393378</updated>
+      <workItem from="1777981395603" duration="7000" />
+    </task>
+    <servers />
+  </component>
+</project>

@@ -175,19 +175,29 @@ public class DonHangServiceImpl implements DonHangService {
 
         return response;
     }
-
     @Override
     @Transactional
     public void capNhatTrangThaiDonHang(Integer donHangId, String trangThaiMoi) {
+        // 1. Tìm đơn hàng
         DonHang donHang = donHangRepository.findById(donHangId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng: " + donHangId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + donHangId));
 
-        // Cập nhật trạng thái đơn hàng (Ví dụ: DANG_GIAO -> DA_GIAO)
+        // 2. Cập nhật trạng thái đơn hàng (Ví dụ: DA_GIAO)
         donHang.setTrangThaiDonHang(trangThaiMoi);
 
-        // Nếu là trạng thái ĐÃ GIAO, có thể cập nhật thêm ngày nhận hàng để tracking
+        // 3. LOGIC GỘP: Nếu trạng thái mới là DA_GIAO, tự động cập nhật thanh toán
         if ("DA_GIAO".equalsIgnoreCase(trangThaiMoi)) {
+            // Cập nhật trạng thái thanh toán thành Đã thanh toán
+            donHang.setTrangThaiThanhToan("DA_THANH_TOAN");
+
+            // Cập nhật ngày nhận hàng
             donHang.setNgayNhanHang(LocalDateTime.now());
+
+            // Gọi hàm cập nhật thanh toán có sẵn của bạn để:
+            // - Ghi lịch sử giao dịch (THANH_TOAN_MUA_HANG)
+            // - Tạo ví cho người mua nếu chưa có
+            // - Gửi thông báo Redis cho cả 2 bên
+            this.capNhatTrangThaiThanhToan(donHangId, "DA_THANH_TOAN", "Hệ thống tự động xác nhận khi giao hàng");
         }
 
         donHangRepository.save(donHang);

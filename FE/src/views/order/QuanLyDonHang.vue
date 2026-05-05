@@ -78,14 +78,30 @@
                       </span>
                     </td>
 
-                    <!-- BOX PHƯƠNG THỨC THANH TOÁN -->
-                    <div class="payment-method-box shadow-sm"
-                      :class="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'vnpay-bg' : 'cash-bg'">
-                      <div class="pay-title">
-                        {{ order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'Chuyểnc khoản': 'Tiền mặt' }}
+                    <div class="payment-method-box"
+                      :class="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'bank-transfer' : 'cod'">
+
+                      <div class="icon-wrapper">
+                        <!-- Icon Ngân hàng cho Chuyển khoản -->
+                        <svg v-if="order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt'"
+                          width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 10v11M7 10v11M17 10v11M2 7l10-5 10 5v3H2V7z" />
+                        </svg>
+
+                        <!-- Icon Tờ tiền cho COD -->
+                        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="2" y="6" width="20" height="12" rx="2" />
+                          <circle cx="12" cy="12" r="2" />
+                          <path d="M6 12h.01M18 12h.01" />
+                        </svg>
                       </div>
-                      <div class="pay-sub">
-                        {{ order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'Thanh toán trực tuyến' : 'Thanh toán khi nhận' }}
+
+                      <div class="payment-info">
+                        <strong class="pay-title">
+                          {{ order.phuongThucThanhToan !== 'COD' && order.phuongThucThanhToan !== 'Tiền mặt' ? 'Chuyển khoản' : 'Tiền mặt' }}
+                        </strong>
                       </div>
                     </div>
 
@@ -676,78 +692,113 @@ onMounted(() => {
   background-color: #17a2b8;
 }
 
+/* Container chung cho box phương thức */
 .payment-method-box {
   display: inline-flex;
+  align-items: center;
+  /* Căn giữa icon và chữ theo chiều dọc */
+  gap: 12px;
+  /* Khoảng cách giữa icon và cụm chữ */
+  padding: 8px 16px;
+  border-radius: 12px;
+  /* Bo góc tròn hơn giống ảnh mẫu */
+  min-width: 180px;
+  height: auto;
+  /* Để chiều cao tự co giãn theo nội dung */
+  font-family: sans-serif;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+/* Cụm text bên phải icon */
+.payment-info {
+  display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
-  padding: 4px 12px;
-  /* Thu gọn padding dọc */
-  border-radius: 4px;
-  min-width: 145px;
-  height: 44px;
-  /* Giảm chiều cao box để dòng không bị đẩy quá cao */
-  color: #ffffff;
-  font-family: sans-serif;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  line-height: 1.2;
-  /* Ép dòng chữ sát nhau */
 }
 
-.payment-method-box strong {
-  font-size: 13px;
+.payment-info strong {
+  font-size: 15px;
   font-weight: 700;
-  margin-bottom: 1px;
+  line-height: 1.2;
 }
 
-.payment-method-box span {
-  font-size: 10px;
-  opacity: 0.9;
+.payment-info span {
+  font-size: 11px;
+  margin-top: 2px;
 }
 
-.payment-method-box.bank-transfer {
-  background-color: #0056a0;
-}
-
+/* 1. Style cho Tiền mặt (COD) - Màu xanh lá */
 .payment-method-box.cod {
-  background-color: #27ae60;
+  background-color: #f0fdf4;
+  /* Nền xanh lá cực nhạt */
+  border-color: #bbf7d0;
+  /* Viền xanh lá nhạt */
 }
 
-/* Giữ nguyên các class nền cũ của bạn */
-.vnpay-bg {
-  background-color: #005bac;
-  border: 1px solid #005bac;
+.payment-method-box.cod strong {
+  color: #166534;
+  /* Chữ xanh lá đậm */
 }
 
-.vnpay-bg .pay-title {
-  color: #fff;
-  font-weight: 600;
-  font-size: 13px;
-  margin: 0;
+.payment-method-box.cod span {
+  color: #15803d;
 }
 
-.vnpay-bg .pay-sub {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 11px;
-  margin: 0;
+.payment-method-box.cod .icon-wrapper {
+  background-color: #dcfce7;
+  color: #16a34a;
+  padding: 8px;
+  border-radius: 50%;
+  /* Icon nằm trong vòng tròn */
+  display: flex;
 }
 
-.cash-bg {
-  background-color: #2ecc71;
-  border: 1px solid #2ecc71;
+/* 2. Style cho Chuyển khoản (Bank) - Màu xanh dương */
+.payment-method-box.bank-transfer {
+  background-color: #eff6ff;
+  /* Nền xanh dương cực nhạt */
+  border-color: #dbeafe;
+  /* Viền xanh dương nhạt */
 }
 
-.cash-bg .pay-title {
-  color: #fff;
-  font-weight: 600;
-  font-size: 13px;
-  margin: 0;
+.payment-method-box.bank-transfer strong {
+  color: #1e40af;
+  /* Chữ xanh dương đậm */
 }
 
-.cash-bg .pay-sub {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 11px;
-  margin: 0;
+.payment-method-box.bank-transfer span {
+  color: #1d4ed8;
+}
+
+.payment-method-box.bank-transfer .icon-wrapper {
+  background-color: #dbeafe;
+  color: #2563eb;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+}
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;  /* Cố định kích thước vòng tròn */
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0; /* Không cho vòng tròn bị bóp méo */
+}
+
+/* Màu icon cho Chuyển khoản */
+.bank-transfer .icon-wrapper {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+/* Màu icon cho COD */
+.cod .icon-wrapper {
+  background-color: #dcfce7;
+  color: #16a34a;
 }
 
 /* CSS MỚI ĐỂ GỘP NÚT HÀNH ĐỘNG (Xóa khoảng trắng dọc) */
