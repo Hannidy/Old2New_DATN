@@ -73,8 +73,6 @@ public class DonHangServiceImpl implements DonHangService {
     private poly.edu.o2n.order.repository.YeuCauTraHangRepository yeuCauTraHangRepository;
 
 
-
-
     @Override
     @Transactional // Đảm bảo lưu cả Cha và Con thành công, nếu lỗi 1 cái là rollback hết
     public Map<String, Object> taoDonHang(OrderRequestDto requestDto) {
@@ -149,7 +147,7 @@ public class DonHangServiceImpl implements DonHangService {
                             "Ting ting! Có đơn hàng mới 💰",
                             "Sản phẩm '" + sp.getTenSanPham() + "' vừa được khách đặt mua. Đơn #" + savedDonHang.getDonHangId(),
                             "ORDER_SELLER",
-                            "/quan-ly-don-ban",
+                            "/sales-order-management",
                             false,
                             null
                     );
@@ -163,7 +161,7 @@ public class DonHangServiceImpl implements DonHangService {
                     "Đặt hàng thành công! 🎉",
                     "Đơn hàng #" + savedDonHang.getDonHangId() + " của bạn đã được ghi nhận.",
                     "ORDER_BUYER",
-                    "/quan-ly-don-hang",
+                    "/order-management",
                     false,
                     null
             );
@@ -175,6 +173,7 @@ public class DonHangServiceImpl implements DonHangService {
 
         return response;
     }
+
     @Override
     @Transactional
     public void capNhatTrangThaiDonHang(Integer donHangId, String trangThaiMoi) {
@@ -308,7 +307,6 @@ public class DonHangServiceImpl implements DonHangService {
     }
 
 
-
     @Override
     public List<DonHangResponse> layDanhSachDonBanCuaUser(Integer sellerId) {
         List<DonHang> donHangs = donHangRepository.findDonHangByNguoiBanId(sellerId);
@@ -369,7 +367,7 @@ public class DonHangServiceImpl implements DonHangService {
                     "Thanh toán thành công! 💳",
                     "Tuyệt vời! Đơn hàng #" + donHangId + " đã được thanh toán thành công qua VNPAY.",
                     "ORDER_BUYER",
-                    "/quan-ly-don-hang",
+                    "/order-management",
                     false,
                     LocalDateTime.now().toString()
             );
@@ -384,13 +382,12 @@ public class DonHangServiceImpl implements DonHangService {
                         "Khách đã thanh toán trước! 💸",
                         "Khách hàng đã thanh toán đơn #" + donHangId + " qua VNPAY. Bạn hãy sớm đóng gói và giao hàng nhé!",
                         "ORDER_SELLER",
-                        "/quan-ly-don-ban",
+                        "/sales-order-management",
                         false,
                         LocalDateTime.now().toString()
                 );
                 thongBaoRedisService.guiThongBao(nguoiBanId, tbBaoShop);
             }
-
 
 
         }
@@ -508,13 +505,12 @@ public class DonHangServiceImpl implements DonHangService {
                     "Khách yêu cầu trả hàng! ⚠️",
                     "Đơn hàng #" + donHang.getDonHangId() + " vừa bị khách yêu cầu trả lại. Vui lòng vào kiểm tra và xử lý ngay!",
                     "ORDER_SELLER",
-                    "/quan-ly-don-ban",
+                    "/sales-order-management",
                     false,
                     LocalDateTime.now().toString()
             );
             thongBaoRedisService.guiThongBao(nguoiBanId, tbYeuCauTra);
         }
-
 
 
     }
@@ -577,7 +573,7 @@ public class DonHangServiceImpl implements DonHangService {
                 : "Shop đã từ chối yêu cầu trả hàng cho đơn #" + donHang.getDonHangId() + ". Đơn hàng được tính là hoàn thành.";
 
         ThongBaoDto tbXuLyTra = new ThongBaoDto(
-                null, tieuDe, noiDung, "ORDER_BUYER", "/quan-ly-don-hang", false, LocalDateTime.now().toString()
+                null, tieuDe, noiDung, "ORDER_BUYER", "/order-management", false, LocalDateTime.now().toString()
         );
         thongBaoRedisService.guiThongBao(nguoiMuaId, tbXuLyTra);
 
